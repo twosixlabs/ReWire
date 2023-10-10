@@ -179,12 +179,12 @@ xor a b = bit $ fromList [a] ^ fromList [b]
 -- Could implement on Vec (m + n)? Could also reimplement Lshift/Rshift to use Proxy?
 -- | Rotate right
 {-# INLINE rotR #-}
-rotR :: KnownNat m => Vec m Bool -> Vec m Bool -> Vec m Bool
+rotR :: KnownNat m => W m -> W m -> W m
 rotR n w = (w >>. n) .|. (w <<. (lit (ReWire.len w) - n))
 
 -- | Rotate left
 {-# INLINE rotL #-}
-rotL :: KnownNat m => Vec m Bool -> Vec m Bool -> Vec m Bool
+rotL :: KnownNat m => W m -> W m -> W m
 rotL n w = (w <<. n) .|. (w >>. (lit (ReWire.len w) - n))
 
 -- | Equal.

@@ -54,6 +54,7 @@ module RWC.Primitives
       , rwPrimVecFromList
       , rwPrimVecIndex
       , rwPrimVecMap
+      , rwPrimVecZip
       , rwPrimVecRSlice
       , rwPrimVecReplicate
       , rwPrimVecReverse
@@ -187,6 +188,10 @@ rwPrimVecIndex = V.index'
 
 rwPrimVecMap :: (a -> b) -> Vec n a -> Vec n b
 rwPrimVecMap = V.map
+
+rwPrimVecZip :: Vec n a -> Vec n b -> Vec n (a , b)
+rwPrimVecZip = V.zip
+
 
 -- | Concatenate vectors.
 rwPrimVecConcat :: Vec n a -> Vec m a -> Vec (n + m) a
