@@ -12,7 +12,7 @@ module ReWire
       , slice, rslice
       , modify
       , empty, singleton, cons, snoc, head, last, length, len
-      , take, init, drop, tail, map, zip
+      , take, init, drop, tail, map, generate, zip
       ) where
 
 import RWC.Primitives
@@ -165,6 +165,10 @@ len v = rwPrimNatVal (length v)
 {-# INLINE map #-}
 map :: (a -> b) -> Vec n a -> Vec n b
 map = rwPrimVecMap
+
+{-# INLINE generate #-}
+generate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
+generate = rwPrimVecGenerate
 
 {-# INLINE zip #-}
 zip :: Vec n a -> Vec n b -> Vec n (a , b)

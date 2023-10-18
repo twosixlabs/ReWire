@@ -54,6 +54,7 @@ module RWC.Primitives
       , rwPrimVecFromList
       , rwPrimVecIndex
       , rwPrimVecMap
+      , rwPrimVecGenerate
       , rwPrimVecZip
       , rwPrimVecRSlice
       , rwPrimVecReplicate
@@ -192,6 +193,12 @@ rwPrimVecMap = V.map
 rwPrimVecZip :: Vec n a -> Vec n b -> Vec n (a , b)
 rwPrimVecZip = V.zip
 
+-- using Generate requires using the finite-typelits package
+-- rwPrimVecGenerate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
+-- rwPrimVecGenerate p f = V.generate' p (f . Fin.getFinite)
+
+rwPrimVecGenerate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
+rwPrimVecGenerate p f = rwPrimVecMap f $ V.enumFromN' 0 p
 
 -- | Concatenate vectors.
 rwPrimVecConcat :: Vec n a -> Vec m a -> Vec (n + m) a
