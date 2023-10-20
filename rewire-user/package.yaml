@@ -27,6 +27,7 @@ dependencies:
 - mtl
 - monad-resumption
 - vector-sized
+- finite-typelits
 - ghc-typelits-natnormalise
 
 library:

@@ -55,6 +55,10 @@ module RWC.Primitives
       , rwPrimVecIndex
       , rwPrimVecMap
       , rwPrimVecGenerate
+      , rwPrimVecPackLo
+      , rwPrimVecPackHi
+      , rwPrimVecUnpackLo
+      , rwPrimVecUnpackHi
       , rwPrimVecZip
       , rwPrimVecRSlice
       , rwPrimVecReplicate
@@ -76,6 +80,7 @@ import qualified Data.Bits                         as GHC
 import qualified Data.Bifunctor                    as BF
 import GHC.TypeLits (Nat, type (+), natVal)
 import qualified GHC.TypeLits                      as TL
+import qualified Data.Finite                       as F
 import qualified Data.Vector.Sized                 as V
 import qualified ReWire.BitWord                    as BW
 
@@ -193,12 +198,38 @@ rwPrimVecMap = V.map
 rwPrimVecZip :: Vec n a -> Vec n b -> Vec n (a , b)
 rwPrimVecZip = V.zip
 
--- using Generate requires using the finite-typelits package
--- rwPrimVecGenerate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
--- rwPrimVecGenerate p f = V.generate' p (f . Fin.getFinite)
-
 rwPrimVecGenerate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
 rwPrimVecGenerate p f = rwPrimVecMap f $ V.enumFromN' 0 p
+
+-- | Returns evens from v concatenated with evens from w
+rwPrimVecPackLo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
+rwPrimVecPackLo p v w = V.generate' p (\ fi -> 
+           if fi GHC.< n then V.index v (fi GHC.* 2)
+                         else V.index w ((fi GHC.- n) GHC.* 2))
+  where
+      n = F.finite (rwPrimNatVal p `GHC.div` 2)
+
+-- | Returns odds from v concatenated with odds from w
+rwPrimVecPackHi :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
+rwPrimVecPackHi p v w = V.generate' p (\ fi -> 
+           if fi GHC.< n then V.index v (fi GHC.* 2 GHC.+ 1)
+                         else V.index w ((fi GHC.- n) GHC.* 2 GHC.+ 1))
+  where
+      n = F.finite (rwPrimNatVal p `GHC.div` 2)
+
+-- | Returns the first half of v interleaved with w
+rwPrimVecUnpackLo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
+rwPrimVecUnpackLo p v w = V.generate' p (\ fi -> 
+            if GHC.even fi then V.index v (fi `GHC.div` 2) 
+                           else V.index w ((fi GHC.- 1) `GHC.div` 2))
+
+-- | Returns the second half of v interleaved with w
+rwPrimVecUnpackHi :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
+rwPrimVecUnpackHi p v w = V.generate' p (\ fi -> 
+      if GHC.even fi then V.index v (n GHC.+ fi `GHC.div` 2)
+                     else V.index w (n GHC.+ (fi GHC.- 1) `GHC.div` 2))
+         where n = F.finite (rwPrimNatVal p `GHC.div` 2)
+
 
 -- | Concatenate vectors.
 rwPrimVecConcat :: Vec n a -> Vec m a -> Vec (n + m) a
