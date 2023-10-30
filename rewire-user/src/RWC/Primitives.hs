@@ -55,6 +55,7 @@ module RWC.Primitives
       , rwPrimVecIndex
       , rwPrimVecMap
       , rwPrimVecGenerate
+      , rwPrimVecIterate
       , rwPrimVecPackLo
       , rwPrimVecPackHi
       , rwPrimVecUnpackLo
@@ -67,6 +68,7 @@ module RWC.Primitives
       , rwPrimVecUpdate
       , rwPrimXNor
       , rwPrimXOr
+      , rwPrimToInteger
       , type (+), type GHC.Monad, type GHC.MonadTrans, KnownNat
       ) where
 
@@ -200,6 +202,9 @@ rwPrimVecZip = V.zip
 
 rwPrimVecGenerate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
 rwPrimVecGenerate p f = rwPrimVecMap f $ V.enumFromN' 0 p
+
+rwPrimVecIterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
+rwPrimVecIterate = V.iterateN'
 
 -- | Returns evens from v concatenated with evens from w
 rwPrimVecPackLo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
@@ -390,3 +395,6 @@ rwPrimRXNor = V.foldl1 (\ x y -> GHC.not (GHC.xor x y))
 -- | Most significant bit.
 rwPrimMSBit :: Vec (1 + n) Bool -> Bool
 rwPrimMSBit = V.head
+
+rwPrimToInteger :: Vec n Bool -> Integer
+rwPrimToInteger = V.foldr (\ b iacc -> if b then 1 GHC.+ 2 GHC.* iacc else 2 GHC.* iacc) 0

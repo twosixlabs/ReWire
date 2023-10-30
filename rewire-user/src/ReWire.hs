@@ -12,7 +12,7 @@ module ReWire
       , slice, rslice
       , modify
       , empty, singleton, cons, snoc, head, last, length, len
-      , take, init, drop, tail, map, generate, zip, unpacklo, unpackhi, packlo, packhi
+      , take, init, drop, tail, map, generate, iterate, zip, zipWith, zipWith3, unpacklo, unpackhi, packlo, packhi
       ) where
 
 import RWC.Primitives
@@ -136,26 +136,26 @@ length _ = Proxy
 
 {-# INLINE take #-}
 take :: KnownNat n => Vec (n + m) a -> Vec n a
-take v = slice (Proxy :: Proxy 0) v
+take = slice (Proxy :: Proxy 0)
 
 {-# INLINE init #-}
 init :: KnownNat n => Vec (n + 1) a -> Vec n a
-init v = take v
+init = take
 
 {-# INLINE drop #-}
 drop :: KnownNat m => Vec (n + m) a -> Vec m a
-drop v = rslice (Proxy :: Proxy 0) v
+drop = rslice (Proxy :: Proxy 0)
 
 {-# INLINE tail #-}
 tail :: KnownNat n => Vec (1 + n) a -> Vec n a
-tail v = drop v
+tail = drop
 
 {-# INLINE update #-}
 update :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a -> Vec ((n + m) + 1) a
 update = rwPrimVecUpdate
 
 {-# INLINE bulkUpdate #-}
-bulkUpdate :: Vec n a -> Vec n (Integer,a) -> Vec n a
+bulkUpdate :: Vec n a -> Vec m (Integer,a) -> Vec n a
 bulkUpdate = rwPrimVecBulkUpdate
 
 {-# INLINE len #-}
@@ -170,9 +170,25 @@ map = rwPrimVecMap
 generate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
 generate = rwPrimVecGenerate
 
+{-# INLINE iterate #-}
+iterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
+iterate = rwPrimVecIterate
+
 {-# INLINE zip #-}
 zip :: Vec n a -> Vec n b -> Vec n (a , b)
 zip = rwPrimVecZip
+
+{-# INLINE uncurry #-}
+uncurry :: (a -> b -> c) -> ((a,b) -> c)
+uncurry f (a,b) = f a b
+
+{-# INLINE zipWith #-}
+zipWith :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
+zipWith f vs ws = map (uncurry f) (zip vs ws)
+
+{-# INLINE zipWith3 #-}
+zipWith3 :: (a -> b -> c -> d) -> Vec n a -> Vec n b -> Vec n c -> Vec n d
+zipWith3 f vs ws = zipWith (uncurry f) (zip vs ws)
 
 {-# INLINE unpacklo #-}
 unpacklo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a

@@ -18,6 +18,10 @@ one = True
 bit :: W 1 -> Bit
 bit = msbit
 
+{-# INLINE toInteger #-}
+toInteger :: W n -> Integer
+toInteger = rwPrimToInteger
+
 -- | Project range of bits.
 --   a @@ (j, i) returns bits j (most significant) to i (least significant) from a (j >= i).
 --   The Integer arguments must be non-negative integer literals (after inlining).
@@ -256,3 +260,6 @@ rXNor = rwPrimRXNor
 {-# INLINE msbit #-}
 msbit :: W (1 + n) -> Bit
 msbit = rwPrimMSBit
+
+
+
