@@ -5,18 +5,17 @@
 module ReWire
       ( module RWC.Primitives
       , error, externWithSig, extern
-      , setRef, getRef, put, get
+      , setRef, getRef, put, get, modify
       , signal, lift, extrude, unfold
-      , fromList, replicate, reverse
-      , index, (++), update, bulkUpdate
-      , slice, rslice
-      , modify
-      , empty, singleton, cons, snoc, head, last, length, len
-      , take, init, drop, tail, map, generate, iterate, zip, zipWith, zipWith3, unpacklo, unpackhi, packlo, packhi
+      , natVal, length, len, fromList
+      , Bit, W
       ) where
 
 import RWC.Primitives
-import Prelude (String, Integer)
+import Prelude (String, Integer, Bool)
+
+type Bit = Bool
+type W n = Vec n Bit
 
 {-# INLINE error #-}
 error :: String -> a
@@ -74,134 +73,19 @@ extrude = rwPrimExtrude
 unfold :: ((R_, s) -> i -> PuRe s o) -> PuRe s o -> ReacT i o Identity A_
 unfold = rwPrimUnfold
 
-{-# INLINE fromList #-}
-fromList :: KnownNat n => [a] -> Vec n a
-fromList = rwPrimVecFromList
-
-{-# INLINE replicate #-}
-replicate :: KnownNat n => a -> Vec n a
-replicate = rwPrimVecReplicate
-
-{-# INLINE reverse #-}
-reverse :: Vec n a -> Vec n a
-reverse = rwPrimVecReverse
-
-{-# INLINE slice #-}
-slice :: (KnownNat i, KnownNat n) => Proxy i -> Vec ((i + n) + m) a -> Vec n a
-slice = rwPrimVecSlice
-
-{-# INLINE rslice #-}
-rslice :: (KnownNat i, KnownNat n) => Proxy i -> Vec ((i + n) + m) a -> Vec n a
-rslice = rwPrimVecRSlice
-
-{-# INLINE index #-}
-index :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a
-index = rwPrimVecIndex
-
-{-# INLINE (++) #-}
-(++) :: Vec n a -> Vec m a -> Vec (n + m) a
-(++) = rwPrimVecConcat
-
-{-# INLINE empty #-}
-empty :: Vec 0 a
-empty = fromList []
-
-{-# INLINE singleton #-}
-singleton :: a -> Vec 1 a
-singleton a = fromList [a]
-
-{-# INLINE cons #-}
-cons :: a -> Vec n a -> Vec (1 + n) a
-cons a v = fromList [a] ++ v
-
-{-# INLINE snoc #-}
-snoc :: Vec n a -> a -> Vec (n + 1) a
-snoc v a = v ++ fromList [a]
-
-{-# INLINE head #-}
-head :: Vec (1 + n) a -> a
-head v = index v (Proxy :: Proxy 0)
-
-{-# INLINE last #-}
-last :: KnownNat n => Vec (1 + n) a -> a
-last v = index v (lastIndex v)
-
-{-# INLINE lastIndex #-}
-lastIndex :: Vec (1 + n) a -> Proxy n
-lastIndex _ = Proxy
+-- | Produce integer associated with type-level natural.
+{-# INLINE natVal #-}
+natVal :: KnownNat n => Proxy n -> Integer
+natVal = rwPrimNatVal
 
 {-# INLINE length #-}
 length :: Vec n a -> Proxy n
 length _ = Proxy
 
-{-# INLINE take #-}
-take :: KnownNat n => Vec (n + m) a -> Vec n a
-take = slice (Proxy :: Proxy 0)
-
-{-# INLINE init #-}
-init :: KnownNat n => Vec (n + 1) a -> Vec n a
-init = take
-
-{-# INLINE drop #-}
-drop :: KnownNat m => Vec (n + m) a -> Vec m a
-drop = rslice (Proxy :: Proxy 0)
-
-{-# INLINE tail #-}
-tail :: KnownNat n => Vec (1 + n) a -> Vec n a
-tail = drop
-
-{-# INLINE update #-}
-update :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a -> Vec ((n + m) + 1) a
-update = rwPrimVecUpdate
-
-{-# INLINE bulkUpdate #-}
-bulkUpdate :: Vec n a -> Vec m (Integer,a) -> Vec n a
-bulkUpdate = rwPrimVecBulkUpdate
-
 {-# INLINE len #-}
 len :: KnownNat n => Vec n a -> Integer
-len v = rwPrimNatVal (length v)
+len v = natVal (length v)
 
-{-# INLINE map #-}
-map :: (a -> b) -> Vec n a -> Vec n b
-map = rwPrimVecMap
-
-{-# INLINE generate #-}
-generate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
-generate = rwPrimVecGenerate
-
-{-# INLINE iterate #-}
-iterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
-iterate = rwPrimVecIterate
-
-{-# INLINE zip #-}
-zip :: Vec n a -> Vec n b -> Vec n (a , b)
-zip = rwPrimVecZip
-
-{-# INLINE uncurry #-}
-uncurry :: (a -> b -> c) -> ((a,b) -> c)
-uncurry f (a,b) = f a b
-
-{-# INLINE zipWith #-}
-zipWith :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
-zipWith f vs ws = map (uncurry f) (zip vs ws)
-
-{-# INLINE zipWith3 #-}
-zipWith3 :: (a -> b -> c -> d) -> Vec n a -> Vec n b -> Vec n c -> Vec n d
-zipWith3 f vs ws = zipWith (uncurry f) (zip vs ws)
-
-{-# INLINE unpacklo #-}
-unpacklo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-unpacklo = rwPrimVecUnpackLo
-
-{-# INLINE unpackhi #-}
-unpackhi :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-unpackhi = rwPrimVecUnpackHi
-
-{-# INLINE packlo #-}
-packlo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-packlo = rwPrimVecPackLo
-
-{-# INLINE packhi #-}
-packhi :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-packhi = rwPrimVecPackHi
+{-# INLINE fromList #-}
+fromList :: KnownNat n => [a] -> Vec n a
+fromList = rwPrimVecFromList

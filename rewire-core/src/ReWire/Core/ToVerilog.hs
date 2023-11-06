@@ -287,13 +287,13 @@ compileExp conf singles lvars = \ case
                     => Name -> C.Exp -> [Pat] -> C.Exp -> ((V.Exp, V.Exp) -> m (V.Exp, [V.Stmt])) -> m (V.Exp, [Stmt])
             mkCall2' s e ps els f = mkCall s e ps els $ \ case
                   [e1, e2] -> f (e1, e2)
-                  es       -> failAt (ann e) $ "primitive: expected two arguments, got: " <> showt (length es)
+                  es       -> failAt (ann e) $ "primitive " <> s <> ": expected two arguments, got: " <> showt (length es)
 
             mkCall1 :: (MonadState SigInfo m, MonadFail m, MonadError AstError m, MonadReader DefnMap m)
                     => Name -> C.Exp -> [Pat] -> C.Exp -> (V.Exp -> m V.Exp) -> m (V.Exp, [Stmt])
             mkCall1 s e ps els f = mkCall s e ps els $ \ case
                   [e1] -> (, []) <$> f e1
-                  es   -> failAt (ann e) $ "primitive: expected one argument, got: " <> showt (length es)
+                  es   -> failAt (ann e) $ "primitive " <> s <> ": expected one argument, got: " <> showt (length es)
 
             mkCall :: (MonadState SigInfo m, MonadFail m, MonadError AstError m, MonadReader DefnMap m)
                     => Name -> C.Exp -> [Pat] -> C.Exp -> ([V.Exp] -> m (V.Exp, [Stmt])) -> m (V.Exp, [Stmt])

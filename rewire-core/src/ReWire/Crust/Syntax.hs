@@ -203,8 +203,12 @@ data Builtin = Error | Extern
              | Bind | Return
              | Put | Get
              | Signal | Lift | Extrude | Unfold
-             | VecFromList | VecReplicate | VecReverse | VecSlice | VecRSlice | VecIndex | VecConcat
-             | VecMap | VecFoldR | VecFoldL | NatVal
+             | VecFromList | VecReplicate | VecReverse | VecSlice | VecRSlice
+             | VecIndex | VecIndexProxy
+             | VecConcat
+             | VecMap | VecFoldR | VecFoldL | VecGenerate
+             | Finite | FiniteMinBound | FiniteMaxBound | ToFinite | ToFiniteMod | FromFinite
+             | NatVal
              | Bits | Resize | BitSlice | BitIndex
              | Add | Sub | Mul | Div | Mod | Pow
              | LAnd | LOr

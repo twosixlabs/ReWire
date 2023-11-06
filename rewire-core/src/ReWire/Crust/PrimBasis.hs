@@ -24,6 +24,7 @@ primDatas = map mkData
       , ("StateT",   KStar `KFun` (kmonad `KFun` kmonad),                [])
       , ("Identity", kmonad,                                             [])
       , ("Vec",      KNat `KFun` KStar `KFun` KStar,                     [])
+      , ("Finite",   KNat `KFun` KStar,                                  [])
       , ("+",        KNat `KFun` KNat  `KFun` KNat,                      [])
       , ("Ref",      KStar `KFun` KStar,                                 [refCtor])
       , ("Integer",  KStar,                                              [])

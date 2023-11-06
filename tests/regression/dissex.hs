@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 import Prelude hiding ((+))
 import ReWire
-import ReWire.Bits (lit, W, Bit, (+))
+import ReWire.Bits (lit, (+))
 
 zeroW8 :: W 8
 zeroW8 = lit 0

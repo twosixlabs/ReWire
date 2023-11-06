@@ -2,6 +2,7 @@
 import Prelude hiding ((+), head, last)
 import ReWire
 import ReWire.Bits
+import ReWire.Vectors
 
 type St = StateT (Vec 2 (W 8)) Identity
 

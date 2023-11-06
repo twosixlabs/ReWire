@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 import Prelude hiding ((+))
 import ReWire
-import ReWire.Bits (W, lit, (+))
+import ReWire.Bits (lit, (+))
 
 go :: ReacT () (W 8) (StateT (W 8) Identity) ()
 go = do

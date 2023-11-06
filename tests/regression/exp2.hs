@@ -3,6 +3,7 @@
 import Prelude hiding ((+), (*), head, last, tail, map, replicate, Word)
 import ReWire
 import ReWire.Bits
+import ReWire.Vectors
 
 type Word = W 100
 type N = 10

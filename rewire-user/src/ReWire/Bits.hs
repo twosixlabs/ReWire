@@ -1,12 +1,12 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 module ReWire.Bits where
 
 import ReWire
 import Prelude hiding (head, (<>), (==), (-), (^), (&&), (||))
 
-type Bit = Bool
-type W n = Vec n Bit
+type Lit = W 128
 
 zero :: Bit
 zero = False
@@ -39,7 +39,6 @@ a @. i = bitIndex a i
 -- *** Primitive bitwise operations based on Verilog operators. ***
 
 infixr 9 **
-infixl 9 !
 infixl 8  *, /, %
 infixl 7  +, -
 infixl 6  <<., >>., >>>
@@ -48,14 +47,14 @@ infixr 6  <>
 infixl 5  .&.
 infixl 4  ^, ~^, `xor`
 infixl 3  .|.
-infixr 2  &&., &&, !=
+infixr 2  &&., &&
 infixr 1  ||., ||
 
 -- | Interpret an Integer literal into a bit vector. Truncates most significant
 --   bits or zero-pads to make it fit.
 {-# INLINE lit #-}
 lit :: KnownNat n => Integer -> W n
-lit i = rwPrimResize (rwPrimBits i :: W 128)
+lit i = rwPrimResize (rwPrimBits i :: Lit)
 
 -- | Resize bitvector, truncating or zero padding most significant bits.
 {-# INLINE resize #-}
@@ -69,16 +68,6 @@ bitSlice = rwPrimBitSlice
 {-# INLINE bitIndex #-}
 bitIndex :: W n -> Integer -> Bit
 bitIndex = rwPrimBitIndex
-
--- | lookup value at index n in vector
-{-# INLINE (!) #-}
-(!) :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a
-(!) = index
-
--- | assign new value a to index i
-{-# INLINE (!=) #-}
-(!=) :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a -> Vec ((n + m) + 1) a
-v != i = update v i
 
 -- | Add.
 {-# INLINE (+) #-}
@@ -184,12 +173,12 @@ xor a b = bit $ fromList [a] ^ fromList [b]
 -- | Rotate right
 {-# INLINE rotR #-}
 rotR :: KnownNat m => W m -> W m -> W m
-rotR n w = (w >>. n) .|. (w <<. (lit (ReWire.len w) - n))
+rotR n w = (w >>. n) .|. (w <<. (lit (len w) - n))
 
 -- | Rotate left
 {-# INLINE rotL #-}
 rotL :: KnownNat m => W m -> W m -> W m
-rotL n w = (w <<. n) .|. (w >>. (lit (ReWire.len w) - n))
+rotL n w = (w <<. n) .|. (w >>. (lit (len w) - n))
 
 -- | Equal.
 {-# INLINE (==) #-}
@@ -261,5 +250,13 @@ rXNor = rwPrimRXNor
 msbit :: W (1 + n) -> Bit
 msbit = rwPrimMSBit
 
+-- | Least significant bit.
+{-# INLINE odd #-}
+odd :: W (1 + n) -> Bool
+odd b = bit (resize b :: W 1)
 
+-- | Least significant bit.
+{-# INLINE even #-}
+even :: W (1 + n) -> Bool
+even b = not (bit (resize b :: W 1))
 

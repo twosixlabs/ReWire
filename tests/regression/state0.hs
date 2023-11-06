@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds #-}
-import ReWire ( signal, Identity, ReacT )
-import ReWire.Bits ( W, lit )
+import ReWire ( W, signal, Identity, ReacT )
+import ReWire.Bits (lit)
 
 type Dev i o = ReacT i o Identity ()
 

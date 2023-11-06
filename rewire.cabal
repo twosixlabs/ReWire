@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -42,6 +42,7 @@ data-files:
     tests/regression/fibo1.hs
     tests/regression/fibo2.hs
     tests/regression/fibo3.hs
+    tests/regression/Finite.hs
     tests/regression/fully.hs
     tests/regression/funcase.hs
     tests/regression/guards.hs
@@ -49,6 +50,7 @@ data-files:
     tests/regression/Infix.hs
     tests/regression/ModsMain.hs
     tests/regression/onestate.hs
+    tests/regression/PackUnpack.hs
     tests/regression/pats.hs
     tests/regression/PreludeTest.hs
     tests/regression/putBug.hs
@@ -68,8 +70,10 @@ data-files:
     rewire-user/src/RWC/Primitives.hs
     rewire-user/src/ReWire/Bits.hs
     rewire-user/src/ReWire/BitWord.hs
+    rewire-user/src/ReWire/Finite.hs
     rewire-user/src/ReWire/Monad.hs
     rewire-user/src/ReWire/Prelude.hs
+    rewire-user/src/ReWire/Vectors.hs
 
 source-repository head
   type: git

@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ConstraintKinds #-}
 module RWC.Primitives
-      ( Identity, ReacT, A_, R_, StateT, Vec, PuRe, Ref (..), Proxy (..)
+      ( Identity, ReacT, A_, R_, StateT, Vec, Finite, PuRe, Ref (..), Proxy (..)
       , rwPrimAdd
       , rwPrimAnd
       , rwPrimBind
@@ -49,17 +49,20 @@ module RWC.Primitives
       , rwPrimSignal
       , rwPrimSub
       , rwPrimUnfold
+      , rwPrimFinite
+      , rwPrimFiniteMinBound
+      , rwPrimFiniteMaxBound
+      , rwPrimToFinite
+      , rwPrimToFiniteMod
+      , rwPrimFromFinite
       , rwPrimVecBulkUpdate
       , rwPrimVecConcat
       , rwPrimVecFromList
       , rwPrimVecIndex
+      , rwPrimVecIndexProxy
       , rwPrimVecMap
       , rwPrimVecGenerate
       , rwPrimVecIterate
-      , rwPrimVecPackLo
-      , rwPrimVecPackHi
-      , rwPrimVecUnpackLo
-      , rwPrimVecUnpackHi
       , rwPrimVecZip
       , rwPrimVecRSlice
       , rwPrimVecReplicate
@@ -92,8 +95,9 @@ type StateT     = GHC.StateT
 type Integer    = GHC.Integer
 type String     = GHC.String
 type Bool       = GHC.Bool
-type Vec n a    = V.Vector n a
-type KnownNat n = TL.KnownNat n
+type Vec        = V.Vector
+type KnownNat   = TL.KnownNat
+type Finite     = F.Finite
 
 -- ReWire primitives.
 
@@ -169,6 +173,25 @@ rwPrimUnfold _ (Done (a,_)) = GHC.return a
 rwPrimUnfold f (Pause (o,b)) = do i <- GHC.signal o
                                   rwPrimUnfold f (f b i)
 
+-- | Convert an Integer into a @'Finite' n@, throws an error if >= @n@.
+rwPrimFinite :: KnownNat n => Integer -> Finite n
+rwPrimFinite = F.finite
+
+rwPrimFiniteMinBound :: KnownNat n => Finite n
+rwPrimFiniteMinBound = GHC.minBound
+
+rwPrimFiniteMaxBound :: KnownNat n => Finite n
+rwPrimFiniteMaxBound = GHC.maxBound
+
+rwPrimToFinite :: KnownNat n => Vec m Bool -> Finite n
+rwPrimToFinite = F.finite . BW.toInteger'
+
+rwPrimToFiniteMod :: forall m n. KnownNat n => Vec m Bool -> Finite n
+rwPrimToFiniteMod v = F.finite (BW.toInteger' v `GHC.mod` (natVal (Proxy :: Proxy n)))
+
+rwPrimFromFinite :: KnownNat m => Finite n -> Vec m Bool
+rwPrimFromFinite = rwPrimResize . rwPrimBits . F.getFinite
+
 -- *** Built-in Vec functions. ***
 
 -- | Turns a List literal into a Vec with fixed length. I.e.,
@@ -191,8 +214,11 @@ rwPrimVecSlice = V.slice
 rwPrimVecRSlice :: (KnownNat i, KnownNat n) => Proxy i -> Vec ((i + n) + m) a -> Vec n a
 rwPrimVecRSlice i = V.reverse . V.slice i . V.reverse
 
-rwPrimVecIndex :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a
-rwPrimVecIndex = V.index'
+rwPrimVecIndex :: Vec n a -> Finite n -> a
+rwPrimVecIndex = V.index
+
+rwPrimVecIndexProxy :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a
+rwPrimVecIndexProxy = V.index'
 
 rwPrimVecMap :: (a -> b) -> Vec n a -> Vec n b
 rwPrimVecMap = V.map
@@ -200,41 +226,11 @@ rwPrimVecMap = V.map
 rwPrimVecZip :: Vec n a -> Vec n b -> Vec n (a , b)
 rwPrimVecZip = V.zip
 
-rwPrimVecGenerate :: KnownNat n => Proxy n -> (Integer -> a) -> Vec n a
-rwPrimVecGenerate p f = rwPrimVecMap f $ V.enumFromN' 0 p
+rwPrimVecGenerate :: KnownNat n => (Finite n -> a) -> Vec n a
+rwPrimVecGenerate = V.generate
 
 rwPrimVecIterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
 rwPrimVecIterate = V.iterateN'
-
--- | Returns evens from v concatenated with evens from w
-rwPrimVecPackLo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-rwPrimVecPackLo p v w = V.generate' p (\ fi -> 
-           if fi GHC.< n then V.index v (fi GHC.* 2)
-                         else V.index w ((fi GHC.- n) GHC.* 2))
-  where
-      n = F.finite (rwPrimNatVal p `GHC.div` 2)
-
--- | Returns odds from v concatenated with odds from w
-rwPrimVecPackHi :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-rwPrimVecPackHi p v w = V.generate' p (\ fi -> 
-           if fi GHC.< n then V.index v (fi GHC.* 2 GHC.+ 1)
-                         else V.index w ((fi GHC.- n) GHC.* 2 GHC.+ 1))
-  where
-      n = F.finite (rwPrimNatVal p `GHC.div` 2)
-
--- | Returns the first half of v interleaved with w
-rwPrimVecUnpackLo :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-rwPrimVecUnpackLo p v w = V.generate' p (\ fi -> 
-            if GHC.even fi then V.index v (fi `GHC.div` 2) 
-                           else V.index w ((fi GHC.- 1) `GHC.div` 2))
-
--- | Returns the second half of v interleaved with w
-rwPrimVecUnpackHi :: KnownNat n => Proxy n -> Vec n a -> Vec n a -> Vec n a
-rwPrimVecUnpackHi p v w = V.generate' p (\ fi -> 
-      if GHC.even fi then V.index v (n GHC.+ fi `GHC.div` 2)
-                     else V.index w (n GHC.+ (fi GHC.- 1) `GHC.div` 2))
-         where n = F.finite (rwPrimNatVal p `GHC.div` 2)
-
 
 -- | Concatenate vectors.
 rwPrimVecConcat :: Vec n a -> Vec m a -> Vec (n + m) a

@@ -5,7 +5,7 @@ module ReWire.Crust.Types
       , arr, intTy, strTy, nilTy, refTy, kmonad, (|->)
       , rangeTy, flattenArrow, pairTy, arrowRight, arrowLeft
       , higherOrder, fundamental, concrete, paramTys
-      , proxyNat, vecSize, vecElemTy, vecTy, evalNat
+      , finMax, proxyNat, finiteTy, vecSize, vecElemTy, vecTy, evalNat
       , mkArrowTy, poly, poly', listTy, kblank, plusTy, plus
       , isReacT, isStateT, ctorNames, resInputTy
       , dstArrow, dstStateT, dstTyApp, dstReacT, proxyTy
@@ -188,8 +188,16 @@ proxyNat t = case flattenTyApp t of
       TyCon _ (n2s -> "Proxy") : [n] -> evalNat n
       _                              -> Nothing
 
+finMax :: Ty -> Maybe Natural
+finMax t = case flattenTyApp t of
+      TyCon _ (n2s -> "Finite") : [n] -> evalNat n
+      _                               -> Nothing
+
 proxyTy :: Annote -> Natural -> Ty
 proxyTy an n = TyApp an (TyCon an (s2n "Proxy")) $ TyNat an n
+
+finiteTy :: Annote -> Natural -> Ty
+finiteTy an n = TyApp an (TyCon an (s2n "Finite")) $ TyNat an n
 
 plusTy :: Annote -> Ty -> Ty -> Ty
 plusTy an n = TyApp an $ TyApp an (TyCon an $ s2n "+") n

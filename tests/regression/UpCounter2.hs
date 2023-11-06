@@ -1,7 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 import Prelude hiding ((+))
 import ReWire
-import ReWire.Bits (Bit, W, lit, resize, msbit, (+), (.|.), (<<.))
+import ReWire.Bits (lit, resize, msbit, (+), (.|.), (<<.))
+import ReWire.Vectors
 
 {-# INLINE tick #-}
 tick :: ReacT Bit (W 8) (StateT (W 8) Identity) Bit

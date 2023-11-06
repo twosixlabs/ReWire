@@ -1,5 +1,4 @@
 import ReWire
-import ReWire.Bits (Bit)
 
 go :: ReacT Bit Bit Identity Bit
 go = do
