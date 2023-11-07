@@ -253,11 +253,11 @@ rwPrimResize v = rwPrimVecFromList vs'
       vs' = BW.resize' (GHC.fromEnum (natVal (Proxy :: Proxy m))) vs
 
 -- | Update index i to value a
-rwPrimVecUpdate :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a -> Vec ((n + m) + 1) a
-rwPrimVecUpdate v i a = V.update v (V.singleton (fromEnum $ natVal i,a))
+rwPrimVecUpdate :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
+rwPrimVecUpdate v i a = V.update v (V.singleton (GHC.fromEnum i,a))
 
 -- | Update multiple indices
-rwPrimVecBulkUpdate :: Vec n a -> Vec m (Integer,a) -> Vec n a
+rwPrimVecBulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
 rwPrimVecBulkUpdate v a = V.update v (V.map (BF.first fromEnum) a)
 
 -- | Produce integer associated with type-level natural.
@@ -265,14 +265,14 @@ rwPrimNatVal :: KnownNat n => Proxy n -> Integer
 rwPrimNatVal = natVal
 
 -- | bitSlice a j i returns bits j (most significant) to i (least significant) from a (j >= i).
---   The Integer arguments must be non-negative integer literals (after inlining).
-rwPrimBitSlice :: Vec n Bool -> Integer -> Integer -> Vec m Bool
+--   The Finite arguments must be known/literals (after inlining).
+rwPrimBitSlice :: Vec n Bool -> Finite n -> Finite n -> Vec m Bool
 rwPrimBitSlice = GHC.error "Prim: bit slice"
 
 -- | bitIndex a i == bitSlice a i i.
---   The Integer argument must be a non-negative integer literal (after inlining).
-rwPrimBitIndex :: Vec n Bool -> Integer -> Bool
-rwPrimBitIndex = GHC.error "Prim: bit extraction"
+--   The Finite argument must be known/literal (after inlining).
+rwPrimBitIndex :: Vec n Bool -> Finite n -> Bool
+rwPrimBitIndex = V.index
 
 -- *** Primitive bitwise operations based on Verilog operators. ***
 

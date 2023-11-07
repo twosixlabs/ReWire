@@ -4,7 +4,6 @@
 module ReWire.Finite where
 
 import ReWire
-import qualified ReWire.Bits as B
 
 -- | Convert an Integer into a @'Finite' n@, throws an error if >= @n@.
 {-# INLINE finite #-}
@@ -33,35 +32,3 @@ toFinite' = rwPrimToFiniteMod
 {-# INLINE fromFinite #-}
 fromFinite :: KnownNat m => Finite n -> W m
 fromFinite = rwPrimFromFinite
-
-{-# INLINE (+) #-}
-(+) :: KnownNat n => Finite n -> Finite n -> Finite n
-a + b = toFinite' $ (fromFinite a :: B.Lit) B.+ fromFinite b
-
-{-# INLINE (-) #-}
-(-) :: KnownNat n => Finite n -> Finite n -> Finite n
-a - b = toFinite' $ (fromFinite a :: B.Lit) B.- fromFinite b
-
-{-# INLINE (*) #-}
-(*) :: KnownNat n => Finite n -> Finite n -> Finite n
-a * b = toFinite' $ (fromFinite a :: B.Lit) B.* fromFinite b
-
-{-# INLINE div #-}
-div :: KnownNat n => Finite n -> Finite n -> Finite n
-div a b = toFinite' $ (fromFinite a :: B.Lit) B./ fromFinite b
-
-{-# INLINE (==) #-}
-(==) :: Finite n -> Finite n -> Bool
-a == b = (fromFinite a :: B.Lit) B.== (fromFinite b :: B.Lit)
-
-{-# INLINE (<) #-}
-(<) :: Finite n -> Finite n -> Bool
-a < b = (fromFinite a :: B.Lit) B.< (fromFinite b :: B.Lit)
-
-{-# INLINE even #-}
-even :: Finite n -> Bool
-even a = B.even (fromFinite a :: B.Lit)
-
-{-# INLINE odd #-}
-odd :: Finite n -> Bool
-odd a = B.odd (fromFinite a :: B.Lit)

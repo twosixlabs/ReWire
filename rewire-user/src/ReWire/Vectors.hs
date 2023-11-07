@@ -5,6 +5,7 @@ module ReWire.Vectors where
 
 import ReWire
 import qualified ReWire.Finite as F
+import qualified ReWire.FiniteComp as FC
 import Prelude hiding ((++), zip, take, drop, map, zipWith)
 
 {-# INLINE replicate #-}
@@ -84,11 +85,11 @@ tail :: KnownNat n => Vec (1 + n) a -> Vec n a
 tail = drop
 
 {-# INLINE update #-}
-update :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a -> Vec ((n + m) + 1) a
+update :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
 update = rwPrimVecUpdate
 
 {-# INLINE bulkUpdate #-}
-bulkUpdate :: Vec n a -> Vec m (Integer,a) -> Vec n a
+bulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
 bulkUpdate = rwPrimVecBulkUpdate
 
 {-# INLINE map #-}
@@ -119,29 +120,29 @@ zipWith3 f vs ws = zipWith (uncurry f) (zip vs ws)
 {-# INLINE packlo #-}
 packlo :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 packlo v w = generate (\ fi ->
-      if fi F.< n then index v (fi F.* two)
-                 else index w ((fi F.- n) F.* two))
+      if fi FC.< n then index v (fi FC.* two)
+                 else index w ((fi FC.- n) FC.* two))
   where
       two = F.finite 2
-      n = lastIndex v `F.div` two
+      n = lastIndex v `FC.div` two
 
 -- | Returns odds from v concatenated with odds from w
 {-# INLINE packhi #-}
 packhi :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 packhi v w = generate (\ fi ->
-      if fi F.< n then index v ((fi F.* two) F.+ one)
-                  else index w (((fi F.- n) F.* two) F.+ one))
+      if fi FC.< n then index v ((fi FC.* two) FC.+ one)
+                  else index w (((fi FC.- n) FC.* two) FC.+ one))
   where
       one = F.finite 1
       two = F.finite 2
-      n = lastIndex v `F.div` two
+      n = lastIndex v `FC.div` two
 
 -- | Returns the first half of v interleaved with w
 {-# INLINE unpacklo #-}
 unpacklo :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 unpacklo v w = generate (\ fi ->
-      if F.even fi then index v (fi `F.div` two) 
-                   else index w ((fi F.- one) `F.div` two))
+      if FC.even fi then index v (fi `FC.div` two) 
+                   else index w ((fi FC.- one) `FC.div` two))
   where
       one = F.finite 1
       two = F.finite 2
@@ -150,12 +151,12 @@ unpacklo v w = generate (\ fi ->
 {-# INLINE unpackhi #-}
 unpackhi :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 unpackhi v w = generate (\ fi ->
-      if F.even fi then index v (n F.+ fi `F.div` two)
-                   else index w (n F.+ (fi F.- one) `F.div` two))
+      if FC.even fi then index v (n FC.+ fi `FC.div` two)
+                   else index w (n FC.+ (fi FC.- one) `FC.div` two))
   where
       one = F.finite 1
       two = F.finite 2
-      n = lastIndex v `F.div` two
+      n = lastIndex v `FC.div` two
 
 -- | lookup value at index n in vector
 {-# INLINE (!) #-}
@@ -166,7 +167,7 @@ infixl 9 !
 
 -- | assign new value a to index i
 {-# INLINE (!=) #-}
-(!=) :: KnownNat n => Vec ((n + m) + 1) a -> Proxy n -> a -> Vec ((n + m) + 1) a
+(!=) :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
 v != i = update v i
 
 infixr 2  !=

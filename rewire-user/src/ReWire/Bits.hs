@@ -4,6 +4,7 @@
 module ReWire.Bits where
 
 import ReWire
+import ReWire.Finite
 import Prelude hiding (head, (<>), (==), (-), (^), (&&), (||))
 
 type Lit = W 128
@@ -26,12 +27,12 @@ toInteger = rwPrimToInteger
 --   a @@ (j, i) returns bits j (most significant) to i (least significant) from a (j >= i).
 --   The Integer arguments must be non-negative integer literals (after inlining).
 {-# INLINE (@@) #-}
-(@@) :: W n -> (Integer, Integer) -> W m
+(@@) :: KnownNat n => W n -> (Integer, Integer) -> W m
 a @@ (j, i) = bitSlice a j i
 
 -- | Project single bit.
 {-# INLINE (@.) #-}
-(@.) :: W n -> Integer -> Bit
+(@.) :: KnownNat n => W n -> Integer -> Bit
 a @. i = bitIndex a i
 
 -- infixr 9 @., @@
@@ -62,12 +63,20 @@ resize :: KnownNat m => W n -> W m
 resize = rwPrimResize
 
 {-# INLINE bitSlice #-}
-bitSlice :: W n -> Integer -> Integer -> W m
-bitSlice = rwPrimBitSlice
+bitSlice :: KnownNat n => W n -> Integer -> Integer -> W m
+bitSlice v j i = finBitSlice v (finite j) (finite i)
 
 {-# INLINE bitIndex #-}
-bitIndex :: W n -> Integer -> Bit
-bitIndex = rwPrimBitIndex
+bitIndex :: KnownNat n => W n -> Integer -> Bit
+bitIndex v i = finBitIndex v (finite i)
+
+{-# INLINE finBitSlice #-}
+finBitSlice :: W n -> Finite n -> Finite n -> W m
+finBitSlice = rwPrimBitSlice
+
+{-# INLINE finBitIndex #-}
+finBitIndex :: W n -> Finite n -> Bit
+finBitIndex = rwPrimBitIndex
 
 -- | Add.
 {-# INLINE (+) #-}
