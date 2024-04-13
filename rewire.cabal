@@ -1,13 +1,13 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           rewire
 version:        2.5.0
 synopsis:       A Haskell-to-Verilog/VHDL compiler
-description:    An experimental compiler for a subset of Haskell to Verilog and VHDL.
+description:    A compiler for a subset of Haskell to Verilog and VHDL.
 category:       Language
 homepage:       https://github.com/mu-chaco/ReWire
 bug-reports:    https://github.com/twosixlabs/ReWire.git/issues
@@ -71,9 +71,45 @@ data-files:
     rewire-user/src/ReWire/Bits.hs
     rewire-user/src/ReWire/BitWord.hs
     rewire-user/src/ReWire/Finite.hs
+    rewire-user/src/ReWire/FiniteComp.hs
+    rewire-user/src/ReWire/Interactive.hs
     rewire-user/src/ReWire/Monad.hs
     rewire-user/src/ReWire/Prelude.hs
     rewire-user/src/ReWire/Vectors.hs
+    tutorial/blake2/Abs_RW_Blake2b.hs
+    tutorial/blake2/Blake2b-reference.hs
+    tutorial/blake2/CRef.hs
+    tutorial/blake2/ExplodedReference.hs
+    tutorial/blake2/Helper.hs
+    tutorial/blake2/Kruft.hs
+    tutorial/blake2/Marshalling.hs
+    tutorial/blake2/Reference.hs
+    tutorial/blake2/RW_Blake2b.hs
+    tutorial/blake2/RW_Compress_OneStage.hs
+    tutorial/blake2/RW_SingleIteration.hs
+    tutorial/blake2/stale-Reference.hs
+    tutorial/blake2/Tests.hs
+    tutorial/chapter1/CarrySaveAdder1.hs
+    tutorial/chapter1/CarrySaveAdders.hs
+    tutorial/chapter1/CarrySaveAddition.hs
+    tutorial/chapter1/CrustyFib.hs
+    tutorial/chapter1/CSAdd.hs
+    tutorial/chapter1/Fib.hs
+    tutorial/chapter1/Fibonacci.hs
+    tutorial/chapter2/CSA.hs
+    tutorial/chapter2/PCSA.hs
+    tutorial/chapter2/SCSA.hs
+    tutorial/chapter3/MiniISA.hs
+    tutorial/chapter3/TinyISA.hs
+    tutorial/riscv32i/BasicRV32I.hs
+    tutorial/riscv32i/ComputerArithmetic.hs
+    tutorial/riscv32i/ExecRV32I.hs
+    tutorial/riscv32i/old_Parser_RV32I.hs
+    tutorial/riscv32i/old_Syntax_RV32I.hs
+    tutorial/riscv32i/ParserRV32I.hs
+    tutorial/riscv32i/SyntaxRV32I.hs
+    tutorial/simple/SimpleLoop.hs
+    tutorial/simple/Sum.hs
 
 source-repository head
   type: git

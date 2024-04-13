@@ -1,7 +1,7 @@
 name:         rewire
 version:      2.5.0
 synopsis:     A Haskell-to-Verilog/VHDL compiler
-description:  An experimental compiler for a subset of Haskell to Verilog and VHDL.
+description:  A compiler for a subset of Haskell to Verilog and VHDL.
 homepage:     https://github.com/mu-chaco/ReWire
 license:      NONE
 license-file: LICENSE
@@ -38,6 +38,12 @@ data-files:
 - rewire-user/src/*.hs
 - rewire-user/src/RWC/*.hs
 - rewire-user/src/ReWire/*.hs
+- tutorial/blake2/*.hs
+- tutorial/chapter1/*.hs
+- tutorial/chapter2/*.hs
+- tutorial/chapter3/*.hs
+- tutorial/riscv32i/*.hs
+- tutorial/simple/*.hs
 
 dependencies:
 - base ^>= 4.16

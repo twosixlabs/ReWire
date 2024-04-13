@@ -62,6 +62,11 @@ lit i = rwPrimResize (rwPrimBits i :: Lit)
 resize :: KnownNat m => W n -> W m
 resize = rwPrimResize
 
+-- | Sign extend bitvector
+{-# INLINE sext #-}
+sext :: KnownNat m => W n -> W m
+sext = rwPrimSignextend
+
 {-# INLINE bitSlice #-}
 bitSlice :: KnownNat n => W n -> Integer -> Integer -> W m
 bitSlice v j i = finBitSlice v (finite j) (finite i)

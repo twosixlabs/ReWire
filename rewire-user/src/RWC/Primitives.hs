@@ -47,6 +47,7 @@ module RWC.Primitives
       , rwPrimReturn
       , rwPrimSetRef
       , rwPrimSignal
+      , rwPrimSignextend
       , rwPrimSub
       , rwPrimUnfold
       , rwPrimFinite
@@ -252,6 +253,12 @@ rwPrimResize v = rwPrimVecFromList vs'
       vs = V.toList v
       vs' = BW.resize' (GHC.fromEnum (natVal (Proxy :: Proxy m))) vs
 
+rwPrimSignextend :: forall m n . KnownNat m => Vec n Bool -> Vec m Bool
+rwPrimSignextend v = rwPrimVecFromList vs'
+    where
+      vs = V.toList v
+      vs' = BW.signextend (GHC.fromEnum (natVal (Proxy :: Proxy m))) vs
+
 -- | Update index i to value a
 rwPrimVecUpdate :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
 rwPrimVecUpdate v i a = V.update v (V.singleton (GHC.fromEnum i,a))
@@ -392,5 +399,8 @@ rwPrimRXNor = V.foldl1 (\ x y -> GHC.not (GHC.xor x y))
 rwPrimMSBit :: Vec (1 + n) Bool -> Bool
 rwPrimMSBit = V.head
 
+-- rwPrimToInteger :: Vec n Bool -> Integer
+-- rwPrimToInteger = V.foldr (\ b iacc -> if b then 1 GHC.+ 2 GHC.* iacc else 2 GHC.* iacc) 0
+
 rwPrimToInteger :: Vec n Bool -> Integer
-rwPrimToInteger = V.foldr (\ b iacc -> if b then 1 GHC.+ 2 GHC.* iacc else 2 GHC.* iacc) 0
+rwPrimToInteger = V.foldl (\ iacc b -> if b then 1 GHC.+ 2 GHC.* iacc else 2 GHC.* iacc) 0

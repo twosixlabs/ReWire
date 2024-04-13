@@ -151,6 +151,11 @@ pad' n v | n Prelude.== 0 = v
          | n Prelude.> 0 = False : pad' (n Prelude.- 1) v
          | otherwise = error "negative padding"
 
+signpad' :: Bool -> Int -> [Bool] -> [Bool]
+signpad' pn n v | n Prelude.== 0 = v
+                | n Prelude.> 0 = pn : signpad' pn (n Prelude.- 1) v
+                | otherwise = error "negative padding"
+
 -- w is bigendian
 padTrunc' :: Int -> [Bool] -> [Bool]
 padTrunc' d w
@@ -182,6 +187,13 @@ resize' d w | l Prelude.== d = w
             | otherwise = reverse . take d . reverse $ w
        where
          l = length w
+
+signextend :: Int -> [Bool] -> [Bool]
+signextend d w | l Prelude.== d = w
+               | l Prelude.< d  = signpad' (msBit' w) (d Prelude.- l) w
+               | otherwise = reverse . take d . reverse $ w
+           where
+             l = length w
 
 false' :: [Bool] -> Bool
 false' [] = True
