@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -78,21 +78,15 @@ data-files:
     rewire-user/src/ReWire/Vectors.hs
     tutorial/blake2/Abs_RW_Blake2b.hs
     tutorial/blake2/Blake2b-reference.hs
-    tutorial/blake2/CRef.hs
     tutorial/blake2/ExplodedReference.hs
-    tutorial/blake2/Helper.hs
-    tutorial/blake2/Kruft.hs
-    tutorial/blake2/Marshalling.hs
     tutorial/blake2/Reference.hs
     tutorial/blake2/RW_Blake2b.hs
     tutorial/blake2/RW_Compress_OneStage.hs
     tutorial/blake2/RW_SingleIteration.hs
-    tutorial/blake2/stale-Reference.hs
     tutorial/blake2/Tests.hs
     tutorial/chapter1/CarrySaveAdder1.hs
     tutorial/chapter1/CarrySaveAdders.hs
     tutorial/chapter1/CarrySaveAddition.hs
-    tutorial/chapter1/CrustyFib.hs
     tutorial/chapter1/CSAdd.hs
     tutorial/chapter1/Fib.hs
     tutorial/chapter1/Fibonacci.hs
