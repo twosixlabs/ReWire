@@ -342,7 +342,10 @@ transBuiltin an' t' an = \ case
                         sub t a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t) M.Sub) [a, b]
 
                         rshift :: M.Ty -> M.Ty -> M.Exp -> M.Exp -> M.Exp
-                        rshift at bt a b = M.mkApp an (M.Builtin an Nothing (Just $ at `M.arr` bt `M.arr` at)  M.RShift) [a, b]
+                        rshift at bt a b = M.mkApp an (M.Builtin an Nothing (Just $ at `M.arr` at `M.arr` at) M.RShift)
+                              [ a
+                              , M.mkApp an (M.Builtin an Nothing (Just $ bt `M.arr` at) M.Resize) [b]
+                              ]
 
                         mul :: M.Ty -> M.Exp -> M.Exp -> M.Exp
                         mul t a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t)  M.Mul) [a, b]
