@@ -125,7 +125,8 @@ transBuiltin an' t' an = \ case
       -- pure $ callError an' sz
       -- callError :: Annote -> C.Size -> C.Exp
       -- callError an sz = C.Call an sz (C.Extern (C.ExternSig an [] mempty [] [(mempty, sz)]) "error" "error") C.nil [] C.nil
-      (M.Error, _) -> failAt an' $ "Encountered call to built-in \"error\" function that was not eliminated."
+      (M.Error, [M.LitStr _ _ x]) -> failAt an' $ "Encountered call to built-in \"error\" function that was not eliminated."
+                                               <> "\nErrorMessage: " <> showt x
       (M.Bits, [arg]) -> transExp arg
       (M.Resize, [arg]) -> do
             sz       <- sizeOf' an t'

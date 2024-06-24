@@ -285,23 +285,23 @@ rwPrimBitIndex = V.index
 
 -- | Add.
 rwPrimAdd :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
-rwPrimAdd v w = rwPrimVecFromList $ BW.plus' (V.toList v) (V.toList w)
+rwPrimAdd v w = rwPrimResize $ rwPrimBits $ BW.toInteger' v GHC.+ BW.toInteger' w
 
 -- | Subtract.
 rwPrimSub :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
-rwPrimSub v w = rwPrimVecFromList $ BW.minus' (V.toList v) (V.toList w)
+rwPrimSub v w = rwPrimResize $ rwPrimBits $ BW.toInteger' v GHC.- BW.toInteger' w
 
 -- | Multiply.
 rwPrimMul :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
-rwPrimMul v w = rwPrimVecFromList $ BW.times' (V.toList v) (V.toList w)
+rwPrimMul v w = rwPrimResize $ rwPrimBits $ BW.toInteger' v GHC.* BW.toInteger' w
 
 -- | Divide.
 rwPrimDiv :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
-rwPrimDiv v w = rwPrimVecFromList $ BW.divide' (V.toList v) (V.toList w)
+rwPrimDiv v w = rwPrimResize $ rwPrimBits $ BW.toInteger' v `GHC.div` BW.toInteger' w
 
 -- | Modulus.
 rwPrimMod :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
-rwPrimMod v w = rwPrimVecFromList $ BW.mod' (V.toList v) (V.toList w)
+rwPrimMod v w = rwPrimResize $ rwPrimBits $ BW.toInteger' v `GHC.mod` BW.toInteger' w
 
 -- | Exponentiation.
 rwPrimPow :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool

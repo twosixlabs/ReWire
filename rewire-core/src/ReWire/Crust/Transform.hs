@@ -46,6 +46,9 @@ import Data.Text (Text)
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Set as Set
 
+-- import ReWire.Pretty
+-- import Debug.Trace (trace)
+
 -- | Removes the Main.main function definition, which is unused by rwc.
 removeMain :: FreeProgram -> FreeProgram
 removeMain (ts, syns, ds) = (ts, syns, filter (not . isMain) ds)
@@ -618,10 +621,16 @@ reduce (ts, syns, vs) = (ts, syns, ) <$> mapM reduceDefn vs
                               MatchYes sub -> reduceExp $ substs sub e1'
                               MatchMaybe   -> case e2 of
                                     Nothing  -> Case an tan t e' <$> (bind p <$> reduceExp e1') <*> pure Nothing
-                                    Just e2' -> Case an tan t e' <$> (bind p <$> reduceExp e1') <*> (Just <$> reduceExp e2')
+                                    Just e2' -> -- trace ("MAYBEmatch " ++ show (pretty e')
+                                                --  ++ "\nof " ++ show (pretty p)) $
+                                                Case an tan t e' <$> (bind p <$> reduceExp e1') <*> (Just <$> reduceExp e2')
                               MatchNo      -> case e2 of
-                                    Nothing  -> pure $ mkError an t "Pattern match failure (reduced)"
-                                    Just e2' -> reduceExp e2'
+                                    Nothing  -> -- trace ("ERRORmatch " ++ show (pretty e')
+                                                --    ++ "\nof " ++ show (pretty p)) $ 
+                                                pure $ mkError an t "Pattern match failure (reduced)"
+                                    Just e2' -> -- trace ("NOmatch " ++ show (pretty e')
+                                                --    ++ "\nof " ++ show (pretty p)) $
+                                                reduceExp e2'
                   -- TODO(chathhorn): handle match?
                   Match an tan t e p e' Nothing    -> Match an tan t <$> reduceExp e <*> pure p <*> reduceExp e' <*> pure Nothing
                   Match an tan t e p e' (Just e'') -> Match an tan t <$> reduceExp e <*> pure p <*> reduceExp e' <*> (Just <$> reduceExp e'')

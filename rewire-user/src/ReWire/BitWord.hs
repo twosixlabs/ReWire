@@ -137,7 +137,8 @@ rXnor' = not . foldr (>^<) False
 -- Produces bits in little endian form.
 int2bits' :: Integer -> [Bool]
 int2bits' i | i Prelude.== 0      = []
-          | otherwise = b : int2bits' (i `div` 2)
+            | i < 0 = int2bits' (i `mod` (2 Prelude.^ 128))
+            | otherwise = b : int2bits' (i `div` 2)
               where b = case i `mod` 2 of
                       0 -> False
                       1 -> True
@@ -178,7 +179,7 @@ fromBool = toInteger . fromEnum
 
 -- should check that this works on big-endian
 toInteger' :: Vec n Bool -> Integer
-toInteger' = foldr (\ x s -> fromBool x Prelude.+ 2 Prelude.* s) 0
+toInteger' = foldl (\ s x -> fromBool x Prelude.+ 2 Prelude.* s) 0
 
 -- w is bigendian
 resize' :: Int -> [Bool] -> [Bool]
