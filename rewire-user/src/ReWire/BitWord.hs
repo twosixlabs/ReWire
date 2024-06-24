@@ -178,7 +178,7 @@ fromBool = toInteger . fromEnum
 
 -- should check that this works on big-endian
 toInteger' :: Vec n Bool -> Integer
-toInteger' = foldr (\ x s -> fromBool x Prelude.+ 2 Prelude.* s) 0
+toInteger' = foldl (\ s x -> fromBool x Prelude.+ 2 Prelude.* s) 0
 
 -- w is bigendian
 resize' :: Int -> [Bool] -> [Bool]

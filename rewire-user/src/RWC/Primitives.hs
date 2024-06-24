@@ -245,7 +245,6 @@ rwPrimBits =
         where
           i = GHC.fromIntegral (natVal (Proxy :: Proxy 128))
 
-
 -- | Truncates or zero-pads most significant bits.
 rwPrimResize :: forall m n . KnownNat m => Vec n Bool -> Vec m Bool
 rwPrimResize v = rwPrimVecFromList vs'
@@ -297,7 +296,7 @@ rwPrimMul v w = rwPrimVecFromList $ BW.times' (V.toList v) (V.toList w)
 
 -- | Divide.
 rwPrimDiv :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
-rwPrimDiv v w = rwPrimVecFromList $ BW.divide' (V.toList v) (V.toList w)
+rwPrimDiv v w = rwPrimResize $ rwPrimBits $ rwPrimToInteger v `GHC.div` rwPrimToInteger w
 
 -- | Modulus.
 rwPrimMod :: KnownNat n => Vec n Bool -> Vec n Bool -> Vec n Bool
