@@ -1,5 +1,7 @@
-resolver: lts-20.2
+resolver: lts-22.26
 packages:
 - .
 - rewire-user
 - rewire-core
+extra-deps:
+- unbound-generics-0.4.4

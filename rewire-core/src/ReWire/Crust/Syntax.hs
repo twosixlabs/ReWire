@@ -145,18 +145,23 @@ instance Subst Ty Ty where
 instance Subst Ty Annote where
       subst _ _ x = x
       substs _ x  = x
+      substBvs _ _ x = x
 instance Subst Ty Natural where
       subst _ _ x = x
       substs _ x  = x
+      substBvs _ _ x  = x
 instance Subst Ty Text where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Ty Kind where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Ty Builtin where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Ty Exp
 instance Subst Ty Pat
 instance Subst Ty MatchPat
@@ -259,33 +264,43 @@ instance Subst Exp Exp where
 instance Subst Exp Annote where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Natural where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Text where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Ty where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Kind where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Pat where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp MatchPat where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp DefnAttr where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Poly where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Builtin where
       subst _ _ x = x
       substs _ x = x
+      substBvs _ _ x  = x
 instance Subst Exp Defn
 
 instance NFData Exp
