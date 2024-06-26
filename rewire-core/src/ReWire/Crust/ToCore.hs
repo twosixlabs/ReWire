@@ -198,25 +198,25 @@ transBuiltin an' t' an = \ case
       (M.Finite, [arg]) -> do
             arg' <- transExp arg
             case arg' of
-                  C.Lit _ (BV.nat -> i) -> do
+                  C.Lit an' (BV.nat -> i) -> do
                         finMax <- maybe (failAt an' "transExp: rwPrimFinite: invalid type.") pure
                                     $ t' >>= M.finMax
                         unless (i >= 0 && i < fromIntegral finMax)
                               $ failAt (ann arg) ("transExp: rwPrimFinite: Integer " <> showt i <> " is not representable in Finite " <> showt finMax <> ".")
+                        pure $ C.Lit an' $ BV.bitVec (ceilLog2 $ fromIntegral finMax) i
                   _ -> failAt (ann arg) "transExp: rwPrimFinite: can't determine argument value at compile-time."
-            pure arg'
       (M.FiniteMinBound, []) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFiniteMinBound: invalid argument type.") pure
                         $ t' >>= M.finMax
             unless (finMax > 0)
                   $ failAt an "transExp: rwPrimFiniteMinBound: Finite 0 is uninhabited."
-            transExp $ lit (0 :: Int)
+            transExp $ finite finMax 0
       (M.FiniteMaxBound, []) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFiniteMaxBound: invalid argument type.") pure
                         $ t' >>= M.finMax
             unless (finMax > 0)
                   $ failAt an "transExp: rwPrimFiniteMaxBound: Finite 0 is uninhabited."
-            transExp $ lit $ finMax - 1
+            transExp $ finite finMax $ finMax - 1
       (M.ToFinite, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimToFinite: invalid type.") pure
                         $ t' >>= M.finMax
@@ -224,7 +224,7 @@ transBuiltin an' t' an = \ case
                         $ M.typeOf arg >>= M.vecSize
             unless (2 ^ nBits <= (fromIntegral finMax :: Integer))
                   $ failAt (ann arg) ("transExp: rwPrimToFinite: bitvector argument (size " <> showt nBits <> ") is not representable in Finite " <> showt finMax <> ".")
-            transExp arg
+            resize an (fromIntegral nBits) arg
       (M.ToFiniteMod, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid type.") pure
                         $ t' >>= M.finMax
@@ -232,8 +232,8 @@ transBuiltin an' t' an = \ case
                         $ M.typeOf arg
             nBits  <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid Vec argument.") pure
                         $ M.vecSize argTy
-            if (2 ^ nBits <= (fromIntegral finMax :: Integer)) then transExp arg
-            else transExp $ modW argTy arg $ lit finMax
+            if (2 ^ nBits <= (fromIntegral finMax :: Integer)) then resize an (fromIntegral nBits) arg
+            else resize an (fromIntegral nBits) $ modW argTy arg $ lit finMax
       (M.FromFinite, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFromFinite: invalid argument type.") pure
                         $ M.typeOf arg >>= M.finMax
@@ -241,7 +241,7 @@ transBuiltin an' t' an = \ case
                         $ t' >>= M.vecSize
             unless ((fromIntegral finMax :: Integer) <= 2 ^ nBits)
                   $ failAt (ann arg) ("transExp: rwPrimFromFinite: Finite " <> showt finMax <> " is not representable in bitvector of size " <> showt nBits <> ".")
-            transExp arg
+            resize an (fromIntegral nBits) arg
       (toPrim -> Just p, args) -> do
             sz       <- sizeOf' an t'
             args'    <- mapM transExp args

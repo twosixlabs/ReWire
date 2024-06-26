@@ -46,9 +46,9 @@ checkExp dsigs args = \ case
       Concat _ e1 e2                                                            -> checkExp dsigs args e1 >> checkExp dsigs args e2
       Call an sz _ _ _ e                 | not (isNil e), sz /= sizeOf e        -> failAt an "core check: call: else size mismatch"
       Call an _ _ disc ps _              | (sum $ sizeOf <$> ps) /= sizeOf disc -> failAt an "core check: call: size mismatch between discriminator and pattern."
-      Call an _ (Global g) _ _ _         | Nothing <- lookup g dsigs            -> failAt an "core check: call: unknown global"
+      Call an _ (Global g) _ _ _         | Nothing <- lookup g dsigs            -> failAt an $ "core check: call: unknown global: " <> g
       Call an sz (Global g) _ ps _       | Just sig <- lookup g dsigs
-                                         , mkSig ps sz `neq` sig                -> failAt an "core check: call: global sig mismatch"
+                                         , mkSig ps sz `neq` sig                -> failAt an $ "core check: call: global sig mismatch: " <> g
       Call an sz (Extern sig _ _) _ ps _ | mkSig ps sz `neq` toSig sig          -> failAt an "core check: call: extern sig mismatch"
       Call an sz (Prim pr) _ ps _        | not (primCompat (mkSig ps sz) pr)    -> failAt an $ "core check: call: prim sig mismatch: " <> showt pr
       Call an sz (Const bv) _ ps _       | mkSig ps sz `neq` constSig bv        -> failAt an "core check: call: const sig mismatch"
