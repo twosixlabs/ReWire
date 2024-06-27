@@ -6,6 +6,7 @@ cabal-dev
 rewire.cmd.out
 show.out
 tc.out
+.DS_store
 *.hs.html
 *.o
 *.hi_o

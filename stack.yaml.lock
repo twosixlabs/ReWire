@@ -3,10 +3,17 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: unbound-generics-0.4.4@sha256:f7fc93641d5043db8938a5e77f463afa7c473edca3ef26097d4b6f98d45e255c,5521
+    pantry-tree:
+      sha256: 0f4e625ef42ebec6078ed94b7c539269bfe51ef148c91fa8803afff884ca24d7
+      size: 3267
+  original:
+    hackage: unbound-generics-0.4.4
 snapshots:
 - completed:
-    sha256: fc39d8afc97531d53d87b10abdef593bce503c0c1e46c2e9a84ebcbc78bf8470
-    size: 648432
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/2.yaml
-  original: lts-20.2
+    sha256: 8e7996960d864443a66eb4105338bbdd6830377b9f6f99cd5527ef73c10c01e7
+    size: 719128
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/26.yaml
+  original: lts-22.26

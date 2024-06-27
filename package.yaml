@@ -1,5 +1,5 @@
 name:         rewire
-version:      2.5.0
+version:      2.5.1
 synopsis:     A Haskell-to-Verilog/VHDL compiler
 description:  A compiler for a subset of Haskell to Verilog and VHDL.
 homepage:     https://github.com/mu-chaco/ReWire
@@ -14,6 +14,7 @@ author:
 - Chris Hathhorn <hathhorn@gmail.com>
 - Ian Graves
 - William L. Harrison
+- Matthew Heimerdinger
 
 ghc-options:
 - -Wall
@@ -46,13 +47,13 @@ data-files:
 - tutorial/simple/*.hs
 
 dependencies:
-- base ^>= 4.16
-- ghc ^>= 9.2
+- base ^>= 4.18
+- ghc ^>= 9.6
 - directory ^>= 1.3
 - filepath ^>= 1.4
-- lens ^>= 5.1
+- lens ^>= 5.2
 - rewire-user ^>= 0.1
-- text ^>= 1.2
+- text ^>= 2.0
 
 library:
   source-dirs: src
@@ -65,13 +66,6 @@ executables:
     main: Main.hs
     dependencies:
     - rewire
-
-  rwcx:
-    source-dirs: apps/rwcx
-    main: Main.hs
-    dependencies:
-    - rewire-core
-    - ghc-paths ^>= 0.1.0.12
 
   firrtl:
     source-dirs: apps/firrtl

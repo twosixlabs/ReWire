@@ -13,11 +13,12 @@ import ReWire.Pretty (TextShow (showb, showt), fromText, prettyPrint)
 import ReWire.Unbound (Fresh (fresh), s2n, n2s, bind, Name, Embed (Embed), unbind)
 
 import Control.Arrow (first, second, (&&&))
+import Control.Monad ((>=>))
 import Control.Monad.State
-import Data.List (find, isSuffixOf)
-import Data.Either (partitionEithers)
-import Data.Maybe (fromMaybe, catMaybes)
 import Data.Bool (bool)
+import Data.Either (partitionEithers)
+import Data.List (find, isSuffixOf)
+import Data.Maybe (fromMaybe, catMaybes)
 import Data.Text (Text)
 
 import Data.Set (Set, singleton, insert)

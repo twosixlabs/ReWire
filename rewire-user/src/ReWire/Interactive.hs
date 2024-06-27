@@ -49,7 +49,7 @@ instance ShowHex (Vec n Bool) where
      hexify :: [Bool] -> String
      hexify bits = map toHex (reverse (fours False (reverse bits)))
      fours :: a -> [a] -> [(a,a,a,a)]
-     fours d []                       = []
+     fours _ []                       = []
      fours d (x1 : x2 : x3 : x4 : xs) = (x4 , x3 , x2 , x1) : fours d xs
      fours d (x1 : x2 : x3 : [])      = (d , x3 , x2 , x1) : []
      fours d (x1 : x2 : [])           = (d , d , x2 , x1) : []
@@ -73,13 +73,13 @@ instance ShowHex (Vec n Bool) where
      toHex (True , True , True , False)    = 'E'
      toHex (True , True , True , True)     = 'F'
 
-binary :: Vec n Bool -> IO () 
+binary :: Vec n Bool -> IO ()
 binary = putStrLn . bshow
 
-hex :: Vec n Bool -> IO () 
+hex :: Vec n Bool -> IO ()
 hex = putStrLn . xshow
 
-dec :: Vec n Bool -> IO () 
+dec :: Vec n Bool -> IO ()
 dec = putStrLn . dshow
 
 {- -}
@@ -136,7 +136,7 @@ step (GHC.ReacT x) i' s = case GHC.runIdentity (runStateT  x s) of
 
 stepPure :: RePure i o a -> i -> Either a (RePure i o a , o)
 stepPure (GHC.ReacT x) i' = case GHC.runIdentity x of
-                                 (Left a)         -> Left a 
+                                 (Left a)         -> Left a
                                  (Right (o' , k)) -> Right (k i' , o')
 
 iterRe :: (i -> Re i s o a) -> i -> s -> Either (a, s) (i -> Re i s o a, s, o)
@@ -145,21 +145,21 @@ iterRe f i' s = case GHC.runIdentity (runStateT (runReacT (f i')) s) of
                      (Right (o' , k) , s') -> Right (k  , s' , o')
 
 grunt :: (i -> Re i s o a) -> (i , s , o) -> [i] -> WriterPlus (i , s , o) (Maybe (a , i , s))
-grunt f (i0 , s0 , o0) []      = (i0 , s0 , o0) :+> Nothing
+grunt _ (i0 , s0 , o0) []      = (i0 , s0 , o0) :+> Nothing
 grunt f (i0, s0, o0) (i' : is) = case iterRe f i0 s0 of
                                        Left (a , si)       -> (i0 , s0 , o0) :+> Just (a , i' , si)
                                        Right (k , s' , o') -> (i0 , s0 , o0) :> grunt k (i' , s' , o') is
-                                       
+
 
 run :: Re i s o a -> (i , s , o) -> [i] -> WriterPlus (i , s , o) (Maybe (a , i , s))
-run x (i0, s0, o0) []        = (i0 , s0 , o0) :+> Nothing
+run _ (i0, s0, o0) []        = (i0 , s0 , o0) :+> Nothing
 run x (i0, s0, o0) (i' : is) = case step x i' s0 of
                                        Left (a , si)        -> (i0 , s0 , o0) :+> Just (a , i' , si)
                                        Right (x' , s' , o') -> (i0 , s0 , o0) :> run x' (i' , s' , o') is
 
 
 runP :: RePure i o a -> (i , o) -> [i] -> WriterPlus (i , o) (Maybe (a , i))
-runP x (i0, o0) []        = (i0 , o0) :+> Nothing
+runP _ (i0, o0) []        = (i0 , o0) :+> Nothing
 runP x (i0, o0) (i' : is) = case stepPure x i' of
                                  Left a          -> (i0 , o0) :+> Just (a , i')
                                  Right (x' , o') -> (i0 , o0) :> runP x' (i' , o') is

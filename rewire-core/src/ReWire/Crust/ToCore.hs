@@ -13,8 +13,9 @@ import ReWire.BitVector (bitVec, zeros, BV)
 
 import Control.Arrow ((&&&))
 import Control.Lens ((^.))
+import Control.Monad (unless)
 import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks, lift)
-import Control.Monad.State (StateT (..), MonadState, get, put, unless)
+import Control.Monad.State (StateT (..), MonadState, get, put)
 import Data.Either (partitionEithers)
 import Data.HashMap.Strict (HashMap)
 import Data.List (find, findIndex, genericLength)
@@ -163,19 +164,19 @@ transBuiltin an' t' an = \ case
             arg'   <- transExp arg
             nElems <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
                         $ t' >>= M.vecSize
-            elemTy <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
+            tyElem <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
                         $ t' >>= M.vecElemTy
-            elemSz <- sizeOf an elemTy
-            pure $ C.Call an sz (C.Prim C.Reverse) arg' (replicate (fromIntegral nElems) $ C.PatVar an elemSz) C.nil
+            szElem <- sizeOf an tyElem
+            pure $ C.Call an sz (C.Prim C.Reverse) arg' (replicate (fromIntegral nElems) $ C.PatVar an szElem) C.nil
       (M.VecReplicate, [arg]) -> do
             sz     <- sizeOf' an t'
             arg'   <- transExp arg
             nElems <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
                         $ t' >>= M.vecSize
-            elemTy <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
+            tyElem <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
                         $ t' >>= M.vecElemTy
-            elemSz <- sizeOf an elemTy
-            pure $ C.Call an sz (C.Prim $ C.Replicate nElems) arg' [C.PatVar an elemSz] C.nil
+            szElem <- sizeOf an tyElem
+            pure $ C.Call an sz (C.Prim $ C.Replicate nElems) arg' [C.PatVar an szElem] C.nil
       (M.VecMap, [f, arg]) -> do
             nElems <- maybe (failAt an' "transExp: rwPrimVecMap: invalid Vec argument.") pure
                         $ t' >>= M.vecSize
@@ -197,25 +198,25 @@ transBuiltin an' t' an = \ case
       (M.Finite, [arg]) -> do
             arg' <- transExp arg
             case arg' of
-                  C.Lit _ (BV.nat -> i) -> do
+                  C.Lit an' (BV.nat -> i) -> do
                         finMax <- maybe (failAt an' "transExp: rwPrimFinite: invalid type.") pure
                                     $ t' >>= M.finMax
                         unless (i >= 0 && i < fromIntegral finMax)
                               $ failAt (ann arg) ("transExp: rwPrimFinite: Integer " <> showt i <> " is not representable in Finite " <> showt finMax <> ".")
+                        pure $ C.Lit an' $ BV.bitVec (ceilLog2 $ fromIntegral finMax) i
                   _ -> failAt (ann arg) "transExp: rwPrimFinite: can't determine argument value at compile-time."
-            pure arg'
       (M.FiniteMinBound, []) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFiniteMinBound: invalid argument type.") pure
                         $ t' >>= M.finMax
             unless (finMax > 0)
                   $ failAt an "transExp: rwPrimFiniteMinBound: Finite 0 is uninhabited."
-            transExp $ lit (0 :: Int)
+            transExp $ finite finMax 0
       (M.FiniteMaxBound, []) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFiniteMaxBound: invalid argument type.") pure
                         $ t' >>= M.finMax
             unless (finMax > 0)
                   $ failAt an "transExp: rwPrimFiniteMaxBound: Finite 0 is uninhabited."
-            transExp $ lit $ finMax - 1
+            transExp $ finite finMax $ finMax - 1
       (M.ToFinite, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimToFinite: invalid type.") pure
                         $ t' >>= M.finMax
@@ -223,7 +224,7 @@ transBuiltin an' t' an = \ case
                         $ M.typeOf arg >>= M.vecSize
             unless (2 ^ nBits <= (fromIntegral finMax :: Integer))
                   $ failAt (ann arg) ("transExp: rwPrimToFinite: bitvector argument (size " <> showt nBits <> ") is not representable in Finite " <> showt finMax <> ".")
-            transExp arg
+            resize an (fromIntegral nBits) arg
       (M.ToFiniteMod, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid type.") pure
                         $ t' >>= M.finMax
@@ -231,8 +232,8 @@ transBuiltin an' t' an = \ case
                         $ M.typeOf arg
             nBits  <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid Vec argument.") pure
                         $ M.vecSize argTy
-            if (2 ^ nBits <= (fromIntegral finMax :: Integer)) then transExp arg
-            else transExp $ modW argTy arg $ lit finMax
+            if (2 ^ nBits <= (fromIntegral finMax :: Integer)) then resize an (fromIntegral nBits) arg
+            else resize an (fromIntegral nBits) $ modW argTy arg $ lit finMax
       (M.FromFinite, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFromFinite: invalid argument type.") pure
                         $ M.typeOf arg >>= M.finMax
@@ -240,7 +241,7 @@ transBuiltin an' t' an = \ case
                         $ t' >>= M.vecSize
             unless ((fromIntegral finMax :: Integer) <= 2 ^ nBits)
                   $ failAt (ann arg) ("transExp: rwPrimFromFinite: Finite " <> showt finMax <> " is not representable in bitvector of size " <> showt nBits <> ".")
-            transExp arg
+            resize an (fromIntegral nBits) arg
       (toPrim -> Just p, args) -> do
             sz       <- sizeOf' an t'
             args'    <- mapM transExp args
@@ -258,15 +259,15 @@ transBuiltin an' t' an = \ case
       where -- | If i is negative, it represents an offset from the end, where '-1' is the offset for the last element.
             subElems :: (Fresh m, MonadError AstError m, MonadState SizeMap m) => Annote -> M.Exp -> Integer -> Natural -> TCM m C.Exp
             subElems an arg i nElems = do
-                  elemTy <- maybe (failAt (ann arg) "ToCore: subElems: non-vector type argument to built-in vector function") pure
+                  tyElem <- maybe (failAt (ann arg) "ToCore: subElems: non-vector type argument to built-in vector function") pure
                           $ M.typeOf arg >>= M.vecElemTy
-                  elemSz <- fromIntegral <$> sizeOf an elemTy
+                  szElem <- fromIntegral <$> sizeOf an tyElem
                   arg'   <- transExp arg
 
                   let sz, off, n, rem :: Natural
                       sz          = fromIntegral $ C.sizeOf arg'
-                      off         = fromIntegral $ (if i < 0 then fromIntegral sz else 0) + i * elemSz
-                      n           = nElems * fromIntegral elemSz
+                      off         = fromIntegral $ (if i < 0 then fromIntegral sz else 0) + i * szElem
+                      n           = nElems * fromIntegral szElem
                       rem         = if sz >= off + n then sz - off - n else 0
 
                   unless (sz >= off + n)
@@ -324,31 +325,61 @@ transBuiltin an' t' an = \ case
             -- index v i = resizeToSizeofA (v >> ((n - i - 1) * sizeof a))
             vecIndex :: (MonadError AstError m, Fresh m, MonadState SizeMap m) => M.Exp -> M.Exp -> TCM m C.Exp
             vecIndex v i = do
-                  vecTy <- maybe (failAt an "ToCore: rwPrimIndex: invalid vector argument.") pure
+                  tyVec <- maybe (failAt an "ToCore: rwPrimIndex: invalid vector argument.") pure
                           $ M.typeOf v
+                  szVec <- sizeOf an tyVec
+
                   n <- maybe (failAt an "ToCore: rwPrimIndex: invalid Vec argument.") pure
-                        $ M.vecSize vecTy
-                  elemTy <- maybe (failAt an "ToCore: rwPrimIndex: non-vector type argument to built-in vector function.") pure
-                          $ M.vecElemTy vecTy
-                  idxTy <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument.") pure
+                        $ M.vecSize tyVec
+
+                  tyElem <- maybe (failAt an "ToCore: rwPrimIndex: non-vector type argument to built-in vector function.") pure
+                          $ M.vecElemTy tyVec
+                  szElem <- sizeOf an tyElem
+
+                  tyIdx <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument.") pure
                           $ M.typeOf i
-                  sz <- sizeOf an elemTy
-                  let rshift' = rshift vecTy idxTy
-                      sub'    = sub idxTy
-                      mul'    = mul idxTy
-                  resize an sz $ v `rshift'` (((lit n `sub'` i) `sub'` lit (1::Int)) `mul'` lit sz)
+                  szIdx <- sizeOf an tyIdx
 
-                  where sub :: M.Ty -> M.Exp -> M.Exp -> M.Exp
-                        sub t a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t) M.Sub) [a, b]
+                  let tyLit = M.intTy an
+                  szLit <- sizeOf an tyLit
 
-                        rshift :: M.Ty -> M.Ty -> M.Exp -> M.Exp -> M.Exp
-                        rshift at bt a b = M.mkApp an (M.Builtin an Nothing (Just $ at `M.arr` at `M.arr` at) M.RShift)
-                              [ a
-                              , M.mkApp an (M.Builtin an Nothing (Just $ bt `M.arr` at) M.Resize) [b]
-                              ]
+                  let sub1 = sub tyLit szLit tyIdx szIdx (lit n) i
+                  tySub1 <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument (in sub1).") pure
+                          $ M.typeOf sub1
+                  szSub1 <- sizeOf an tySub1
 
-                        mul :: M.Ty -> M.Exp -> M.Exp -> M.Exp
-                        mul t a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t)  M.Mul) [a, b]
+                  let sub2 = sub tySub1 szSub1 tyLit szLit sub1 $ lit (1::Int)
+                  tySub2 <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument (in sub2).") pure
+                          $ M.typeOf sub2
+                  szSub2 <- sizeOf an tySub2
+
+                  let mul1 = mul tySub2 szSub2 tyLit szLit sub2 $ lit szElem
+                  tyMul1 <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument (in mul1).") pure
+                          $ M.typeOf mul1
+                  szMul1 <- sizeOf an tyMul1
+
+                  let rshift' = rshift tyVec szVec tyMul1 szMul1
+
+                  -- resize szElem $ v >> ( ((n - i) - 1) * szElem )
+                  resize an szElem $ v `rshift'` mul1
+
+                  where sub :: M.Ty -> C.Size -> M.Ty -> C.Size -> M.Exp -> M.Exp -> M.Exp
+                        sub ta sza tb szb a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t) M.Sub) [arg1, arg2]
+                              where (t, arg1, arg2) = if sza >= szb
+                                          then (ta, a, M.mkApp an (M.Builtin an Nothing (Just $ tb `M.arr` ta) M.Resize) [b])
+                                          else (tb, M.mkApp an (M.Builtin an Nothing (Just $ ta `M.arr` tb) M.Resize) [a], b)
+
+                        rshift :: M.Ty -> C.Size -> M.Ty -> C.Size -> M.Exp -> M.Exp -> M.Exp
+                        rshift ta sza tb szb a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t) M.RShift) [arg1, arg2]
+                              where (t, arg1, arg2) = if sza >= szb
+                                          then (ta, a, M.mkApp an (M.Builtin an Nothing (Just $ tb `M.arr` ta) M.Resize) [b])
+                                          else (tb, M.mkApp an (M.Builtin an Nothing (Just $ ta `M.arr` tb) M.Resize) [a], b)
+
+                        mul :: M.Ty -> C.Size -> M.Ty -> C.Size -> M.Exp -> M.Exp -> M.Exp
+                        mul ta sza tb szb a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t)  M.Mul) [arg1, arg2]
+                              where (t, arg1, arg2) = if sza >= szb
+                                          then (ta, a, M.mkApp an (M.Builtin an Nothing (Just $ tb `M.arr` ta) M.Resize) [b])
+                                          else (tb, M.mkApp an (M.Builtin an Nothing (Just $ ta `M.arr` tb) M.Resize) [a], b)
 
             lit :: Integral n => n -> M.Exp
             lit = M.LitInt an Nothing . fromIntegral

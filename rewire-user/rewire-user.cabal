@@ -1,11 +1,11 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
 name:           rewire-user
-version:        0.1.0.0
+version:        0.1.1
 description:    Please see the README.
 homepage:       https://github.com/githubuser/rewire-user#readme
 bug-reports:    https://github.com/githubuser/rewire-user/issues

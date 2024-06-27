@@ -6,10 +6,11 @@ import ReWire.Error
 
 import qualified Data.Text as Txt
 import Language.Haskell.Exts (parseFileWithMode, ParseResult (..), defaultParseMode, ParseMode (..))
+import System.Directory (getCurrentDirectory, setCurrentDirectory, doesFileExist, doesDirectoryExist)
+
 import safe Control.Monad.IO.Class (liftIO, MonadIO)
 import safe Language.Haskell.Exts.SrcLoc (SrcSpanInfo, SrcLoc (..))
 import safe Language.Haskell.Exts.Syntax (Module (..))
-import safe System.Directory (getCurrentDirectory, setCurrentDirectory, doesFileExist, doesDirectoryExist)
 
 tryParseInDir :: (MonadIO m, MonadError AstError m) => FilePath -> FilePath -> m (Maybe (FilePath, Module SrcSpanInfo))
 tryParseInDir fp dp = do
