@@ -8,14 +8,18 @@ synchronous hardware development, based on reactive resumption monads. See the
 
 ## Installing
 
-Make sure Haskell Stack is installed, e.g.:
+Make sure Haskell Stack is installed; e.g., for linux machines:
 ```
 $ sudo apt install haskell-stack
+```
+Or, if you have a Mac, `haskell-stack` is on homebrew:
+```
+$ brew install haskell-stack
 ```
 
 To clone this repo, build, and install the `rwc` executable to `~/.local/bin`:
 ```
-$ git clone https://github.com/mu-chaco/ReWire
+$ git clone https://github.com/twosixlabs/ReWire
 $ cd ReWire
 $ stack install
 ```
