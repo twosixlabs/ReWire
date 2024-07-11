@@ -137,7 +137,7 @@ rXnor' = not . foldr (>^<) False
 -- Produces bits in little endian form.
 int2bits' :: Integer -> [Bool]
 int2bits' i | i Prelude.== 0      = []
-            | i < 0 = int2bits' (i `mod` (2 Prelude.^ 128))
+            | i < 0 = int2bits' (i `mod` ((2::Integer) Prelude.^ (128::Integer)))
             | otherwise = b : int2bits' (i `div` 2)
               where b = case i `mod` 2 of
                       0 -> False
