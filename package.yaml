@@ -39,12 +39,9 @@ data-files:
 - rewire-user/src/*.hs
 - rewire-user/src/RWC/*.hs
 - rewire-user/src/ReWire/*.hs
-- tutorial/blake2/*.hs
-- tutorial/chapter1/*.hs
-- tutorial/chapter2/*.hs
-- tutorial/chapter3/*.hs
-- tutorial/riscv32i/*.hs
-- tutorial/simple/*.hs
+- tutorial/*/*
+- tutorial/*/*/*
+- tutorial/*/*/*/*
 
 dependencies:
 - base ^>= 4.18
