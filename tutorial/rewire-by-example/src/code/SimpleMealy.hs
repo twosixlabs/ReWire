@@ -24,5 +24,5 @@ s1 Zero = signal One  >>= s0
 s1 One  = signal Zero >>= s1
 
 start :: ReacT Alphabet Alphabet Identity ()
-start = signal Zero >>= s0
+start = signal Zero >>= si
 
