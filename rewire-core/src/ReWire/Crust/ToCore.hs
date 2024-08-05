@@ -221,20 +221,27 @@ transBuiltin an' t' an = \ case
       (M.ToFinite, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimToFinite: invalid type.") pure
                         $ t' >>= M.finMax
+            sz     <- sizeOf' an t'
             nBits  <- maybe (failAt an' "transExp: rwPrimToFinite: invalid Vec argument.") pure
                         $ M.typeOf arg >>= M.vecSize
             unless (2 ^ nBits <= (fromIntegral finMax :: Integer))
                   $ failAt (ann arg) ("transExp: rwPrimToFinite: bitvector argument (size " <> showt nBits <> ") is not representable in Finite " <> showt finMax <> ".")
-            resize an (fromIntegral nBits) arg
+            resize an sz arg
       (M.ToFiniteMod, [arg]) -> do
-            finMax <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid type.") pure
+            finMax   <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid type.") pure
                         $ t' >>= M.finMax
-            argTy  <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid argument.") pure
+            sz       <- sizeOf' an t'
+            argTy    <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid argument.") pure
                         $ M.typeOf arg
-            nBits  <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid Vec argument.") pure
+            nBits    <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid Vec argument.") pure
                         $ M.vecSize argTy
-            if (2 ^ nBits <= (fromIntegral finMax :: Integer)) then resize an (fromIntegral nBits) arg
-            else resize an (fromIntegral nBits) $ modW argTy arg $ lit finMax
+
+            finMaxTy <- maybe (failAt an' "transExp: rwPrimToFiniteMod: typeof lit finMax?") pure
+                     $ M.typeOf $ lit finMax
+            finMaxSz <- sizeOf an finMaxTy
+
+            if 2 ^ nBits <= (fromIntegral finMax :: Integer) then resize an sz arg
+            else resize an sz $ modW argTy (fromIntegral nBits) finMaxTy finMaxSz arg $ lit finMax
       (M.FromFinite, [arg]) -> do
             finMax <- maybe (failAt an' "transExp: rwPrimFromFinite: invalid argument type.") pure
                         $ M.typeOf arg >>= M.finMax
@@ -385,8 +392,11 @@ transBuiltin an' t' an = \ case
             lit :: Integral n => n -> M.Exp
             lit = M.LitInt an Nothing . fromIntegral
 
-            modW :: M.Ty -> M.Exp -> M.Exp -> M.Exp
-            modW t a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t) M.Mod) [a, b]
+            modW :: M.Ty -> C.Size -> M.Ty -> C.Size -> M.Exp -> M.Exp -> M.Exp
+            modW ta sza tb szb a b = M.mkApp an (M.Builtin an Nothing (Just $ t `M.arr` t `M.arr` t) M.Mod) [arg1, arg2]
+                  where (t, arg1, arg2) = if sza >= szb
+                              then (ta, a, M.mkApp an (M.Builtin an Nothing (Just $ tb `M.arr` ta) M.Resize) [b])
+                              else (tb, M.mkApp an (M.Builtin an Nothing (Just $ ta `M.arr` tb) M.Resize) [a], b)
 
             resize :: (MonadError AstError m, Fresh m, MonadState SizeMap m) => Annote -> C.Size -> M.Exp -> TCM m C.Exp
             resize an sz arg = do

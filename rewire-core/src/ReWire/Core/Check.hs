@@ -9,19 +9,22 @@ import ReWire.Core.Syntax (isNil, sizeOf, LId, GId, Size, ExternSig (..), Progra
 import ReWire.Error (MonadError, AstError, failAt)
 import ReWire.Pretty (showt)
 
+import Data.HashMap.Strict (HashMap)
 import Control.Arrow ((&&&))
 
-type LIds = [(LId, Size)]
-type DefnSigs = [(GId, Sig)]
+import qualified Data.HashMap.Strict as Map
+
+type LIds = HashMap LId Size
+type DefnSigs = HashMap GId (Sig, Exp)
 
 check :: MonadError AstError m => Program -> m Program
 check p = do
-      checkLoop defnSigs (loop p)
-      checkState0 defnSigs (state0 p)
-      mapM_ (checkDefn defnSigs) (defns p)
+      checkLoop defnSigs $ loop p
+      checkState0 defnSigs $ state0 p
+      mapM_ (checkDefn defnSigs) $ defns p
       pure p
       where defnSigs :: DefnSigs
-            defnSigs = (defnName &&& defnSig) <$> defns p
+            defnSigs = Map.fromList $ map (defnName &&& (defnSig &&& defnBody)) $ loop p : state0 p : defns p
 
 checkLoop :: MonadError AstError m => DefnSigs -> Defn -> m ()
 checkLoop dsigs d@Defn { defnSig = Sig _ args _ }
@@ -36,23 +39,39 @@ checkState0 dsigs d@Defn { defnSig = Sig _ args _ }
 checkDefn :: MonadError AstError m => DefnSigs -> Defn -> m ()
 checkDefn dsigs (Defn an n (Sig _ args res) body)
       | sizeOf body /= res = failAt an $ "core check: " <> n <> ": function body size mismatch: expected " <> showt res <> ", got " <> showt (sizeOf body) <> "."
-      | otherwise          = checkExp dsigs (zip [0..] args) body
+      | otherwise          = do
+            checkExp dsigs (Map.fromList $ zip [0..] args) body
+            checkRecursion dsigs [n] body
 
 checkExp :: MonadError AstError m => DefnSigs -> LIds -> Exp -> m ()
 checkExp dsigs args = \ case
       Lit _ _                                                                   -> pure ()
-      LVar an sz x | Just sz' <- lookup x args, sz == sz'                       -> pure ()
+      LVar an sz x | Just sz' <- Map.lookup x args, sz == sz'                   -> pure ()
                    | otherwise                                                  -> failAt an "core check: LVar"
       Concat _ e1 e2                                                            -> checkExp dsigs args e1 >> checkExp dsigs args e2
       Call an sz _ _ _ e                 | not (isNil e), sz /= sizeOf e        -> failAt an "core check: call: else size mismatch"
       Call an _ _ disc ps _              | (sum $ sizeOf <$> ps) /= sizeOf disc -> failAt an "core check: call: size mismatch between discriminator and pattern."
-      Call an _ (Global g) _ _ _         | Nothing <- lookup g dsigs            -> failAt an $ "core check: call: unknown global: " <> g
-      Call an sz (Global g) _ ps _       | Just sig <- lookup g dsigs
+      Call an _ (Global g) _ _ _         | Nothing <- Map.lookup g dsigs        -> failAt an $ "core check: call: unknown global: " <> g
+      Call an sz (Global g) _ ps _       | Just (sig, _) <- Map.lookup g dsigs
                                          , mkSig ps sz `neq` sig                -> failAt an $ "core check: call: global sig mismatch: " <> g
       Call an sz (Extern sig _ _) _ ps _ | mkSig ps sz `neq` toSig sig          -> failAt an "core check: call: extern sig mismatch"
       Call an sz (Prim pr) _ ps _        | not (primCompat (mkSig ps sz) pr)    -> failAt an $ "core check: call: prim sig mismatch: " <> showt pr
       Call an sz (Const bv) _ ps _       | mkSig ps sz `neq` constSig bv        -> failAt an "core check: call: const sig mismatch"
       Call _ _ _ disc _ e                                                       -> checkExp dsigs args disc >> checkExp dsigs args e
+
+checkRecursion :: MonadError AstError m => DefnSigs -> [GId] -> Exp -> m ()
+checkRecursion dsigs gids = \ case
+      Concat _ e1 e2                                                            -> checkRecursion dsigs gids e1 >> checkRecursion dsigs gids e2
+      Call an _ (Global g) _ _ _ | g `elem` gids                                -> failAt an $ "core check: unsupported use of recursion (core id: " <> g <> ")."
+      Call _ _ (Global g) e1 _ e2 | Just (_, body) <- Map.lookup g dsigs
+                                  , g `notElem` gids                            -> do
+            checkRecursion dsigs gids e1
+            checkRecursion dsigs gids e2
+            checkRecursion dsigs (g : gids) body
+      Call _ _ _ e1 _ e2                                                        -> do
+            checkRecursion dsigs gids e1
+            checkRecursion dsigs gids e2
+      _                                                                         -> pure ()
 
 mkSig :: [Pat] -> Size -> Sig
 mkSig ps sz = Sig noAnn (sizeOf <$> filter isVar ps) sz
