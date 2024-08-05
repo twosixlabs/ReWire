@@ -47,13 +47,13 @@ compileFile :: MonadIO m => Config -> FilePath -> m ()
 compileFile conf filename = do
       when (conf^.verbose) $ liftIO $ T.putStrLn $ "Compiling: " <> pack filename
 
-      runSyntaxError (loadCore >>= compile)
+      runSyntaxError (loadCore >>= Core.check >>= compile)
             >>= either (liftIO . (>> exitFailure) . T.hPutStrLn stderr . prettyPrint) pure
 
       where loadCore :: (MonadError AstError m, MonadState AstError m, MonadFail m, MonadIO m) => m Core.Program
             loadCore = case conf^.source of
-                  Haskell -> loadProgram conf filename
-                  RWCore  -> parseCore filename >>= Core.check
+                  Haskell -> loadProgram conf filename 
+                  RWCore  -> parseCore filename
                   s       -> failAt noAnn $ "Not a supported source language: " <> pack (show s)
 
             compile :: (MonadFail m, MonadError AstError m, MonadIO m) => Core.Program -> m ()
