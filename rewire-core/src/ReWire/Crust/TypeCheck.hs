@@ -10,7 +10,7 @@ import ReWire.Crust.Types (poly, arrowRight, (|->), concrete, kblank, tyAnn, set
 import ReWire.Crust.Util (mkApp)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fixOn, fixOn')
-import ReWire.Pretty (showt, prettyPrint)
+import ReWire.Pretty (showt, prettyPrint, Pretty (..), hsep)
 import ReWire.SYB (transform, query)
 import ReWire.Unbound (fresh, substs, Subst, n2s, s2n, unsafeUnbind, Fresh, Embed (Embed), Name, bind, unbind, fv)
 
@@ -159,8 +159,8 @@ unify :: (MonadError AstError m, MonadState TySub m) => Annote -> Ty -> Ty -> m 
 unify an t1 t2 = do
       t1' <- gets $ flip rewrite t1
       t2' <- gets $ flip rewrite t2
-      -- trace ("Unifying: " <> unpack (prettyPrint t1')
-      --   <> "\n    with: " <> unpack (prettyPrint t2')) $ pure ()
+      -- trace ("... Unifying: " <> unpack (prettyPrint t1')
+      --    <> "\n...     with: " <> unpack (prettyPrint t2')) $ pure ()
       case mgu t1' t2' of
             Just s -> do
                   -- trace ("    result:\n" <> unpack (prettyPrint  (Map.toList s))) $ pure ()
@@ -191,8 +191,10 @@ patHoles = flip patHoles' $ pure mempty
                   MatchPatVar {}           -> id
                   MatchPatWildCard {}      -> id
 
-tcPatCon :: (MonadReader TCEnv m, MonadState TySub m, Fresh m, MonadError AstError m) => Annote -> Ty -> (Ty -> pat -> m pat) -> Name DataConId -> [pat] -> m ([pat], Ty)
+tcPatCon :: (MonadReader TCEnv m, MonadState TySub m, Fresh m, MonadError AstError m, Pretty pat) => Annote -> Ty -> (Ty -> pat -> m pat) -> Name DataConId -> [pat] -> m ([pat], Ty)
 tcPatCon an t tc i ps = do
+      -- trace ("     tcPatCon: " <> show i <> show (hsep (map pretty ps)) <> " :: " <> unpack (prettyPrint t)) $ pure ()
+      -- _ <- infoM "RWC" $ "tcPatCon: " <> concatMap (unpack . prettyPrint) ps
       cas     <- asks cas
       case Map.lookup i cas of
             Nothing  -> failAt an $ "Unknown constructor: " <> prettyPrint i
@@ -205,6 +207,7 @@ tcPatCon an t tc i ps = do
 tcPat :: (Fresh m, MonadError AstError m, MonadReader TCEnv m, MonadState TySub m) => Ty -> Pat -> m Pat
 tcPat t = \ case
       p | Just pt <- tyAnn p -> do
+            -- trace ("   tcPat: " <> show (pretty p) <> " :: " <> unpack (prettyPrint pt)) $ pure ()
             ta <- inst pt
             t' <- unify (ann p) ta t
             setTyAnn (Just pt) <$> tcPat t' (setTyAnn Nothing p)
@@ -217,6 +220,7 @@ tcPat t = \ case
 tcMatchPat :: (Fresh m, MonadError AstError m, MonadReader TCEnv m, MonadState TySub m) => Ty -> MatchPat -> m MatchPat
 tcMatchPat t = \ case
       p | Just pt <- tyAnn p -> do
+            -- trace ("   tcPat: " <> show (pretty p) <> " :: " <> unpack (prettyPrint pt)) $ pure ()
             ta <- inst pt
             t' <- unify (ann p) ta t
             setTyAnn (Just pt) <$> tcMatchPat t' (setTyAnn Nothing p)
@@ -229,7 +233,7 @@ tcMatchPat t = \ case
 tcExp :: (Fresh m, MonadError AstError m, MonadReader TCEnv m, MonadState TySub m) => Ty -> Exp -> m (Exp, Ty)
 tcExp tt = \ case
       e | Just pt <- tyAnn e -> do
-            -- trace ("tc: type annotation") $ pure ()
+            -- trace ("tcExp: type annotation: " ++ show (prettty pt) $ pure ())
             ta       <- inst pt
             t        <- unify (ann e) ta tt
             (e', t') <- first (setTyAnn $ Just pt) <$> tcExp t (setTyAnn Nothing e)
@@ -243,7 +247,7 @@ tcExp tt = \ case
                   -- Note: we instantiate LitVec here. TODO(chathhorn): move this to the inlining pass?
                   Just es -> tcExp tt $ LitVec an tan Nothing es
       App an tan _ e1 e2 -> do
-            -- trace "tc: app (1): tc e2" $ pure ()
+            -- trace "tcExp: app (1): tc e2" $ pure ()
             tvx      <- freshv
             (e2', t2) <- tcExp tvx e2
             -- trace "tc: app (2): tc e1" $ pure ()
@@ -251,7 +255,7 @@ tcExp tt = \ case
             -- trace ("tc: app: e2':\n" <> show (unAnn e2')) $ pure ()
             pure (App an tan (Just $ arrowRight t1) e1' e2', arrowRight t1)
       Lam an tan _ e -> do
-            -- trace "tc: lam" $ pure ()
+            -- trace "tcExp: lam" $ pure ()
             tvx          <- freshv
             tvr          <- freshv
             tt'          <- unify an tt $ tvx `arr` tvr
@@ -262,7 +266,7 @@ tcExp tt = \ case
                         $ tcExp tvr' e'
             pure (Lam an tan (Just tvx') $ bind x e'', tvx' `arr` tvr'')
       Var an tan _ v -> do
-            -- trace ("tc: var: " <> show v) $ pure ()
+            -- trace ("tcExp: var: " <> show v) $ pure ()
             as <- asks as
             case Map.lookup v as of
                   Nothing -> failAt an $ "Unknown variable: " <> showt v
@@ -271,7 +275,7 @@ tcExp tt = \ case
                         t' <- unify an tt t
                         pure (Var an tan (Just t') v, t')
       Con an tan _ i -> do
-            -- trace "tc: con" $ pure ()
+            -- trace ("tcExp: con " ++ show (pretty i)) $ pure ()
             cas <- asks cas
             case Map.lookup i cas of
                   Nothing -> failAt an $ "Unknown constructor: " <> prettyPrint i
@@ -280,7 +284,9 @@ tcExp tt = \ case
                         t' <- unify an tt t
                         pure (Con an tan (Just t') i, t')
       Case an tan _ e e1 e2 -> do
-            -- trace "tc: case" $ pure ()
+            -- trace ("  tcCase: " <> show (pretty e) <> " :: " <>
+            --                unpack (prettyPrint tan)) $ pure ()
+            -- trace "tcExp: case" $ pure ()
             tve        <- freshv
             (e', tp)   <- tcExp tve e
             (p, e1')   <- unbind e1
@@ -295,7 +301,7 @@ tcExp tt = \ case
                         (e2', t2) <- tcExp t1 e2
                         pure (Case an tan (Just t2) e' (bind p' e1'') (Just e2'), t2)
       Match an tan _ e p f e2 -> do
-            -- trace "tc: match" $ pure ()
+            -- trace "tcExp: match" $ pure ()
             tve      <- freshv
             (e', tp) <- tcExp tve e
             p'       <- tcMatchPat tp p
@@ -307,7 +313,7 @@ tcExp tt = \ case
                         (e2', t2) <- tcExp tb e2
                         pure (Match an tan (Just t2) e' p' f (Just e2'), t2)
       Builtin an tan _ b -> do
-            -- trace ("tc: builtin: " <> show b) $ pure ()
+            -- trace ("tcExp: builtin: " <> show b) $ pure ()
             as <- asks as
             case Map.lookup (s2n $ builtinName b) as of
                   Nothing -> failAt an $ "Unknown builtin: " <> builtinName b
@@ -318,7 +324,7 @@ tcExp tt = \ case
       e@LitInt {} -> (e, ) <$> unify (ann e) tt (intTy $ ann e)
       e@LitStr {} -> (e, ) <$> unify (ann e) tt (strTy $ ann e)
       LitList an tan _ es -> do
-            -- trace "tc: LitList" $ pure ()
+            -- trace "tcExp: LitList" $ pure ()
             te  <- freshv
             _ <- unify an tt $ listTy an te
             (es', te') <- foldM tcElem ([], te) es
@@ -326,7 +332,7 @@ tcExp tt = \ case
             tt' <- unify an tt $ listTy an te'
             pure (LitList an tan (Just tt') es', tt')
       LitVec an tan _ es -> do
-            -- trace "tc: LitVec" $ pure ()
+            -- trace "tcExp: LitVec" $ pure ()
             te  <- freshv
             (es', te') <- foldM tcElem ([], te) es
             tt'   <- unify an tt $ vecTy an (TyNat an $ fromInteger $ toInteger $ length es') te'
