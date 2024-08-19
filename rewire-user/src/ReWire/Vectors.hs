@@ -46,11 +46,11 @@ singleton a = fromList [a]
 
 {-# INLINE cons #-}
 cons :: a -> Vec n a -> Vec (1 + n) a
-cons a v = fromList [a] ++ v
+cons x v = fromList [x] ++ v
 
 {-# INLINE snoc #-}
 snoc :: Vec n a -> a -> Vec (n + 1) a
-snoc v a = v ++ fromList [a]
+snoc v x = v ++ fromList [x]
 
 {-# INLINE head #-}
 head :: Vec (1 + n) a -> a
