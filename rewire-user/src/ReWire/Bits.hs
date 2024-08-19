@@ -48,8 +48,8 @@ infixr 6  <>
 infixl 5  .&.
 infixl 4  ^, ~^, `xor`
 infixl 3  .|.
-infixr 2  &&., &&
-infixr 1  ||., ||
+infixr 2  &&., &&&
+infixr 1  ||., |||
 
 -- | Interpret an Integer literal into a bit vector. Truncates most significant
 --   bits or zero-pads to make it fit.
@@ -113,15 +113,20 @@ finBitIndex = rwPrimBitIndex
 (**) :: KnownNat n => W n -> W n -> W n
 (**) = rwPrimPow
 
+-- | Prelude (&&), but using built-ins.
+{-# INLINE (&&&) #-}
+(&&&) :: Bool -> Bool -> Bool
+(&&&) a b = bit $ (fromList [a] :: W 1) .&. (fromList [b] :: W 1)
+
+-- | Prelude (||), but using built-ins.
+{-# INLINE (|||) #-}
+(|||) :: Bool -> Bool -> Bool
+(|||) a b = bit $ (fromList [a] :: W 1) .|. (fromList [b] :: W 1)
+
 -- | Logical and.
 {-# INLINE (&&.) #-}
 (&&.) :: W n -> W n -> Bool
 (&&.) = rwPrimLAnd
-
--- | Prelude (&&), but using built-ins.
-{-# INLINE (&&) #-}
-(&&) :: Bool -> Bool -> Bool
-(&&) a b = bit $ fromList [a] .&. fromList [b]
 
 -- | Logical or.
 {-# INLINE (||.) #-}
@@ -132,11 +137,6 @@ finBitIndex = rwPrimBitIndex
 {-# INLINE lnot #-}
 lnot :: W n -> Bit
 lnot = rwPrimLNot
-
--- | Prelude (||), but using built-ins.
-{-# INLINE (||) #-}
-(||) :: Bool -> Bool -> Bool
-(||) a b = bit $ fromList [a] .|. fromList [b]
 
 -- | Bitwise and.
 {-# INLINE (.&.) #-}
