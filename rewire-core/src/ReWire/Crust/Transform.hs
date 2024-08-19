@@ -3,7 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE Safe #-}
 module ReWire.Crust.Transform
       ( inline, expandTypeSynonyms, reduce
       , neuterExterns
