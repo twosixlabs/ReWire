@@ -56,15 +56,15 @@ module RWC.Primitives
       , rwPrimToFinite
       , rwPrimToFiniteMod
       , rwPrimFromFinite
-      , rwPrimVecBulkUpdate
+      -- , rwPrimVecBulkUpdate
       , rwPrimVecConcat
       , rwPrimVecFromList
       , rwPrimVecIndex
       , rwPrimVecIndexProxy
       , rwPrimVecMap
       , rwPrimVecGenerate
-      , rwPrimVecIterate
-      , rwPrimVecZip
+      -- , rwPrimVecIterate
+      -- , rwPrimVecZip
       , rwPrimVecRSlice
       , rwPrimVecReplicate
       , rwPrimVecReverse
@@ -88,6 +88,7 @@ import GHC.TypeLits (Nat, type (+), natVal)
 import qualified GHC.TypeLits                      as TL
 import qualified Data.Finite                       as F
 import qualified Data.Vector.Sized                 as V
+import qualified Data.Vector                       as VU
 import qualified ReWire.BitWord                    as BW
 
 type Identity   = GHC.Identity
@@ -224,14 +225,14 @@ rwPrimVecIndexProxy = V.index'
 rwPrimVecMap :: (a -> b) -> Vec n a -> Vec n b
 rwPrimVecMap = V.map
 
-rwPrimVecZip :: Vec n a -> Vec n b -> Vec n (a , b)
-rwPrimVecZip = V.zip
+-- rwPrimVecZip :: Vec n a -> Vec n b -> Vec n (a , b)
+-- rwPrimVecZip = V.zip
 
 rwPrimVecGenerate :: KnownNat n => (Finite n -> a) -> Vec n a
 rwPrimVecGenerate = V.generate
 
-rwPrimVecIterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
-rwPrimVecIterate = V.iterateN'
+-- rwPrimVecIterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
+-- rwPrimVecIterate = V.iterateN'
 
 -- | Concatenate vectors.
 rwPrimVecConcat :: Vec n a -> Vec m a -> Vec (n + m) a
@@ -263,8 +264,8 @@ rwPrimVecUpdate :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
 rwPrimVecUpdate v i a = V.update v (V.singleton (GHC.fromEnum i,a))
 
 -- | Update multiple indices
-rwPrimVecBulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
-rwPrimVecBulkUpdate v a = V.update v (V.map (BF.first fromEnum) a)
+-- rwPrimVecBulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
+-- rwPrimVecBulkUpdate v a = V.update v (V.map (BF.first fromEnum) a)
 
 -- | Produce integer associated with type-level natural.
 rwPrimNatVal :: KnownNat n => Proxy n -> Integer
@@ -272,8 +273,13 @@ rwPrimNatVal = natVal
 
 -- | bitSlice a j i returns bits j (most significant) to i (least significant) from a (j >= i).
 --   The Finite arguments must be known/literals (after inlining).
-rwPrimBitSlice :: Vec n Bool -> Finite n -> Finite n -> Vec m Bool
-rwPrimBitSlice = GHC.error "Prim: bit slice"
+rwPrimBitSlice :: KnownNat m => Vec n Bool -> Finite n -> Finite n -> Vec m Bool
+rwPrimBitSlice v j i = case V.toSized 
+                           (VU.slice (GHC.fromIntegral (F.getFinite i))
+                                     (GHC.fromIntegral (F.getFinite j))
+                                     (V.fromSized v)) of
+      GHC.Nothing -> GHC.error "rwPrimBitSlice: slice size mismatch" 
+      GHC.Just w  -> w
 
 -- | bitIndex a i == bitSlice a i i.
 --   The Finite argument must be known/literal (after inlining).
