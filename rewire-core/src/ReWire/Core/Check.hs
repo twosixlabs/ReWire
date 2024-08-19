@@ -55,7 +55,7 @@ checkExp dsigs args = \ case
       Call an sz (Global g) _ ps _       | Just (sig, _) <- Map.lookup g dsigs
                                          , mkSig ps sz `neq` sig                -> failAt an $ "core check: call: global sig mismatch: " <> g
       Call an sz (Extern sig _ _) _ ps _ | mkSig ps sz `neq` toSig sig          -> failAt an "core check: call: extern sig mismatch"
-      Call an sz (Prim pr) _ ps _        | not (primCompat (mkSig ps sz) pr)    -> failAt an $ "core check: call: prim sig mismatch: " <> showt pr
+      Call an sz (Prim pr) _ ps _        | not (primCompat (mkSig ps sz) pr)    -> failAt an $ "core check: call: prim sig mismatch: " <> showt pr <> " failed to match pattern type " <> showt (mkSig ps sz)
       Call an sz (Const bv) _ ps _       | mkSig ps sz `neq` constSig bv        -> failAt an "core check: call: const sig mismatch"
       Call _ _ _ disc _ e                                                       -> checkExp dsigs args disc >> checkExp dsigs args e
 
@@ -112,7 +112,7 @@ primCompat (Sig _ args res) p = case (p, args) of
       (RXNor, [_])          -> 1 == res
       (MSBit, [_])          -> 1 == res
       (Resize, [_])         -> True
-      (Reverse, [a])        -> a == res
+      (Reverse, xs@(a:as))  -> all (== a) as && sum xs == res
       (Id, xs)              -> sum xs == res
       _                     -> False
 

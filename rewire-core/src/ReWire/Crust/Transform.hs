@@ -609,7 +609,8 @@ reduce (ts, syns, vs) = (ts, syns, ) <$> mapM reduceDefn vs
                         case e1' of
                               Lam _ _ tx e -> do
                                     (x, e') <- unbind e
-                                    reduceExp $ subst x (setTyAnn (poly' <$> tx) e2') e' -- TODO(chathhorn): ad-hoc promoting current type to annotation.
+                                    beta <- reduceExp $ subst x (setTyAnn (poly' <$> tx) e2') e' -- TODO(chathhorn): ad-hoc promoting current type to annotation.
+                                    pure $ setTyAnn tan beta
                               _              -> pure $ App an tan t e1' e2'
                   Lam an tan t e        -> do
                         (x, e') <- unbind e
