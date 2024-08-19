@@ -46,27 +46,27 @@ singleton a = fromList [a]
 
 {-# INLINE cons #-}
 cons :: a -> Vec n a -> Vec (1 + n) a
-cons a v = fromList [a] ++ v
+cons x v = fromList [x] ++ v
 
 {-# INLINE snoc #-}
 snoc :: Vec n a -> a -> Vec (n + 1) a
-snoc v a = v ++ fromList [a]
+snoc v x = v ++ fromList [x]
 
 {-# INLINE head #-}
 head :: Vec (1 + n) a -> a
 head v = index' v (Proxy :: Proxy 0)
 
 {-# INLINE last #-}
-last :: KnownNat n => Vec (1 + n) a -> a
-last v = index' v (lastIndex' v)
+last :: KnownNat n => Vec n a -> a
+last v = index v (lastIndex v)
 
 {-# INLINE lastIndex #-}
 lastIndex :: KnownNat n => Vec n a -> Finite n
 lastIndex _ = F.maxBound
 
-{-# INLINE lastIndex' #-}
-lastIndex' :: Vec (1 + n) a -> Proxy n
-lastIndex' _ = Proxy
+-- {-# INLINE lastIndex' #-}
+-- lastIndex' :: KnownNat n => Vec (1 + n) a -> Proxy n
+-- lastIndex' _ = Proxy
 
 {-# INLINE take #-}
 take :: KnownNat n => Vec (n + m) a -> Vec n a
@@ -88,9 +88,9 @@ tail = drop
 update :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
 update = rwPrimVecUpdate
 
-{-# INLINE bulkUpdate #-}
-bulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
-bulkUpdate = rwPrimVecBulkUpdate
+-- {-# INLINE bulkUpdate #-}
+-- bulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
+-- bulkUpdate = rwPrimVecBulkUpdate
 
 {-# INLINE map #-}
 map :: (a -> b) -> Vec n a -> Vec n b
@@ -100,21 +100,21 @@ map = rwPrimVecMap
 generate :: KnownNat n => (Finite n -> a) -> Vec n a
 generate = rwPrimVecGenerate
 
-{-# INLINE iterate #-}
-iterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
-iterate = rwPrimVecIterate
+-- {-# INLINE iterate #-}
+-- iterate :: KnownNat n => Proxy n -> (a -> a) -> a -> Vec n a
+-- iterate = rwPrimVecIterate
 
-{-# INLINE zip #-}
-zip :: Vec n a -> Vec n b -> Vec n (a , b)
-zip = rwPrimVecZip
+-- {-# INLINE zip #-}
+-- zip :: Vec n a -> Vec n b -> Vec n (a , b)
+-- zip = rwPrimVecZip
 
-{-# INLINE zipWith #-}
-zipWith :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
-zipWith f vs ws = map (uncurry f) (zip vs ws)
+-- {-# INLINE zipWith #-}
+-- zipWith :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
+-- zipWith f vs ws = map (uncurry f) (zip vs ws)
 
-{-# INLINE zipWith3 #-}
-zipWith3 :: (a -> b -> c -> d) -> Vec n a -> Vec n b -> Vec n c -> Vec n d
-zipWith3 f vs ws = zipWith (uncurry f) (zip vs ws)
+-- {-# INLINE zipWith3 #-}
+-- zipWith3 :: (a -> b -> c -> d) -> Vec n a -> Vec n b -> Vec n c -> Vec n d
+-- zipWith3 f vs ws = zipWith (uncurry f) (zip vs ws)
 
 -- | Returns evens from v concatenated with evens from w
 {-# INLINE packlo #-}

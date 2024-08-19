@@ -27,7 +27,7 @@ toInteger = rwPrimToInteger
 --   a @@ (j, i) returns bits j (most significant) to i (least significant) from a (j >= i).
 --   The Integer arguments must be non-negative integer literals (after inlining).
 {-# INLINE (@@) #-}
-(@@) :: KnownNat n => W n -> (Integer, Integer) -> W m
+(@@) :: (KnownNat n,KnownNat m) => W n -> (Integer, Integer) -> W m
 a @@ (j, i) = bitSlice a j i
 
 -- | Project single bit.
@@ -48,8 +48,8 @@ infixr 6  <>
 infixl 5  .&.
 infixl 4  ^, ~^, `xor`
 infixl 3  .|.
-infixr 2  &&., &&
-infixr 1  ||., ||
+infixr 2  &&., &&&
+infixr 1  ||., |||
 
 -- | Interpret an Integer literal into a bit vector. Truncates most significant
 --   bits or zero-pads to make it fit.
@@ -68,7 +68,7 @@ sext :: KnownNat m => W n -> W m
 sext = rwPrimSignextend
 
 {-# INLINE bitSlice #-}
-bitSlice :: KnownNat n => W n -> Integer -> Integer -> W m
+bitSlice :: (KnownNat n, KnownNat m) => W n -> Integer -> Integer -> W m
 bitSlice v j i = finBitSlice v (finite j) (finite i)
 
 {-# INLINE bitIndex #-}
@@ -76,7 +76,7 @@ bitIndex :: KnownNat n => W n -> Integer -> Bit
 bitIndex v i = finBitIndex v (finite i)
 
 {-# INLINE finBitSlice #-}
-finBitSlice :: W n -> Finite n -> Finite n -> W m
+finBitSlice :: KnownNat m => W n -> Finite n -> Finite n -> W m
 finBitSlice = rwPrimBitSlice
 
 {-# INLINE finBitIndex #-}
@@ -113,15 +113,20 @@ finBitIndex = rwPrimBitIndex
 (**) :: KnownNat n => W n -> W n -> W n
 (**) = rwPrimPow
 
+-- | Prelude (&&), but using built-ins.
+{-# INLINE (&&&) #-}
+(&&&) :: Bool -> Bool -> Bool
+(&&&) a b = bit $ (fromList [a] :: W 1) .&. (fromList [b] :: W 1)
+
+-- | Prelude (||), but using built-ins.
+{-# INLINE (|||) #-}
+(|||) :: Bool -> Bool -> Bool
+(|||) a b = bit $ (fromList [a] :: W 1) .|. (fromList [b] :: W 1)
+
 -- | Logical and.
 {-# INLINE (&&.) #-}
 (&&.) :: W n -> W n -> Bool
 (&&.) = rwPrimLAnd
-
--- | Prelude (&&), but using built-ins.
-{-# INLINE (&&) #-}
-(&&) :: Bool -> Bool -> Bool
-(&&) a b = bit $ fromList [a] .&. fromList [b]
 
 -- | Logical or.
 {-# INLINE (||.) #-}
@@ -132,11 +137,6 @@ finBitIndex = rwPrimBitIndex
 {-# INLINE lnot #-}
 lnot :: W n -> Bit
 lnot = rwPrimLNot
-
--- | Prelude (||), but using built-ins.
-{-# INLINE (||) #-}
-(||) :: Bool -> Bool -> Bool
-(||) a b = bit $ fromList [a] .|. fromList [b]
 
 -- | Bitwise and.
 {-# INLINE (.&.) #-}
