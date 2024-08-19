@@ -5,9 +5,9 @@
 module ReWire.Crust.ToCore (toCore) where
 
 import ReWire.Config (Config, inputSigs, outputSigs, stateSigs, top)
-import ReWire.Annotation (Annote, noAnn, Annotated (ann))
+import ReWire.Annotation (Annote, noAnn, Annotated (ann), unAnn)
 import ReWire.Error (failAt, AstError, MonadError)
-import ReWire.Pretty (showt, prettyPrint)
+import ReWire.Pretty (showt, prettyPrint, pretty)
 import ReWire.Unbound (Name, Fresh, runFreshM, Embed (..) , unbind, n2s)
 import ReWire.BitVector (bitVec, zeros, BV)
 
@@ -37,7 +37,7 @@ type StartDefn = (C.Name, C.Wiring, C.GId, C.GId)
 
 toCore :: (Fresh m, MonadError AstError m, MonadFail m) => Config -> Text -> M.FreeProgram -> m C.Program
 toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
-      mapM_ ((`runReaderT` conMap) . sizeOf noAnn . M.TyCon noAnn . M.dataName) ts
+      mapM_ (\ x -> ((`runReaderT` conMap) . sizeOf (n2s (M.dataName x)) noAnn . M.TyCon noAnn . M.dataName) x) ts
       let intSz = 128 -- TODO(chathhorn)
       put $ Map.singleton (M.intTy noAnn) intSz
       vs'    <- mapM (transDefn conf start conMap) $ filter (not . M.isPrim . M.defnName) vs
@@ -71,9 +71,9 @@ transDefn conf start conMap = \ case
                         case M.flattenApp e' of
                               [M.Builtin _ _ _ M.Unfold, M.Var _ _ _ loop, M.Var _ _ (Just state0Ty) state0] -> do
                                     t_st              <- getRegsTy state0Ty
-                                    (t_in' : t_ins)   <- mapM ((`runReaderT` conMap) . sizeOf an) $ t_in  : detuple t_in
-                                    (t_out' : t_outs) <- mapM ((`runReaderT` conMap) . sizeOf an) $ t_out : detuple t_out
-                                    (t_st' : t_sts)   <- mapM ((`runReaderT` conMap) . sizeOf an) $ t_st  : concatMap detuple (detuple t_st)
+                                    (t_in' : t_ins)   <- mapM ((`runReaderT` conMap) . sizeOf "start In" an) $ t_in  : detuple t_in
+                                    (t_out' : t_outs) <- mapM ((`runReaderT` conMap) . sizeOf "start Out" an) $ t_out : detuple t_out
+                                    (t_st' : t_sts)   <- mapM ((`runReaderT` conMap) . sizeOf "start State" an) $ t_st  : concatMap detuple (detuple t_st)
                                     let t_ins'         = t_in' - sum t_ins : t_ins
                                         t_outs'        = t_out' - sum t_outs : t_outs
                                         t_sts'         = t_st' - sum t_sts : t_sts
@@ -130,69 +130,60 @@ transBuiltin an' t' an = \ case
                                                <> "\nErrorMessage: " <> showt x
       (M.Bits, [arg]) -> transExp arg
       (M.Resize, [arg]) -> do
-            sz       <- sizeOf' an t'
+            sz       <- sizeOf' "rwPrimResize" an t'
             resize an sz arg
-      (M.BitIndex, [arg, M.LitInt _ _ i]) -> subElems an arg ((-i) - 1) 1
-      (M.BitSlice, [arg, M.LitInt _ _ j, M.LitInt _ _ i]) -> do
+      (M.BitIndex, [arg, M.App _ _ _ (M.Builtin _ _ _ M.Finite) (M.LitInt _ _ i)]) -> subElems an arg ((-i) - 1) 1
+      (M.BitSlice, [arg, M.App _ _ _ (M.Builtin _ _ _ M.Finite) (M.LitInt _ _ j)
+                       , M.App _ _ _ (M.Builtin _ _ _ M.Finite) (M.LitInt _ _ i)]) -> do
             unless (j + 1 >= i) $ failAt (ann arg)
                   $ "transExp: invalid bit slice (j: " <> showt j <> ", i: " <> showt i <> ")."
             let nBits = fromIntegral $ j + 1 - i
                 off   = (-i) - fromIntegral nBits
             subElems an arg off nBits
+      (M.BitSlice, _) -> failAt an "transExp: rwPrimBitSlice must have arguments (finite j) (finite i) with LitInts"
+                        -- <> " Received: " <> showt (unAnn arg1) <> ", and " <> showt (unAnn arg2)
       (M.VecIndex, [arg, i]) -> vecIndex arg i
       (M.VecIndexProxy, [arg, p]) -> do
-            i      <- maybe (failAt an' "transExp: rwPrimVecIndexProxy: invalid proxy argument.") (pure . fromIntegral)
-                        $ M.typeOf p >>= M.proxyNat
+            i      <- checkProxyArg "rwPrimVecIndexProxy" p
             subElems an arg i 1
       (M.NatVal, [p]) -> do
-            i      <- maybe (failAt an' "transExp: rwPrimNatVal: invalid proxy argument.") (pure . fromIntegral)
-                        $ M.typeOf p >>= M.proxyNat
+            i      <- checkProxyArg "rwPrimNatVal" p
             transExp $ M.LitInt an Nothing i
       (M.VecSlice, [p, arg]) -> do
-            i      <- maybe (failAt an' "transExp: rwPrimVecSlice: invalid proxy argument.") (pure . fromIntegral)
-                        $ M.typeOf p >>= M.proxyNat
-            nElems <- maybe (failAt an' "transExp: rwPrimVecSlice: invalid Vec argument.") pure
-                        $ t' >>= M.vecSize
+            i      <- checkProxyArg "rwPrimVecSlice" p
+            nElems <- checkVecArgSize "rwPrimVecSlice" t'
             subElems an arg i nElems
       (M.VecRSlice, [p, arg]) -> do
-            i      <- maybe (failAt an' "transExp: rwPrimVecRSlice: invalid proxy argument.") (pure . fromIntegral)
-                        $ M.typeOf p >>= M.proxyNat
-            nElems <- maybe (failAt an' $ "transExp: rwPrimVecRSlice: invalid Vec argument.") pure
-                        $ t' >>= M.vecSize
+            i      <- checkProxyArg "rwPrimVecRSlice" p
+            nElems <- checkVecArgSize "rwPrimVecRSlice" t'
             subElems an arg ((- i) - fromIntegral nElems) nElems
       (M.VecReverse, [arg]) -> do
-            sz     <- sizeOf' an t'
+            sz     <- sizeOf' "rwPrimVecReverse" an t'
             arg'   <- transExp arg
-            nElems <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
-                        $ t' >>= M.vecSize
-            tyElem <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
-                        $ t' >>= M.vecElemTy
-            szElem <- sizeOf an tyElem
+            nElems <- checkVecArgSize "rwPrimVecReverse" t'
+            tyElem <- checkVecArgType "rwPrimVecReverse" t'
+            szElem <- sizeOf "rwPrimVecReverse" an tyElem
             pure $ C.Call an sz (C.Prim C.Reverse) arg' (replicate (fromIntegral nElems) $ C.PatVar an szElem) C.nil
       (M.VecReplicate, [arg]) -> do
-            sz     <- sizeOf' an t'
+            sz     <- sizeOf' "rwPrimVecReplicate" an t'
             arg'   <- transExp arg
-            nElems <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
-                        $ t' >>= M.vecSize
-            tyElem <- maybe (failAt an' "transExp: rwPrimVecReverse: invalid Vec argument.") pure
-                        $ t' >>= M.vecElemTy
-            szElem <- sizeOf an tyElem
+            nElems <- checkVecArgSize "rwPrimVecReplicate" t'
+            tyElem <- checkVecArgType "rwPrimVecReplicate" t'
+            szElem <- sizeOf "rwPrimVecReplicate" an tyElem
             pure $ C.Call an sz (C.Prim $ C.Replicate nElems) arg' [C.PatVar an szElem] C.nil
       (M.VecMap, [f, arg]) -> do
-            nElems <- maybe (failAt an' "transExp: rwPrimVecMap: invalid Vec argument.") pure
-                        $ t' >>= M.vecSize
+            nElems <- checkVecArgSize "rwPrimVecMap" t'
             transExp $ M.LitVec an Nothing Nothing $ map (M.mkApp an f . pure . vecIndexProxy arg) [0 .. nElems - 1]
       (M.VecGenerate, [f]) -> do
-            nElems <- maybe (failAt an' "transExp: rwPrimVecGenerate: invalid Vec argument.") pure
-                        $ t' >>= M.vecSize
+            nElems <- checkVecArgSize "rwPrimVecGenerate" t'
             transExp $ M.LitVec an Nothing Nothing $ map (M.mkApp an f . pure . finite nElems) [0 .. nElems - 1]
       (M.SetRef, M.App _ _ _ _ (M.LitStr _ _ r) : args) -> do
-            sz       <- sizeOf' an t'
+            sz       <- sizeOf' "rwPrimSetRef" an t'
             args'    <- mapM transExp args
             let argSizes = map C.sizeOf args'
             pure $ C.Call an sz (C.SetRef r) (C.cat args') (map (C.PatVar an) argSizes) C.nil
       (M.GetRef, [M.App _ _ _ _ (M.LitStr _ _ r)]) -> do
-            sz       <- sizeOf' an t'
+            sz       <- sizeOf' "rwPrimGetRef" an t'
             pure $ C.Call an sz (C.GetRef r) C.nil [] C.nil
       (M.VecConcat, [arg1, arg2]) -> do
             C.cat <$> mapM transExp [arg1, arg2]
@@ -200,76 +191,68 @@ transBuiltin an' t' an = \ case
             arg' <- transExp arg
             case arg' of
                   C.Lit an' (BV.nat -> i) -> do
-                        finMax <- maybe (failAt an' "transExp: rwPrimFinite: invalid type.") pure
-                                    $ t' >>= M.finMax
+                        finMax <- checkFinTypeMax "rwPrimFinite" t'
                         unless (i >= 0 && i < fromIntegral finMax)
                               $ failAt (ann arg) ("transExp: rwPrimFinite: Integer " <> showt i <> " is not representable in Finite " <> showt finMax <> ".")
                         pure $ C.Lit an' $ BV.bitVec (ceilLog2 $ fromIntegral finMax) i
                   _ -> failAt (ann arg) "transExp: rwPrimFinite: can't determine argument value at compile-time."
       (M.FiniteMinBound, []) -> do
-            finMax <- maybe (failAt an' "transExp: rwPrimFiniteMinBound: invalid argument type.") pure
-                        $ t' >>= M.finMax
+            finMax <- checkFinTypeMax "rwPrimFiniteMinBound" t'
             unless (finMax > 0)
                   $ failAt an "transExp: rwPrimFiniteMinBound: Finite 0 is uninhabited."
             transExp $ finite finMax 0
       (M.FiniteMaxBound, []) -> do
-            finMax <- maybe (failAt an' "transExp: rwPrimFiniteMaxBound: invalid argument type.") pure
-                        $ t' >>= M.finMax
+            finMax <- checkFinTypeMax "rwPrimFiniteMaxBound" t'
             unless (finMax > 0)
                   $ failAt an "transExp: rwPrimFiniteMaxBound: Finite 0 is uninhabited."
             transExp $ finite finMax $ finMax - 1
       (M.ToFinite, [arg]) -> do
-            finMax <- maybe (failAt an' "transExp: rwPrimToFinite: invalid type.") pure
-                        $ t' >>= M.finMax
-            sz     <- sizeOf' an t'
-            nBits  <- maybe (failAt an' "transExp: rwPrimToFinite: invalid Vec argument.") pure
-                        $ M.typeOf arg >>= M.vecSize
+            finMax <- checkFinTypeMax "rwPrimToFinite" t'
+            sz     <- sizeOf' "rwPrimToFinite" an t'
+            argTy  <- maybe (failAt an' "transExp: rwPrimToFinite: invalid argument type.") pure
+                        $ M.typeOf arg
+            nBits  <- checkVecArgSize "rwPrimToFinite" (Just argTy)
             unless (2 ^ nBits <= (fromIntegral finMax :: Integer))
                   $ failAt (ann arg) ("transExp: rwPrimToFinite: bitvector argument (size " <> showt nBits <> ") is not representable in Finite " <> showt finMax <> ".")
             resize an sz arg
       (M.ToFiniteMod, [arg]) -> do
-            finMax   <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid type.") pure
-                        $ t' >>= M.finMax
-            sz       <- sizeOf' an t'
-            argTy    <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid argument.") pure
+            finMax   <- checkFinTypeMax "rwPrimToFiniteMod" t'
+            sz       <- sizeOf' "rwPrimToFiniteMod" an t'
+            argTy    <- maybe (failAt an' $ "transExp: rwPrimToFiniteMod: invalid argument type."
+                                          <> " " <> showt (unAnn (M.typeOf arg))) pure
                         $ M.typeOf arg
-            nBits    <- maybe (failAt an' "transExp: rwPrimToFiniteMod: invalid Vec argument.") pure
-                        $ M.vecSize argTy
-
+            nBits    <- checkVecArgSize "rwPrimToFiniteMod" (Just argTy)
             finMaxTy <- maybe (failAt an' "transExp: rwPrimToFiniteMod: typeof lit finMax?") pure
                      $ M.typeOf $ lit finMax
-            finMaxSz <- sizeOf an finMaxTy
-
+            finMaxSz <- sizeOf "rwPrimToFiniteMod" an finMaxTy
             if 2 ^ nBits <= (fromIntegral finMax :: Integer) then resize an sz arg
             else resize an sz $ modW argTy (fromIntegral nBits) finMaxTy finMaxSz arg $ lit finMax
       (M.FromFinite, [arg]) -> do
-            finMax <- maybe (failAt an' "transExp: rwPrimFromFinite: invalid argument type.") pure
-                        $ M.typeOf arg >>= M.finMax
-            nBits  <- maybe (failAt an' "transExp: rwPrimFromFinite: invalid result Vec type.") pure
-                        $ t' >>= M.vecSize
+            finMax <- checkFinTypeMax "rwPrimFromFinite" (M.typeOf arg)
+            nBits  <- checkVecArgSize "rwPrimFromFinite" t'
             unless ((fromIntegral finMax :: Integer) <= 2 ^ nBits)
                   $ failAt (ann arg) ("transExp: rwPrimFromFinite: Finite " <> showt finMax <> " is not representable in bitvector of size " <> showt nBits <> ".")
             resize an (fromIntegral nBits) arg
       (toPrim -> Just p, args) -> do
-            sz       <- sizeOf' an t'
+            sz       <- sizeOf' (showt p) an t'
             args'    <- mapM transExp args
             let argSizes = map C.sizeOf args'
             pure $ C.Call an sz (C.Prim p) (C.cat args') (map (C.PatVar an) argSizes) C.nil
       (M.Extern, M.LitList _ _ _ ps : M.LitStr _ _ clk : M.LitList _ _ _ as : M.LitList _ _ _ rs : M.LitStr _ _ s : a : M.LitStr _ _ inst : args)
             | (arity <$> M.typeOf a) == Just (length args) -> do
-            sz       <- sizeOf' an t'
+            sz       <- sizeOf' "rwPrimExtern" an t'
             args'    <- mapM transExp args
             let argSizes = map C.sizeOf args'
             pure $ C.Call an sz (C.Extern (externSig an argSizes sz clk (ps, as, rs)) s inst) (C.cat args') (map (C.PatVar an) argSizes) C.nil
-      (M.Extern,  _) -> failAt an "transExp: encountered not-fully-applied extern (after inlining)."
-      (b, _)         -> failAt an ("transExp: encountered unsupported builtin use: rwPrim" <> showt b <> ".")
+      (M.Extern,  _) -> failAt an "toCore: transExp: encountered not-fully-applied extern (after inlining)."
+      (b, _)         -> failAt an ("toCore: transExp: encountered unsupported builtin use: rwPrim" <> showt b <> ".")
 
       where -- | If i is negative, it represents an offset from the end, where '-1' is the offset for the last element.
             subElems :: (Fresh m, MonadError AstError m, MonadState SizeMap m) => Annote -> M.Exp -> Integer -> Natural -> TCM m C.Exp
             subElems an arg i nElems = do
                   tyElem <- maybe (failAt (ann arg) "ToCore: subElems: non-vector type argument to built-in vector function") pure
                           $ M.typeOf arg >>= M.vecElemTy
-                  szElem <- fromIntegral <$> sizeOf an tyElem
+                  szElem <- fromIntegral <$> sizeOf "subElems" an tyElem
                   arg'   <- transExp arg
 
                   let sz, off, n, rem :: Natural
@@ -335,36 +318,36 @@ transBuiltin an' t' an = \ case
             vecIndex v i = do
                   tyVec <- maybe (failAt an "ToCore: rwPrimIndex: invalid vector argument.") pure
                           $ M.typeOf v
-                  szVec <- sizeOf an tyVec
+                  szVec <- sizeOf "rwPrimIndex" an tyVec
 
                   n <- maybe (failAt an "ToCore: rwPrimIndex: invalid Vec argument.") pure
                         $ M.vecSize tyVec
 
                   tyElem <- maybe (failAt an "ToCore: rwPrimIndex: non-vector type argument to built-in vector function.") pure
                           $ M.vecElemTy tyVec
-                  szElem <- sizeOf an tyElem
+                  szElem <- sizeOf "rwPrimIndex" an tyElem
 
                   tyIdx <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument.") pure
                           $ M.typeOf i
-                  szIdx <- sizeOf an tyIdx
+                  szIdx <- sizeOf "rwPrimIndex" an tyIdx
 
                   let tyLit = M.intTy an
-                  szLit <- sizeOf an tyLit
+                  szLit <- sizeOf "rwPrimIndex" an tyLit
 
                   let sub1 = sub tyLit szLit tyIdx szIdx (lit n) i
                   tySub1 <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument (in sub1).") pure
                           $ M.typeOf sub1
-                  szSub1 <- sizeOf an tySub1
+                  szSub1 <- sizeOf "rwPrimIndex" an tySub1
 
                   let sub2 = sub tySub1 szSub1 tyLit szLit sub1 $ lit (1::Int)
                   tySub2 <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument (in sub2).") pure
                           $ M.typeOf sub2
-                  szSub2 <- sizeOf an tySub2
+                  szSub2 <- sizeOf "rwPrimIndex" an tySub2
 
                   let mul1 = mul tySub2 szSub2 tyLit szLit sub2 $ lit szElem
                   tyMul1 <- maybe (failAt an "ToCore: rwPrimIndex: invalid index argument (in mul1).") pure
                           $ M.typeOf mul1
-                  szMul1 <- sizeOf an tyMul1
+                  szMul1 <- sizeOf "rwPrimIndex" an tyMul1
 
                   let rshift' = rshift tyVec szVec tyMul1 szMul1
 
@@ -403,6 +386,22 @@ transBuiltin an' t' an = \ case
                   arg' <- transExp arg
                   pure $ C.Call an sz (C.Prim C.Resize) arg' [C.PatVar an $ C.sizeOf arg'] C.nil
 
+            checkProxyArg :: (MonadError AstError m) => Text -> M.Exp -> TCM m Integer
+            checkProxyArg t p = maybe (failAt an' $ "transExp: " <> t <> ": invalid Proxy argument.  " <> showt (unAnn p) <> " : " <> showt (unAnn (M.typeOf p))) (pure . fromIntegral)
+                        $ M.typeOf p >>= M.proxyNat
+
+            checkVecArgSize :: (MonadError AstError m) => Text -> Maybe M.Ty -> TCM m Natural
+            checkVecArgSize s t = maybe (failAt an' $ "transExp: " <> s <> ": invalid Vec Size argument: " <> showt (unAnn t)) pure
+                        $ t >>= M.vecSize
+
+            checkVecArgType :: (MonadError AstError m) => Text -> Maybe M.Ty -> TCM m M.Ty
+            checkVecArgType s t = maybe (failAt an' $ "transExp: " <> s <> ": invalid Vec Type argument: " <> showt (unAnn t)) pure
+                        $ t >>= M.vecElemTy
+
+            checkFinTypeMax :: (MonadError AstError m) => Text -> Maybe M.Ty -> TCM m Natural
+            checkFinTypeMax s t = maybe (failAt an' $ "transExp: " <> s <> ": invalid Finite Type: "  <> showt (unAnn t)) pure
+                        $ t >>= M.finMax
+
 transExp :: (MonadError AstError m, Fresh m, MonadState SizeMap m) => M.Exp -> TCM m C.Exp
 transExp e = case e of
       M.App an _ _ _ _                    -> case M.flattenApp e of
@@ -410,7 +409,7 @@ transExp e = case e of
             e'                        : _ | Just t' <- M.typeOf e'
                                           , not $ M.concrete t'            -> failAt an $ "transExp: could not infer a concrete type in an application. Inferred type: " <> prettyPrint (M.typeOf e')
             M.Var _ _ _ x             : args                               -> do
-                  sz       <- sizeOf' an $ M.typeOf e
+                  sz       <- sizeOf' ("Applied Var " <> n2s x) an $ M.typeOf e
                   args'    <- mapM transExp args
                   let argSizes = map C.sizeOf args'
                   pure $ C.Call an sz (C.Global $ showt x) (C.cat args') (map (C.PatVar an) argSizes) C.nil
@@ -424,19 +423,19 @@ transExp e = case e of
       M.Builtin an _ _ b                  -> transBuiltin (ann e) (M.typeOf e) an (b, [])
       M.Var an _ t x                      -> lift (asks $ Map.lookup x) >>= \ case
             Nothing -> do
-                  sz <- sizeOf' an t
+                  sz <- sizeOf' ("Var " <> n2s x) an t
                   pure $ C.Call an sz (C.Global $ showt x) C.nil [] C.nil
             Just i  -> do
-                  sz <- sizeOf' an t
+                  sz <- sizeOf' ("Var " <> n2s x) an t
                   pure $ C.LVar an sz i
       M.Con an _ t d                      -> do
             (v, w)     <- ctorTag an t d
             (tag, pad) <- ctorRep an t (v, w) 0
             pure $ C.cat [C.Lit an tag, C.Lit an pad]
-      M.Match an _ t e ps f (Just e2)     -> C.Call an <$> sizeOf' an t <*> (callTarget =<< transExp f) <*> transExp e <*> transPat ps <*> transExp e2
-      M.Match an _ t e ps f Nothing       -> C.Call an <$> sizeOf' an t <*> (callTarget =<< transExp f) <*> transExp e <*> transPat ps <*> pure C.nil
+      M.Match an _ t e ps f (Just e2)     -> C.Call an <$> sizeOf' "Match Just" an t <*> (callTarget =<< transExp f) <*> transExp e <*> transPat ps <*> transExp e2
+      M.Match an _ t e ps f Nothing       -> C.Call an <$> sizeOf' "Match Nothing" an t <*> (callTarget =<< transExp f) <*> transExp e <*> transPat ps <*> pure C.nil
       M.LitInt an _ n                     -> do
-            sz <- sizeOf' an $ M.typeOf e
+            sz <- sizeOf' "LitInt" an $ M.typeOf e
             pure $ C.Lit an $ bitVec (fromIntegral sz) n
       M.LitVec _ _ _ es                   -> C.cat <$> mapM transExp es
       _                                   -> failAt (ann e) $ "ToCore: unsupported expression: " <> prettyPrint e
@@ -449,7 +448,7 @@ transExp e = case e of
             ctorRep :: (Fresh m, MonadReader ConMap m, MonadState SizeMap m, MonadError AstError m) => Annote -> Maybe M.Ty -> (C.Value, C.Size) -> C.Size -> m (BV, BV)
             ctorRep an Nothing _ _ = failAt an "ToCore: ctorRep: encountered untyped constructor (rwc bug)."
             ctorRep an (Just t) (v, w) szArgs = do
-                  sz <- sizeOf an t
+                  sz <- sizeOf "ctorRep" an t
                   if | w + szArgs <= sz -> pure (bitVec (fromIntegral w) v, zeros $ fromIntegral sz - fromIntegral w - fromIntegral szArgs)
                      | otherwise        -> failAt an $ "ToCore: failing to calculate the bitvector representation of a constructor of type (sz: "
                                                     <> showt sz <> " w: " <> showt w <> " szArgs: " <> showt szArgs <> "):\n" <> prettyPrint t
@@ -458,16 +457,16 @@ transPat :: (MonadError AstError m, Fresh m, MonadState SizeMap m, MonadReader C
 transPat = \ case
       M.MatchPatCon an _ t d ps -> do
             (v, w) <- ctorTag an t d
-            sz     <- sizeOf' an t
-            szArgs <- sum <$> mapM (sizeOf' an . M.typeOf) ps
+            sz     <- sizeOf' ("MatchPatCon " <> n2s d) an t
+            szArgs <- sum <$> mapM (sizeOf' "MatchPatCon args" an . M.typeOf) ps
             let tag = C.PatLit an (bitVec (fromIntegral w) v)
                 pad = C.PatWildCard an (sz - w - szArgs) -- or lit 0 bits?
             ([tag, pad] <>) <$> (concat <$> mapM transPat ps)
-      M.MatchPatVar an _ t      -> pure <$> (C.PatVar an <$> sizeOf' an t)
-      M.MatchPatWildCard an _ t -> pure <$> (C.PatWildCard an <$> sizeOf' an t)
+      M.MatchPatVar an _ t      -> pure <$> C.PatVar an <$> sizeOf' "MatchPatVar" an t
+      M.MatchPatWildCard an _ t -> pure <$> C.PatWildCard an <$> sizeOf' "MatchPatWildCard" an t
 
 transType :: (Fresh m, MonadError AstError m, MonadState SizeMap m) => M.Ty -> ReaderT ConMap m C.Sig
-transType t = C.Sig (ann t) <$> mapM (sizeOf $ ann t) (M.paramTys t) <*> sizeOf (ann t) (M.rangeTy t)
+transType t = C.Sig (ann t) <$> mapM (sizeOf "transType Param" $ ann t) (M.paramTys t) <*> sizeOf "transType Range" (ann t) (M.rangeTy t)
 
 matchTy :: MonadError AstError m => Annote -> M.Ty -> M.Ty -> m TySub
 matchTy an (M.TyApp _ t1 t2) (M.TyApp _ t1' t2') = do
@@ -496,7 +495,7 @@ ctorWidth t d = do
             Just ct -> do
                   let (targs, tres) = M.flattenArrow ct
                   s                <- matchTy (ann t') tres t'
-                  sum <$> mapM (sizeOf (ann t) . apply s) targs
+                  sum <$> mapM (sizeOf "ctorWidth" (ann t) . apply s) targs
             _ -> pure 0
       where apply :: TySub -> M.Ty -> M.Ty
             apply s = \ case
@@ -522,27 +521,29 @@ ctorTag an (Just t) d = case M.flattenTyApp t of
                   Nothing  -> failAt an $ "ToCore: ctorTag: unknown ctor: " <> prettyPrint (n2s d) <> " of type " <> prettyPrint (n2s c)
       _               -> failAt an $ "ToCore: ctorTag: unexpected type: " <> prettyPrint t
 
-sizeOf' :: (Fresh m, MonadError AstError m, MonadReader ConMap m, MonadState SizeMap m) => Annote -> Maybe M.Ty -> m C.Size
-sizeOf' an = \ case
+sizeOf' :: (Fresh m, MonadError AstError m, MonadReader ConMap m, MonadState SizeMap m) => Text -> Annote -> Maybe M.Ty -> m C.Size
+sizeOf' s an = \ case
       Nothing -> failAt an "ToCore: encountered an untyped expression (rwc bug)."
-      Just t  -> sizeOf an t
+      Just t  -> sizeOf s an t
 
-sizeOf :: (Fresh m, MonadError AstError m, MonadReader ConMap m, MonadState SizeMap m) => Annote -> M.Ty -> m C.Size
-sizeOf an t = do
+sizeOf :: (Fresh m, MonadError AstError m, MonadReader ConMap m, MonadState SizeMap m) => Text -> Annote -> M.Ty -> m C.Size
+sizeOf s an t = do
       m <- get
       s <- case Map.lookup t m of
             Nothing -> case M.flattenTyApp t of
-                  M.TyCon _ (n2s -> "Vec") : [M.evalNat -> Just n, t] -> (fromIntegral n *) <$> sizeOf an t
-                  M.TyCon _ (n2s -> "Vec") : _                        -> failAt an $ "ToCore: sizeOf: can't determine the size of a Vec."
+                  M.TyCon _ (n2s -> "Vec") : [M.evalNat -> Just n, t] -> (fromIntegral n *) <$> sizeOf s an t
+                  M.TyCon _ (n2s -> "Vec") : [n,t]                    -> failAt an $ "ToCore: " <> s <> ": sizeOf: can't determine the size of a Vec."
+                                                                                  <> " (Vec " <> showt (unAnn n) <> " " <> showt (unAnn t) <> ")"
                   M.TyCon _ (n2s -> "Finite") : [M.evalNat -> Just n] -> pure $ ceilLog2 $ fromIntegral n
-                  M.TyCon _ (n2s -> "Finite") : _                     -> failAt an $ "ToCore: sizeOf: can't determine the size of a Finite."
+                  M.TyCon _ (n2s -> "Finite") : [n]                     -> failAt an $ "ToCore: " <> s <> ": sizeOf: can't determine the size of a Finite."
+                                                                                  <> " (Finite " <> showt (unAnn n) <> ")"
                   M.TyCon _ c              : _                        -> do
                         ctors      <- getCtors c
                         ctorWidths <- mapM (ctorWidth t) ctors
                         pure $ ceilLog2 (genericLength ctors) + maximum (0 : ctorWidths)
-                  M.TyApp {}               : _                        -> failAt an $ "ToCore: sizeOf: got TyApp after flattening (rwc bug): " <> prettyPrint t
+                  M.TyApp {}               : _                        -> failAt an $ "ToCore: " <> s <> ": sizeOf: got TyApp after flattening (rwc bug): " <> prettyPrint t
                   M.TyVar {}               : _                        -> pure 0 -- TODO(chathhorn): shouldn't need this.
-                  _                                                   -> failAt an $ "ToCore: sizeOf: couldn't calculate the size of a type: " <> prettyPrint t
+                  _                                                   -> failAt an $ "ToCore: sizeOf: " <> s <> ": couldn't calculate the size of a type: " <> prettyPrint t
             Just s -> pure s
       put $ Map.insert t s m
       pure s
