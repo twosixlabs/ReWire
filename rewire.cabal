@@ -37,6 +37,7 @@ data-files:
     tests/regression/Mods/C/X.hs
     tests/regression/case1.hs
     tests/regression/case2.hs
+    tests/regression/dependencyGraph.hs
     tests/regression/dissex.hs
     tests/regression/exp2.hs
     tests/regression/extern.hs
@@ -44,20 +45,27 @@ data-files:
     tests/regression/fibo2.hs
     tests/regression/fibo3.hs
     tests/regression/Finite.hs
+    tests/regression/finite2.hs
     tests/regression/fully.hs
     tests/regression/funcase.hs
     tests/regression/guards.hs
     tests/regression/HigherOrderBug.hs
     tests/regression/Infix.hs
+    tests/regression/iter.hs
+    tests/regression/iterSt.hs
     tests/regression/ModsMain.hs
     tests/regression/onestate.hs
     tests/regression/PackUnpack.hs
     tests/regression/pats.hs
+    tests/regression/pats2.hs
     tests/regression/PreludeTest.hs
     tests/regression/putBug.hs
+    tests/regression/react.hs
     tests/regression/records.hs
     tests/regression/sigNothing.hs
+    tests/regression/state.hs
     tests/regression/state0.hs
+    tests/regression/stateTower.hs
     tests/regression/synonym.hs
     tests/regression/test2.hs
     tests/regression/test3.hs
@@ -66,7 +74,16 @@ data-files:
     tests/regression/uniquification.hs
     tests/regression/UpCounter1.hs
     tests/regression/UpCounter2.hs
+    tests/regression/vectorAppend.hs
+    tests/regression/vectorCons.hs
+    tests/regression/vectorIndexProxy.hs
+    tests/regression/vectorPack.hs
     tests/regression/weird1.hs
+    tests/regression/wordArith.hs
+    tests/regression/wordBitwise.hs
+    tests/regression/wordLit.hs
+    tests/regression/wordShift.hs
+    tests/regression/wordSlice.hs
     rewire-user/src/ReWire.hs
     rewire-user/src/RWC/Primitives.hs
     rewire-user/src/ReWire/Bits.hs

@@ -6,22 +6,22 @@ type BitX = Bit
 -- type BitY = BitX
 
 foo :: (BitX, BitX) -> (BitX, BitX) -> (BitX, BitX)
-foo a@(C, C)   b@(C, x)   = (\(C, C) c@(C, y@_) -> (x, y)) a b
-foo a@(S, b@S) _          = (\a@(S, S) _ -> a) a a
+foo a@(False, False)   b@(False, x)   = (\(False, False) c@(False, y@_) -> (x, y)) a b
+foo a@(True, b@True) _          = (\a@(True, True) _ -> a) a a
 foo _          a@(_, b@_) = (b, b)
 
 baz :: BitX -> Bit
 baz b = f c
-      where f S = C
-            f C = S
-            c   = S
+      where f True = False
+            f False = True
+            c   = True
 
 toBitX :: Bit -> BitX
 toBitX = id
 
-start :: ReT BitX BitX I ()
+start :: ReacT BitX BitX Identity ()
 start = do
-  signal $ notb $ baz $ toBitX C
+  signal $ not $ baz $ toBitX False
   start
 
 main = undefined
