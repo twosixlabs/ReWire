@@ -1,0 +1,12 @@
+
+session ReWire = "HOL-Library" +
+  sessions
+    "Word_Lib"
+    "Jordan_Normal_Form"
+  theories
+    "Monads"
+    "Comonads"
+    "MonadSyntax"
+    "Rewire"
+    "Atmo"
+    "Streams"

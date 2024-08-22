@@ -51,6 +51,7 @@ dependencies:
 - lens ^>= 5.2
 - rewire-user ^>= 0.1
 - text ^>= 2.0
+- rewire-embedder
 
 library:
   source-dirs: src
@@ -60,6 +61,12 @@ library:
 executables:
   rwc:
     source-dirs: apps/rwc
+    main: Main.hs
+    dependencies:
+    - rewire
+
+  rwe:
+    source-dirs: apps/rwe
     main: Main.hs
     dependencies:
     - rewire
@@ -82,3 +89,17 @@ tests:
     - filepath ^>= 1.4
     - test-framework ^>= 0.8
     - test-framework-hunit ^>= 0.3.0.2
+
+  rwe-test:
+    source-dirs: apps/rwe-test
+    main: Main.hs
+    dependencies:
+    - rewire
+    - HUnit ^>= 1.6
+    - directory ^>= 1.3
+    - process ^>= 1.6
+    - filepath ^>= 1.4
+    - test-framework ^>= 0.8
+    - test-framework-hunit ^>= 0.3.0.2
+    - tasty ^>= 1.4
+    - tasty-hunit ^>= 0.10

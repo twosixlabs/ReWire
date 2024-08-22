@@ -1,0 +1,20 @@
+
+session ReWire_Tests = "HOL-Library" +
+  sessions
+    "Word_Lib"
+    "Jordan_Normal_Form"
+    "ReWire"
+  theories
+    "iter_2"
+    "iterSt_2"
+    "react_2"
+    "state_2"
+    "stateTower_2"
+    "wordArith_2"
+    "wordComp_2"
+    "wordLit_2"
+    "wordLOps_2"
+    "wordROps_2"
+    "wordShift_2"
+    "wordSlice_2"
+
