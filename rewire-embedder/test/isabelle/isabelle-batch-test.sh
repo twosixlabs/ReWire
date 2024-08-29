@@ -53,7 +53,7 @@ fi
 # Typecheck the batch of .thy files using Isabelle
 
 echo " - Isabelle: Building ReWire_Testing session with files ${@:1}"
-isabelle build -d ./thys/testing ReWire_Testing
+isabelle build -c -d ./thys/testing ReWire_Testing
 
 
 # Save the resulting .thy files in ./thys/cases
