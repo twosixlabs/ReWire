@@ -101,10 +101,10 @@ transDefn conf start conMap = \ case
                   M.TyApp _ (M.TyCon _ (n2s -> "Finite")) _             -> [t]
                   _                                                     -> M.flattenTyApp t
 
-externSig :: Annote -> [C.Size] -> C.Size -> Text -> ([M.Exp], [M.Exp], [M.Exp]) -> C.ExternSig
-externSig an args res clk = \ case
-      (params -> Just ps, params -> Just as, params -> Just rs) -> C.ExternSig an ps clk (if null as then args' else as) (if null rs then res' else rs)
-      _                                                         -> C.ExternSig an [] clk args' res'
+externSig :: Annote -> [C.Size] -> C.Size -> Text -> Text -> ([M.Exp], [M.Exp], [M.Exp]) -> C.ExternSig
+externSig an args res clk rst = \ case
+      (params -> Just ps, params -> Just as, params -> Just rs) -> C.ExternSig an ps clk rst (if null as then args' else as) (if null rs then res' else rs)
+      _                                                         -> C.ExternSig an [] clk rst args' res'
       where params :: [M.Exp] -> Maybe [(Text, C.Size)]
             params = mapM $ \ case
                   M.App _ _ _ (M.App _ _ _ (M.Con _ _ _ (n2s -> "(,)")) (M.LitStr _ _ p)) (M.LitInt _ _ v)
@@ -238,12 +238,12 @@ transBuiltin an' t' an = \ case
             args'    <- mapM transExp args
             let argSizes = map C.sizeOf args'
             pure $ C.Call an sz (C.Prim p) (C.cat args') (map (C.PatVar an) argSizes) C.nil
-      (M.Extern, M.LitList _ _ _ ps : M.LitStr _ _ clk : M.LitList _ _ _ as : M.LitList _ _ _ rs : M.LitStr _ _ s : a : M.LitStr _ _ inst : args)
+      (M.Extern, M.LitList _ _ _ ps : M.LitStr _ _ clk : M.LitStr _ _ rst : M.LitList _ _ _ as : M.LitList _ _ _ rs : M.LitStr _ _ s : a : M.LitStr _ _ inst : args)
             | (arity <$> M.typeOf a) == Just (length args) -> do
             sz       <- sizeOf' "rwPrimExtern" an t'
             args'    <- mapM transExp args
             let argSizes = map C.sizeOf args'
-            pure $ C.Call an sz (C.Extern (externSig an argSizes sz clk (ps, as, rs)) s inst) (C.cat args') (map (C.PatVar an) argSizes) C.nil
+            pure $ C.Call an sz (C.Extern (externSig an argSizes sz clk rst (ps, as, rs)) s inst) (C.cat args') (map (C.PatVar an) argSizes) C.nil
       (M.Extern,  _) -> failAt an "toCore: transExp: encountered not-fully-applied extern (after inlining)."
       (b, _)         -> failAt an ("toCore: transExp: encountered unsupported builtin use: rwPrim" <> showt b <> ".")
 

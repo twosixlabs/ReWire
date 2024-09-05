@@ -137,7 +137,7 @@ extern = Extern externSig <$> name <*> pure ""
 
 -- | TODO(chathhorn)
 externSig :: ExternSig
-externSig = ExternSig noAnn [] "" [] []
+externSig = ExternSig noAnn [] "" "" [] []
 
 ---
 

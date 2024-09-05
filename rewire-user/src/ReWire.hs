@@ -24,6 +24,7 @@ error = rwPrimError
 {-# INLINE externWithSig #-}
 externWithSig :: [(String, Integer)] -- ^ Module parameters (name and integer literal value).
               -> String              -- ^ Clock signal name or empty for no clock.
+              -> String              -- ^ Reset signal name or empty for no reset.
               -> [(String, Integer)] -- ^ Module inputs (name and integer literal bitwidth).
               -> [(String, Integer)] -- ^ Module outputs (name and integer literal bitwidth).
               -> String              -- ^ Module name.
@@ -35,7 +36,7 @@ externWithSig = rwPrimExtern
 -- | The String argument must be a string literal (after inlining).
 {-# INLINE extern #-}
 extern :: String -> a -> a
-extern n a = externWithSig [] "" [] [] n a ""
+extern n a = externWithSig [] "" "" [] [] n a ""
 
 {-# INLINE setRef #-}
 setRef :: Ref a -> a -> b -> b

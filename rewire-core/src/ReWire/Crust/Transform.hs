@@ -121,7 +121,7 @@ neuterExterns = transform $ \ case
       e                               -> e
       where isExtern :: Exp -> Bool
             isExtern e = case flattenApp e of
-                  [Builtin _ _ _ Extern, _ , _, _, _, _] -> True
+                  [Builtin _ _ _ Extern, _, _, _, _, _, _] -> True
                   _                                      -> False
 
 -- | Shifts vars bound by top-level lambdas into defs.

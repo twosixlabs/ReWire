@@ -130,13 +130,14 @@ rwPrimError = GHC.error
 -- | The String and list arguments must be literals (after inlining).
 rwPrimExtern :: [(String, Integer)] -- ^ Module parameters (name and integer literal value).
              -> String              -- ^ Clock signal name or empty for no clock.
+             -> String              -- ^ Reset signal name or empty for no reset.
              -> [(String, Integer)] -- ^ Module inputs (name and integer literal bitwidth).
              -> [(String, Integer)] -- ^ Module outputs (name and integer literal bitwidth).
              -> String              -- ^ Module name.
              -> a                   -- ^ Haskell definition to use when interpreting.
              -> String              -- ^ Instance name to use in generated Verilog.
              -> a
-rwPrimExtern _ _ _ _ _ f _ = f
+rwPrimExtern _ _ _ _ _ _ f _ = f
 
 rwPrimSetRef :: Ref a -> a -> b -> b
 rwPrimSetRef _ _ b = b

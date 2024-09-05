@@ -100,21 +100,21 @@ ppBV = \ case
       vs  -> braced $ pretty <$> vs
 ---
 
-data ExternSig = ExternSig Annote ![(Text, Size)] !Text ![(Text, Size)] ![(Text, Size)]
-        -- ^ Names and sizes of params, clock signal, inputs, and outputs, respectively.
+data ExternSig = ExternSig Annote ![(Text, Size)] !Text !Text ![(Text, Size)] ![(Text, Size)]
+        -- ^ Names and sizes of params, clock signal, reset signal, inputs, and outputs, respectively.
         deriving (Eq, Ord, Generic, Show, Typeable, Data)
         deriving TextShow via FromGeneric ExternSig
 
 instance Hashable ExternSig
 
 instance Annotated ExternSig where
-      ann (ExternSig a _ _ _ _) = a
+      ann (ExternSig a _ _ _ _ _) = a
 
 instance SizeAnnotated ExternSig where
-      sizeOf (ExternSig _ _ _ _ rs) = sum (snd <$> rs)
+      sizeOf (ExternSig _ _ _ _ _ rs) = sum (snd <$> rs)
 
 instance Pretty ExternSig where
-      pretty (ExternSig _ _ _ args res) = hsep $ punctuate (text " ->") $ map (ppBVTy . snd) args <> [parens $ hsep $ punctuate comma $ map (ppBVTy . snd) res]
+      pretty (ExternSig _ _ _ _ args res) = hsep $ punctuate (text " ->") $ map (ppBVTy . snd) args <> [parens $ hsep $ punctuate comma $ map (ppBVTy . snd) res]
 
 ---
 

@@ -77,7 +77,7 @@ mkSig :: [Pat] -> Size -> Sig
 mkSig ps sz = Sig noAnn (sizeOf <$> filter isVar ps) sz
 
 toSig :: ExternSig -> Sig
-toSig (ExternSig an _ _ is os) = Sig an (snd <$> is) $ sum $ snd <$> os
+toSig (ExternSig an _ _ _ is os) = Sig an (snd <$> is) $ sum $ snd <$> os
 
 primCompat :: Sig -> Prim -> Bool
 primCompat (Sig _ args res) p = case (p, args) of
