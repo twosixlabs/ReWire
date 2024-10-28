@@ -3,7 +3,7 @@ version:      2.5.1
 synopsis:     A Haskell-to-Verilog/VHDL compiler
 description:  A compiler for a subset of Haskell to Verilog and VHDL.
 homepage:     https://github.com/mu-chaco/ReWire
-license:      NONE
+license:      BSD3
 license-file: LICENSE
 category:     Language
 build-type:   Simple
