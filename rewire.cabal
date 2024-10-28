@@ -1,6 +1,6 @@
-cabal-version: 2.2
+cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -17,7 +17,7 @@ author:         Adam Procter,
                 William L. Harrison,
                 Matthew Heimerdinger
 maintainer:     Chris Hathhorn <hathhorn@gmail.com>
-license:        NONE
+license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -135,8 +135,6 @@ library
       RWE
   other-modules:
       Paths_rewire
-  autogen-modules:
-      Paths_rewire
   hs-source-dirs:
       src
   default-extensions:
@@ -159,8 +157,6 @@ library
 executable firrtl
   main-is: Main.hs
   other-modules:
-      Paths_rewire
-  autogen-modules:
       Paths_rewire
   hs-source-dirs:
       apps/firrtl
@@ -185,8 +181,6 @@ executable rwc
   main-is: Main.hs
   other-modules:
       Paths_rewire
-  autogen-modules:
-      Paths_rewire
   hs-source-dirs:
       apps/rwc
   default-extensions:
@@ -209,8 +203,6 @@ executable rwc
 executable rwe
   main-is: Main.hs
   other-modules:
-      Paths_rewire
-  autogen-modules:
       Paths_rewire
   hs-source-dirs:
       apps/rwe
@@ -235,8 +227,6 @@ test-suite rwc-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Paths_rewire
-  autogen-modules:
       Paths_rewire
   hs-source-dirs:
       apps/rwc-test
@@ -265,8 +255,6 @@ test-suite rwe-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Paths_rewire
-  autogen-modules:
       Paths_rewire
   hs-source-dirs:
       apps/rwe-test
