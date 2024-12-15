@@ -60,6 +60,7 @@ data-files:
     tests/regression/pats2.hs
     tests/regression/PreludeTest.hs
     tests/regression/putBug.hs
+    tests/regression/pvartype.hs
     tests/regression/react.hs
     tests/regression/records.hs
     tests/regression/sigNothing.hs

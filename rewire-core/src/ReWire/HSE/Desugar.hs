@@ -382,16 +382,16 @@ desugarTuples = mempty
 desugarFuns :: (MonadState Fresh m, MonadError AstError m) => Desugar m
 desugarFuns = mempty
       { dsModule = TM $ \ case
-            Module man hd prags imps ds -> Module man hd prags imps <$> mapM (desugarFun $ tySigMap ds) ds
+            Module man hd prags imps ds -> Module man hd prags imps <$> mapM desugarFun ds
             m                           -> pure m
       , dsBinds = TM $ \ case
-            BDecls ban ds               -> BDecls ban <$> mapM (desugarFun $ tySigMap ds) ds
+            BDecls ban ds               -> BDecls ban <$> mapM desugarFun ds
             b                           -> pure b
       }
-      where desugarFun :: (MonadState Fresh m, MonadError AstError m) => [(Name Annote, Type Annote)] -> Decl Annote -> m (Decl Annote)
-            desugarFun ts = \ case
+      where desugarFun :: (MonadState Fresh m, MonadError AstError m) => Decl Annote -> m (Decl Annote)
+            desugarFun = \ case
                   FunBind l ms@(Match l' name pats _ _:_)  -> do
-                        alts <- mapM (toAlt ts) ms
+                        alts <- mapM toAlt ms
                         e    <- buildLambda l alts $ length pats
                         pure $ PatBind l (PVar l' name) (UnGuardedRhs l e) Nothing
                   -- Turn guards on PatBind into guards on case (of unit) alts.
@@ -409,11 +409,11 @@ desugarFuns = mempty
                         -- NOTE: can't type-annotate params without expanding type synonyms.
                         pure $ Lambda l (PVar l <$> xs) $ Case l (Tuple l Boxed (map (Var l . UnQual l) xs)) alts
 
-            toAlt :: (MonadState Fresh m, MonadError AstError m) => [(Name Annote, Type Annote)] -> Match Annote -> m (Alt Annote)
-            toAlt ts = \ case
+            toAlt :: (MonadState Fresh m, MonadError AstError m) => Match Annote -> m (Alt Annote)
+            toAlt = \ case
                   -- NOTE: can't type-annotate params without expanding type synonyms.
-                  Match l' _ [p] rhs binds -> pure $ Alt l' (annotatePVars ts p) rhs binds
-                  Match l' _ ps  rhs binds -> pure $ Alt l' (PTuple l' Boxed $ map (annotatePVars ts) ps) rhs binds
+                  Match l' _ [p] rhs binds -> pure $ Alt l' p rhs binds
+                  Match l' _ ps  rhs binds -> pure $ Alt l' (PTuple l' Boxed ps) rhs binds
                   m                        -> failAt (ann m) $ "Unsupported decl syntax: " <> pack (show $ void m)
 
 -- | Turns
@@ -554,28 +554,16 @@ desugarTyFuns = mempty { dsType = T $ \ case
 -- > case e1 of { p -> (case e2 of { q -> e3 } }
 desugarLets :: (MonadState Fresh m, MonadError AstError m) => Desugar m
 desugarLets = mempty { dsExp = TM $ \ case
-      Let _ (BDecls _ ds) e -> foldrM (transLet $ tySigMap ds) e $ filter isPatBind ds
+      Let _ (BDecls _ ds) e -> foldrM transLet e $ filter isPatBind ds
       n@Let{}               -> failAt (ann n) "Unsupported let syntax"
       e                     -> pure e}
-      where transLet :: (MonadState Fresh m, MonadError AstError m) => [(Name Annote, Type Annote)] -> Decl Annote -> Exp Annote -> m (Exp Annote)
-            transLet ts (PatBind l p (UnGuardedRhs l' e1) Nothing) inner = pure $ Case l e1 [Alt l (annotatePVars ts p) (UnGuardedRhs l' inner) Nothing]
-            transLet _ n _                                               = failAt (ann n) "Unsupported syntax in a let binding"
+      where transLet :: (MonadState Fresh m, MonadError AstError m) => Decl Annote -> Exp Annote -> m (Exp Annote)
+            transLet (PatBind l p (UnGuardedRhs l' e1) Nothing) inner = pure $ Case l e1 [Alt l p (UnGuardedRhs l' inner) Nothing]
+            transLet n _                                              = failAt (ann n) "Unsupported syntax in a let binding"
 
             isPatBind :: Decl Annote -> Bool
             isPatBind PatBind {} = True
             isPatBind _          = False
-
-tySigMap :: [Decl Annote] -> [(Name Annote, Type Annote)]
-tySigMap = concatMap tySig
-      where tySig :: Decl Annote -> [(Name Annote, Type Annote)]
-            tySig = \ case
-                  TypeSig _ ns t -> (,t) <$> ns
-                  _              -> []
-
-annotatePVars :: [(Name Annote, Type Annote)] -> Pat Annote -> Pat Annote
-annotatePVars ts = transform $ \ case
-      PVar an n | Just t <- lookup n ts -> PatTypeSig an (PVar an n) t
-      n                                 -> n
 
 -- | Turns ifs into cases.
 -- > if e1 then e2 else e3
