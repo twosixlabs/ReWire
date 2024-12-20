@@ -298,6 +298,7 @@ data Pat = PatCon      Annote !(Maybe Poly) !(Maybe Ty) !Text ![Pat]
          | PatVar      Annote !(Maybe Poly) !(Maybe Ty) !Text
          | PatWildCard Annote !(Maybe Poly) !(Maybe Ty)
          | PatTuple    Annote !(Maybe Poly) !(Maybe Ty) ![Pat]
+         | PatAs       Annote !(Maybe Poly) !(Maybe Ty) !Text !Pat -- should only appear in FunBindings
       deriving (Eq, Show, Generic, Typeable, Data)
       deriving TextShow via FromGeneric Pat
 
@@ -311,6 +312,7 @@ instance Annotated Pat where
             PatVar a _ _ _    -> a
             PatWildCard a _ _ -> a
             PatTuple a _ _ _  -> a
+            PatAs a _ _ _ _   -> a
 
 instance Parenless Pat where
       parenless = \ case
@@ -318,6 +320,7 @@ instance Parenless Pat where
             PatVar {}          -> True
             PatWildCard {}     -> True
             PatTuple {}        -> True
+            PatAs {}           -> True
             _                  -> False
 
 instance Pretty Pat where
@@ -326,6 +329,7 @@ instance Pretty Pat where
             PatVar _ pt _ n      -> ppTyAnn pt $ text n
             PatWildCard _ pt _   -> ppTyAnn pt $ text "_"
             PatTuple _ pt _ ps   -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty ps
+            PatAs _ pt _ n p     -> ppTyAnn pt $ parens $ text n <+> "@" <+> parens (pretty p) 
 
 ---
 
@@ -374,6 +378,7 @@ getPatVars (PatVar _ _ _ v : ps) = getPatVars ps >>= \ vs -> return $ v : vs
 getPatVars (PatCon _ _ _ _n ps : ps') = getPatVars ps' >>= \ vs' -> getPatVars ps >>= \ vs -> return $ vs ++ vs'
 getPatVars (PatTuple _ _ _ ps : ps') = getPatVars ps' >>= \ vs' -> getPatVars ps >>= \ vs -> return $ vs ++ vs'
 getPatVars (PatWildCard {} : ps) = getPatVars ps
+getPatVars (PatAs _ _ _ n p : ps) = getPatVars [p] >>= \ vs' -> getPatVars ps >>= \ vs -> return $ n : vs ++ vs'
 
 -- getFunBody :: (MonadError AstError m) => Rhs -> m Exp
 -- getFunBody (UnGuardedRhs _ e) = return e

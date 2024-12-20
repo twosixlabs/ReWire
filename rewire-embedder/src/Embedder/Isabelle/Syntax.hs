@@ -487,6 +487,7 @@ data Pttrn = PttrnWildCard (Maybe Typ)
            | PttrnVar VName (Maybe Typ)
            | PttrnCon VName (Maybe Typ) [Pttrn]
            | PttrnTuple (Maybe Typ) [Pttrn]
+           | PttrnAs (Maybe Typ) Pttrn VName
         deriving (Eq, Ord, Show, Typeable, Data)
 
 instance Pretty Pttrn where
@@ -499,6 +500,8 @@ instance Pretty Pttrn where
     PttrnCon name (Just t) ps -> tyAnn (printCon name (map pretty ps)) (pretty t)
     PttrnTuple Nothing ps -> printTuple ps
     PttrnTuple (Just t) ps -> tyAnn (printTuple ps) (pretty t)
+    PttrnAs Nothing p n -> parens $ pretty p <+> text "=:" <+> text n
+    PttrnAs (Just t) p n -> tyAnn (parens (pretty p <+> text "=:" <+> text n)) (pretty t)
 
 
 

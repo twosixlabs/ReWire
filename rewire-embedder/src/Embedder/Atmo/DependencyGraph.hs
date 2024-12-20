@@ -148,6 +148,7 @@ fvePat = \ case
            PatVar      _ _ _ n -> [n]
            PatWildCard {} -> []
            PatTuple    _ _ _ ps -> concatMap fvePat ps
+           PatAs       _ _ _ n p -> n : fvePat p
 
 datacons :: Exp -> [Text] -- Name DataConId
 datacons = \ case
@@ -174,6 +175,7 @@ dataconsPat = \ case
            PatVar      _ _ _ _n -> []
            PatWildCard {} -> []
            PatTuple    _ _ _ ps -> concatMap fvePat ps
+           PatAs       _ _ _ _ p -> dataconsPat p
 
 getNodeTSyns :: TypeSynonym -> (Def,Text,[Text])
 getNodeTSyns d@(C.TypeSynonym _ n (Poly _ t)) = (TDef d, n, fvt t :: [Text]) -- Name TyConId

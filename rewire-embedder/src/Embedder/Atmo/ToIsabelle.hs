@@ -359,6 +359,7 @@ tPat = \ case
       (PatVar _a _mp mt name) -> PttrnVar (tLocal name) (fmap tType mt)
       (PatWildCard _a _mp mt) -> PttrnWildCard (fmap tType mt)
       (PatTuple _a _mp mt ps) -> PttrnTuple (fmap tType mt) (map tPat ps)
+      (PatAs _a _mp mt n p)   -> PttrnAs (fmap tType mt) (tPat p) (tLocal n)
 
 tPatBind :: (Monad m) => PatBind -> m (Isa.Pttrn, Isa.Term)
 tPatBind (A.PatBind p e) = do

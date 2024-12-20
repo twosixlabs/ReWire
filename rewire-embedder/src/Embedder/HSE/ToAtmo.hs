@@ -407,7 +407,8 @@ transPat rn = \ case
       PVar l x         -> pure $ M.PatVar l Nothing Nothing (mkUId $ void x)
       PWildCard l      -> pure $ M.PatWildCard l Nothing Nothing
       PatTypeSig _ p t -> M.setTyAnn <$> (Just . M.poly' <$> transTy rn t) <*> transPat rn p
-      PTuple l _b ps -> M.PatTuple l Nothing Nothing <$> mapM (transPat rn) ps
+      PTuple l _b ps   -> M.PatTuple l Nothing Nothing <$> mapM (transPat rn) ps
+      PAsPat l n p     -> M.PatAs l Nothing Nothing (mkUId $ void n) <$> transPat rn p
       p                -> failAt (ann p) $ "Unsupported syntax in a pattern: " <> pack (show $ void p)
 
 
