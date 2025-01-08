@@ -97,7 +97,7 @@ type ErrorMsg = Text
 
 getOutFile :: Config -> FilePath -> FilePath
 getOutFile c filename = flip fromMaybe (c^.outFile) $ case c^.target of
-      Verilog   -> filename -<.> "v"
+      Verilog   -> filename -<.> "sv"
       FIRRTL    -> filename -<.> "fir"
       VHDL      -> filename -<.> "vhdl"
       Interpret -> filename -<.> "yaml"
