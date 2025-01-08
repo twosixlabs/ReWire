@@ -17,7 +17,7 @@ import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.))
 import qualified ReWire.BitVector as BV
 
 import Control.Arrow ((&&&), first, second)
-import Control.Lens ((^.), (.~), magma)
+import Control.Lens ((^.), (.~))
 import Control.Monad (liftM2)
 import Control.Monad.Reader (MonadReader, asks, runReaderT)
 import Control.Monad.State (MonadState, runStateT, modify, gets)
@@ -121,7 +121,7 @@ compileStart conf singles topLevel w loop state0 = do
             initExp <- initState rStart
             pure $ mod (loopSigs <> startSigs <> sigs)
                  $  ssStart <> loopStmts
-                 <> [ Initial $ ParAssign lvCurrState initExp 
+                 <> [ Initial $ ParAssign lvCurrState initExp
                     , Always (Pos clock' : rstEdge) $ Block [ ifRst initExp ]
                     ]
 
@@ -231,30 +231,35 @@ compileCall conf singles g sz lvars
 instantiate :: (MonadFail m, MonadState SigInfo m, MonadError AstError m) => Config -> ExternSig -> GId -> Text -> V.Size -> [V.Exp] -> m (V.Exp, [Stmt])
 instantiate conf (ExternSig an ps theirClock theirReset args res) g inst sz lvars = do
       Name mr         <- newWire sz "extRes"
-      (args', lvars') <- do 
-                        (args1,lvars1) <- maybe (failAt an "ToVerilog: external module requires a clock signal, but we have no clock to give it.")
-                                                pure
-                                                (addClock theirClock ourClock (args,lvars))
-                        maybe (failAt an "ToVerilog: external module requires a reset signal, but we have no reset to give it.")
-                              pure
-                              (addReset theirReset ourReset (args1,lvars1))
-      inst'           <- fresh' inst
+      (args', lvars') <- do
+            (args1, lvars1) <- maybe (failAt an "ToVerilog: external module requires a clock signal, but we have no clock to give it.") pure $
+                                     addClock theirClock ourClock (args, lvars)
+            maybe (failAt an "ToVerilog: external module requires a reset signal, but we have no reset to give it.") pure $
+                  addReset theirReset ourReset (args1, lvars1)
+      inst'           <- fresh' $ if T.null inst then "inst" else inst
       let stmt = Instantiate g inst' (map (second $ LitBits . bitVec 32) ps)
                $ zip (fst <$> args') lvars' <> zip (fst <$> res) (toSubRanges mr (snd <$> res))
       pure (LVal $ Name mr, [stmt])
       where ourClock :: Text
             ourClock = conf^.clock
+
             ourReset :: Text
             ourReset = conf^.reset
+
             addClock :: Text -> Text -> ([(Text,Size)],[V.Exp]) -> Maybe ([(Text,Size)],[V.Exp])
-            addClock theirClock ourClock (args,lvars) | T.null theirClock = Just (args,lvars)
-            addClock theirClock ourClock (args,lvars) | not (T.null ourClock) = Just ((theirClock, 1) : args, LVal (Name ourClock) : lvars)
-            addClock theirClock ourClock (args,lvars) = Nothing
+            addClock theirClock _        (args, lvars)
+                  | T.null theirClock      = Just (args, lvars)
+            addClock theirClock ourClock (args, lvars)
+                  | not (T.null ourClock)  = Just ((theirClock, 1) : args, LVal (Name ourClock) : lvars)
+            addClock _          _        _ = Nothing
+
             addReset :: Text -> Text -> ([(Text,Size)],[V.Exp]) -> Maybe ([(Text,Size)],[V.Exp])
-            addReset theirReset ourReset (args,lvars) | T.null theirReset = Just (args, lvars)
-            addReset theirReset ourReset (args,lvars) | not (T.null ourReset) = Just ((theirReset, 1) : args, LVal (Name ourReset) : lvars)
-            addReset theirReset ourReset (args,lvars) = Nothing
-                                          
+            addReset theirReset _        (args, lvars)
+                  | T.null theirReset      = Just (args, lvars)
+            addReset theirReset ourReset (args, lvars)
+                  | not (T.null ourReset)  = Just ((theirReset, 1) : args, LVal (Name ourReset) : lvars)
+            addReset _          _        _ = Nothing
+
 
 compileExps :: (MonadState SigInfo m, MonadFail m, MonadError AstError m, MonadReader DefnMap m)
             => Config -> [GId] -> [V.Exp] -> [C.Exp] -> m ([V.Exp], [Stmt])
