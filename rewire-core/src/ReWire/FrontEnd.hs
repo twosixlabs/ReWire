@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE Trustworthy #-}
 module ReWire.FrontEnd
       ( loadProgram
@@ -91,8 +90,7 @@ compileFile conf filename = do
             writeOutput :: (MonadError AstError m, MonadIO m, Pretty a) => a -> m ()
             writeOutput a = do
                   let fout = getOutFile conf filename
-                  liftIO $ T.writeFile fout $ if | conf^.Config.pretty -> prettyPrint a
-                                                 | otherwise           -> fastPrint a
+                  liftIO $ T.writeFile fout $ if conf^.Config.pretty then prettyPrint a else fastPrint a
 
 -- | Replicates/truncates inputs to fill up exactly ncycles cycles.
 boundInput :: Natural -> [Ins] -> [Ins]

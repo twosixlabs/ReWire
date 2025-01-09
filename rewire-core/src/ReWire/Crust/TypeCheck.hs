@@ -10,7 +10,7 @@ import ReWire.Crust.Types (poly, arrowRight, (|->), concrete, kblank, tyAnn, set
 import ReWire.Crust.Util (mkApp)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fixOn, fixOn')
-import ReWire.Pretty (showt, prettyPrint, Pretty (..), hsep)
+import ReWire.Pretty (showt, prettyPrint, Pretty (..))
 import ReWire.SYB (transform, query)
 import ReWire.Unbound (fresh, substs, Subst, n2s, s2n, unsafeUnbind, Fresh, Embed (Embed), Name, bind, unbind, fv)
 

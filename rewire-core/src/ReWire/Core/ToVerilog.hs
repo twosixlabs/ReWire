@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Safe #-}
 module ReWire.Core.ToVerilog (compileProgram) where
@@ -115,8 +114,8 @@ compileStart conf topLevel w loop state0 = do
       let mod       = Module topLevel $ inputs <> outputs
           loopStmts = ssLoop <> [ Assign lvPause rLoop ]
 
-      if | T.null clock' -> pure $ mod (loopSigs <> sigs) loopStmts
-         | otherwise     -> do
+      if T.null clock' then pure $ mod (loopSigs <> sigs) loopStmts
+      else do
             initExp <- initState rStart
             pure $ mod (loopSigs <> startSigs <> sigs)
                  $  ssStart <> loopStmts
@@ -164,13 +163,13 @@ compileStart conf topLevel w loop state0 = do
                   _                    -> failAt noAnn "compileStart: could not calculate initial state."
 
             lvPause :: LVal
-            lvPause = mkLVals $ (Name . fst) <$> pauseWires
+            lvPause = mkLVals $ Name . fst <$> pauseWires
 
             lvCurrState :: LVal
-            lvCurrState = mkLVals $ (Name . fst) <$> dispatchWires w'
+            lvCurrState = mkLVals $ Name . fst <$> dispatchWires w'
 
             lvNxtState :: LVal
-            lvNxtState = mkLVals $ (Name . fst) <$> nextDispatchWires
+            lvNxtState = mkLVals $ Name . fst <$> nextDispatchWires
 
             rstEdge :: [Sensitivity]
             rstEdge | T.null reset' = []
@@ -188,7 +187,7 @@ compileStart conf topLevel w loop state0 = do
             pauseWires = pausePrefix w' <> nextDispatchWires
 
             nextDispatchWires :: [(Name, Size)]
-            nextDispatchWires = (first (<> "_next")) <$> dispatchWires w'
+            nextDispatchWires = first (<> "_next") <$> dispatchWires w'
 
             allWires :: [(Name, Size)]
             allWires = extraWires w' <> dispatchWires w' <> nextDispatchWires

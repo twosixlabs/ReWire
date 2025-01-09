@@ -359,7 +359,7 @@ pureDefns Program { loop, state0, defns } = fix' purity mempty
 
 defnUses :: Program -> HashMap GId Uses
 defnUses Program { loop, state0, defns } = Map.fromList [(defnName loop, 1), (defnName state0, 1)]
-      <+> foldr (<+>) Map.empty ((expUses . defnBody) <$> defns)
+      <+> foldr (<+>) Map.empty (expUses . defnBody <$> defns)
       where expUses :: Exp -> HashMap GId Uses
             expUses = \ case
                   Concat _ e1 e2              -> expUses e1 <+> expUses e2

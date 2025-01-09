@@ -122,9 +122,10 @@ setRef :: Parser Target
 setRef = SetRef <$> stringLit
 
 prim :: Parser Target
-prim = (readMaybe . unpack <$> name) >>= \ case
+prim = name >>= (\ case
       Just p  -> pure $ Prim p
-      Nothing -> empty
+      Nothing -> empty)
+      . readMaybe . unpack
 
 constant :: Parser Target
 constant = Const <$> bv

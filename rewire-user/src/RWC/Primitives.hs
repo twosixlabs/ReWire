@@ -77,13 +77,12 @@ module RWC.Primitives
       ) where
 
 -- Imports in this file are ignored by rwc.
-import Prelude ((.),($),fromEnum)
+import Prelude ((.),($))
 import qualified Prelude                           as GHC
 import qualified Control.Monad.Identity            as GHC
 import qualified Control.Monad.Resumption.Reactive as GHC
 import qualified Control.Monad.State               as GHC
 import qualified Data.Bits                         as GHC
-import qualified Data.Bifunctor                    as BF
 import GHC.TypeLits (Nat, type (+), natVal)
 import qualified GHC.TypeLits                      as TL
 import qualified Data.Finite                       as F

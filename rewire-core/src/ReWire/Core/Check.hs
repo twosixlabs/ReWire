@@ -45,19 +45,19 @@ checkDefn dsigs (Defn an n (Sig _ args res) body)
 
 checkExp :: MonadError AstError m => DefnSigs -> LIds -> Exp -> m ()
 checkExp dsigs args = \ case
-      Lit _ _                                                                   -> pure ()
-      LVar an sz x | Just sz' <- Map.lookup x args, sz == sz'                   -> pure ()
-                   | otherwise                                                  -> failAt an "core check: LVar"
-      Concat _ e1 e2                                                            -> checkExp dsigs args e1 >> checkExp dsigs args e2
-      Call an sz _ _ _ e                 | not (isNil e), sz /= sizeOf e        -> failAt an "core check: call: else size mismatch"
-      Call an _ _ disc ps _              | (sum $ sizeOf <$> ps) /= sizeOf disc -> failAt an "core check: call: size mismatch between discriminator and pattern."
-      Call an _ (Global g) _ _ _         | Nothing <- Map.lookup g dsigs        -> failAt an $ "core check: call: unknown global: " <> g
+      Lit _ _                                                                  -> pure ()
+      LVar an sz x | Just sz' <- Map.lookup x args, sz == sz'                  -> pure ()
+                   | otherwise                                                 -> failAt an "core check: LVar"
+      Concat _ e1 e2                                                           -> checkExp dsigs args e1 >> checkExp dsigs args e2
+      Call an sz _ _ _ e                 | not (isNil e), sz /= sizeOf e       -> failAt an "core check: call: else size mismatch"
+      Call an _ _ disc ps _              | sum (sizeOf <$> ps) /= sizeOf disc  -> failAt an "core check: call: size mismatch between discriminator and pattern."
+      Call an _ (Global g) _ _ _         | Nothing <- Map.lookup g dsigs       -> failAt an $ "core check: call: unknown global: " <> g
       Call an sz (Global g) _ ps _       | Just (sig, _) <- Map.lookup g dsigs
-                                         , mkSig ps sz `neq` sig                -> failAt an $ "core check: call: global sig mismatch: " <> g
-      Call an sz (Extern sig _ _) _ ps _ | mkSig ps sz `neq` toSig sig          -> failAt an "core check: call: extern sig mismatch"
-      Call an sz (Prim pr) _ ps _        | not (primCompat (mkSig ps sz) pr)    -> failAt an $ "core check: call: prim sig mismatch: " <> showt pr <> " failed to match pattern type " <> showt (mkSig ps sz)
-      Call an sz (Const bv) _ ps _       | mkSig ps sz `neq` constSig bv        -> failAt an "core check: call: const sig mismatch"
-      Call _ _ _ disc _ e                                                       -> checkExp dsigs args disc >> checkExp dsigs args e
+                                         , mkSig ps sz `neq` sig               -> failAt an $ "core check: call: global sig mismatch: " <> g
+      Call an sz (Extern sig _ _) _ ps _ | mkSig ps sz `neq` toSig sig         -> failAt an "core check: call: extern sig mismatch"
+      Call an sz (Prim pr) _ ps _        | not (primCompat (mkSig ps sz) pr)   -> failAt an $ "core check: call: prim sig mismatch: " <> showt pr <> " failed to match pattern type " <> showt (mkSig ps sz)
+      Call an sz (Const bv) _ ps _       | mkSig ps sz `neq` constSig bv       -> failAt an "core check: call: const sig mismatch"
+      Call _ _ _ disc _ e                                                      -> checkExp dsigs args disc >> checkExp dsigs args e
 
 checkRecursion :: MonadError AstError m => DefnSigs -> [GId] -> Exp -> m ()
 checkRecursion dsigs gids = \ case
@@ -74,7 +74,7 @@ checkRecursion dsigs gids = \ case
       _                                                                         -> pure ()
 
 mkSig :: [Pat] -> Size -> Sig
-mkSig ps sz = Sig noAnn (sizeOf <$> filter isVar ps) sz
+mkSig ps = Sig noAnn (sizeOf <$> filter isVar ps)
 
 toSig :: ExternSig -> Sig
 toSig (ExternSig an _ _ _ is os) = Sig an (snd <$> is) $ sum $ snd <$> os

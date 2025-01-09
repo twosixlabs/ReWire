@@ -463,8 +463,8 @@ transPat = \ case
             let tag = C.PatLit an (bitVec (fromIntegral w) v)
                 pad = C.PatWildCard an (sz - w - szArgs) -- or lit 0 bits?
             ([tag, pad] <>) <$> (concat <$> mapM transPat ps)
-      M.MatchPatVar an _ t      -> pure <$> C.PatVar an <$> sizeOf' "MatchPatVar" an t
-      M.MatchPatWildCard an _ t -> pure <$> C.PatWildCard an <$> sizeOf' "MatchPatWildCard" an t
+      M.MatchPatVar an _ t      -> pure . C.PatVar an <$> sizeOf' "MatchPatVar" an t
+      M.MatchPatWildCard an _ t -> pure . C.PatWildCard an <$> sizeOf' "MatchPatWildCard" an t
 
 transType :: (Fresh m, MonadError AstError m, MonadState SizeMap m) => M.Ty -> ReaderT ConMap m C.Sig
 transType t = C.Sig (ann t) <$> mapM (sizeOf "transType Param" $ ann t) (M.paramTys t) <*> sizeOf "transType Range" (ann t) (M.rangeTy t)

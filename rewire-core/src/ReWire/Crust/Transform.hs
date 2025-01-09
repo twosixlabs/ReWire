@@ -95,7 +95,7 @@ expandTypeSynonyms (ts, syns0, ds) = (,,) <$> expandSyns ts <*> syns' <*> expand
             substs' subs' = transformM $ \ case
                   t@(TyCon _ n)   | Just pt <- lookup n subs'        -> do
                         (vs, t') <- unbind pt
-                        pure $ if length vs == 0 then t' else t
+                        pure $ if null vs then t' else t
                   t@(TyApp _ a b) | Just (n, args) <- findTyCon a
                                   , Just pt        <- lookup n subs' -> do
                         (vs, t') <- unbind pt
@@ -350,7 +350,7 @@ liftLambdas p = evalStateT (liftLambdas' p) []
                         modify $ (:) $ Defn an f (fv t' |-> t') Nothing (Embed $ bind fvs e')
                         pure $ App an tan t ex (mkApp an (Var an Nothing (Just t') f) $ map (toVar an) bvs)
                   e -> pure e)
-                 >=> (\ (ts, syns, ds) -> (ts, syns,) <$> gets (ds <>))
+                 >=> (\ (ts, syns, ds) -> gets ((ts, syns,) . (ds <>)))
 
 
             isExtrude :: Exp -> Bool
@@ -510,7 +510,7 @@ specialize (ts, syns, vs) = do
             specDefn :: (MonadError AstError m, Fresh m, MonadState SpecMap m) => Defn -> m Defn
             specDefn (Defn ann n pt inl (Embed body)) = do
                   (vs, body') <- unbind body
-                  Defn ann n pt inl <$> Embed <$> bind vs <$> specExp body'
+                  (Defn ann n pt inl . Embed) . bind vs <$> specExp body'
 
             specExp :: (MonadError AstError m, Fresh m, MonadState SpecMap m) => Exp -> m Exp
             specExp = \ case
