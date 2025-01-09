@@ -7,7 +7,7 @@ module ReWire.Crust.ToCore (toCore) where
 import ReWire.Config (Config, inputSigs, outputSigs, stateSigs, top)
 import ReWire.Annotation (Annote, noAnn, Annotated (ann), unAnn)
 import ReWire.Error (failAt, AstError, MonadError)
-import ReWire.Pretty (showt, prettyPrint, pretty)
+import ReWire.Pretty (showt, prettyPrint)
 import ReWire.Unbound (Name, Fresh, runFreshM, Embed (..) , unbind, n2s)
 import ReWire.BitVector (bitVec, zeros, BV)
 
@@ -110,6 +110,7 @@ externSig an args res clk rst = \ case
                   M.App _ _ _ (M.App _ _ _ (M.Con _ _ _ (n2s -> "(,)")) (M.LitStr _ _ p)) (M.LitInt _ _ v)
                         -> pure (p, fromIntegral v)
                   _     -> Nothing
+
             args' :: [(Text, C.Size)]
             args' = map (mempty, ) args
 
