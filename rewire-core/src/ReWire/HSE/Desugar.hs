@@ -403,7 +403,7 @@ desugarFuns = mempty
                   1     -> do
                         x <- fresh l
                         -- NOTE: can't type-annotate params without expanding type synonyms.
-                        pure $ Lambda l ([PVar l x]) $ Case l (Var l $ UnQual l x) alts
+                        pure $ Lambda l [PVar l x] $ Case l (Var l $ UnQual l x) alts
                   arity -> do
                         xs <- replicateM arity (fresh l)
                         -- NOTE: can't type-annotate params without expanding type synonyms.

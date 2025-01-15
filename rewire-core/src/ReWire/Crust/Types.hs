@@ -152,11 +152,11 @@ dstArrow = \ case
 
 -- | Given 'a -> (b -> c)' returns 'b -> c'.
 arrowRight :: Ty -> Ty
-arrowRight t = fromMaybe t $ snd <$> dstArrow t
+arrowRight t = maybe t snd $ dstArrow t
 
 -- | Given 'a -> (b -> c)' returns 'a'.
 arrowLeft :: Ty -> Ty
-arrowLeft t = fromMaybe t $ fst <$> dstArrow t
+arrowLeft t = maybe t fst $ dstArrow t
 
 ctorNames :: Ty -> [Name TyConId]
 ctorNames = \ case
@@ -366,8 +366,8 @@ pickVar = pickVar' . normP1
             sort' = sortOn (hash . show . fst)
 
 poly1Ty :: Poly1 -> Ty
-poly1Ty (Poly1 r cs) | (c : cs') <- Map.toList cs, r == 0 = foldr plus' (mono c) $ map mono cs'
-                     | (c : cs') <- Map.toList cs         = ratTy r `plus'` foldr plus' (mono c) (map mono cs')
+poly1Ty (Poly1 r cs) | (c : cs') <- Map.toList cs, r == 0 = foldr (plus' . mono) (mono c) cs'
+                     | (c : cs') <- Map.toList cs         = ratTy r `plus'` foldr (plus' . mono) (mono c) cs'
                      | otherwise                          = ratTy r
       where mono :: (Name Ty, Rational) -> Ty
             mono (x, cx) | cx == 1   = tyVar x
@@ -377,7 +377,7 @@ poly1Ty (Poly1 r cs) | (c : cs') <- Map.toList cs, r == 0 = foldr plus' (mono c)
             plus' = plusTy noAnn
 
             tyVar :: Name Ty -> Ty
-            tyVar x = TyVar noAnn KNat x
+            tyVar = TyVar noAnn KNat
 
 ratTy :: Rational -> Ty
 ratTy r | r < 0              = negTy $ posRatTy (-r)

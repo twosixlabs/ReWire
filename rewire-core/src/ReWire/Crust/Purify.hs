@@ -217,7 +217,7 @@ mkPureEnv ms ((n, Embed phi) : nps) = do
 getStates :: Ty -> [Ty]
 getStates t = case dstReacT $ rangeTy t of
       Just (_, _, sts', _) -> sts'
-      _                    -> fromMaybe [] $ (fst <$> dstTyApp (rangeTy t)) >>= dstStateT
+      _                    -> fromMaybe [] $ dstTyApp (rangeTy t) >>= dstStateT . fst
 
 lookupPure :: MonadError AstError m => Annote -> Name Exp -> PureEnv -> m Ty
 lookupPure an x = maybe (failAt an $ "No pure binding for variable: " <> n2s x) pure . lookup x
