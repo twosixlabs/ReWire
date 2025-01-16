@@ -5,7 +5,7 @@ module ReWire.Crust.Types
       , arr, intTy, strTy, nilTy, refTy, kmonad, (|->)
       , rangeTy, flattenArrow, pairTy, arrowRight, arrowLeft
       , higherOrder, fundamental, concrete, paramTys
-      , finMax, proxyNat, finiteTy, vecSize, vecElemTy, vecTy, evalNat
+      , finSz, proxyNat, finiteTy, vecSize, vecElemTy, vecTy, evalNat
       , mkArrowTy, poly, poly', listTy, kblank, plusTy, plus
       , isReacT, isStateT, ctorNames, resInputTy
       , dstArrow, dstStateT, dstTyApp, dstReacT, proxyTy
@@ -21,7 +21,7 @@ import Data.Containers.ListUtils (nubOrd)
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable (hash))
 import Data.List (sortOn)
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (isJust)
 import Data.Ratio (numerator, denominator, (%))
 import Numeric.Natural (Natural)
 
@@ -188,8 +188,8 @@ proxyNat t = case flattenTyApp t of
       TyCon _ (n2s -> "Proxy") : [n] -> evalNat n
       _                              -> Nothing
 
-finMax :: Ty -> Maybe Natural
-finMax t = case flattenTyApp t of
+finSz :: Ty -> Maybe Natural
+finSz t = case flattenTyApp t of
       TyCon _ (n2s -> "Finite") : [n] -> evalNat n
       _                               -> Nothing
 

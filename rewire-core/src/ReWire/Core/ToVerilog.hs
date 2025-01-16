@@ -12,7 +12,7 @@ import ReWire.Error (failAt, AstError, MonadError)
 import ReWire.Verilog.Syntax as V
 import ReWire.Core.Interp (patApply', patMatches', subRange, dispatchWires, pausePrefix, extraWires, resumptionSize, Wiring')
 import ReWire.Pretty (prettyPrint, showt)
-import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.))
+import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.), szBitRep)
 import qualified ReWire.BitVector as BV
 
 import Control.Arrow ((&&&), first, second)
@@ -234,7 +234,7 @@ compileCall conf g sz lvars = asks (Map.lookup g) >>= \ case
             inst'      <- fresh' g
             let stmt   = Instantiate g inst' []
                        $ zip (repeat mempty)
-                       $ (if isPure then lvars else ([clk, rst] <> lvars)) <> [LVal mr]
+                       $ (if isPure then [] else [clk, rst]) <> lvars <> [LVal mr]
             pure (LVal mr, [stmt])
       _ -> failAt noAnn $ "ToVerilog: compileCall: failed to find definition for " <> g <> " while flattening."
       where clk :: V.Exp
@@ -373,21 +373,21 @@ compileExp conf lvars = \ case
 
 -- | Attempt to break up giant literals.
 bvToExp :: BV -> V.Exp
-bvToExp bv | width bv < maxLit      = LitBits bv
-           | width bv == 0          = V.nil
-           | bv == zeros 1          = Repl (toLit $ width bv) $ LitBits (zeros 1)
-           | bv == ones (width bv)  = Repl (toLit $ width bv) $ LitBits (ones 1)
-           | zs > 8                 = V.cat [LitBits $ subRange (fromIntegral zs, width bv - 1) bv, Repl (toLit zs) $ LitBits $ zeros 1]
-           | otherwise              = LitBits bv -- TODO(chathhorn)
-      where zs :: Size -- trailing zeros
+bvToExp bv | width bv < maxLit     = LitBits bv
+           | width bv == 0         = V.nil
+           | bv == zeros 1         = Repl (toLit $ fromIntegral $ width bv) $ LitBits (zeros 1)
+           | bv == ones (width bv) = Repl (toLit $ fromIntegral $ width bv) $ LitBits (ones 1)
+           | zs > 8                = V.cat [LitBits $ subRange (fromIntegral zs, width bv - 1) bv, Repl (toLit zs) $ LitBits $ zeros 1]
+           | otherwise             = LitBits bv -- TODO(chathhorn)
+      where zs :: Natural -- trailing zeros
             zs | bv == zeros 1 = fromIntegral $ width bv
                | otherwise     = fromIntegral $ lsb1 bv
 
             maxLit :: Int
             maxLit = 32
 
-toLit :: Integral a => a -> V.Exp
-toLit v = LitBits $ bitVec (fromIntegral $ ceilLog2 v) v
+toLit :: Natural -> V.Exp
+toLit v = LitBits $ bitVec (fromIntegral $ szBitRep v) v
 
 expToBV :: V.Exp -> Maybe BV
 expToBV = \ case
@@ -397,8 +397,8 @@ expToBV = \ case
       _                          -> Nothing
 
 -- | Size of the inclusive range [i, j].
-nbits :: Index -> Index -> Size
-nbits i j = fromIntegral (j - i + 1)
+szRange :: Index -> Index -> Size
+szRange i j = fromIntegral (j - i + 1)
 
 mkLVals :: [V.LVal] -> V.LVal
 mkLVals = \ case
@@ -411,9 +411,9 @@ mkRange n i j | i == j    = Element n i
 
 mkWCast :: Size -> V.Exp -> V.Exp
 mkWCast sz = \ case
-      LVal (Range n i j) | sz < nbits i j -> LVal $ mkRange n i (j - fromIntegral (nbits i j - sz))
-      WCast _ e                           -> WCast sz e
-      e                                   -> WCast sz e
+      LVal (Range n i j) | sz < szRange i j -> LVal $ mkRange n i (j - fromIntegral (szRange i j - sz))
+      WCast _ e                             -> WCast sz e
+      e                                     -> WCast sz e
 
 -- | Recreates the effect of assignment by adding bitwidth casts to an expression:
 -- > wcast s e
@@ -514,7 +514,7 @@ expWidth = \ case
             lvalWidth :: (MonadError AstError m, MonadState SigInfo m) => LVal -> m (Maybe Size)
             lvalWidth = \ case
                   Element _ _ -> pure $ Just 1
-                  Range _ i j -> pure $ Just $ fromIntegral $ nbits i j
+                  Range _ i j -> pure $ Just $ fromIntegral $ szRange i j
                   Name n      -> lookupWidth n
                   LVals lvs   -> sumMaybes <$> mapM lvalWidth lvs
 
@@ -597,8 +597,3 @@ argsSize = sum . map patToSize
 
 mkSignal :: (Name, Size) -> Signal
 mkSignal (n, sz) = Logic [sz] n []
-
--- TODO(chathhorn): duplicated from Crust/ToCore.hs
-ceilLog2 :: Integral a => a -> a
-ceilLog2 n | toInteger n < 1 = 0
-ceilLog2 n                   = ceiling $ logBase 2 (fromIntegral n :: Double)

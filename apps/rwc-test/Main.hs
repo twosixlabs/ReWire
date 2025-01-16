@@ -20,53 +20,78 @@ import Paths_rewire (getDataFileName)
 
 data Flag = FlagV
           | FlagVhdl
-          | FlagNoGhdl
+          | FlagNoCheck
           | FlagNoGhc
           | FlagNoDTypes
-          | FlagChecker String
+          | FlagVhdlChecker String
+          | FlagVerilogChecker String
       deriving (Eq, Show)
 
 options :: [OptDescr Flag]
 options =
-       [ Option ['v'] ["verbose"]      (NoArg FlagV)                  "More verbose output."
-       , Option []    ["vhdl"]         (NoArg FlagVhdl)               "Test VHDL code generation in addition to Verilog."
-       , Option []    ["no-ghdl"]      (NoArg FlagNoGhdl)             "Implies --vhdl: disable verification of output VHDL with 'ghdl -s' (which requires 'ghdl' in $PATH)."
-       , Option []    ["no-ghc"]       (NoArg FlagNoGhc)              "Disable running tests through ghc."
-       , Option []    ["vhdl-checker"] (ReqArg FlagChecker "command") "Set the command to use for checking generated VHDL (default: 'ghdl -s')."
+       [ Option ['v'] ["verbose"]         (NoArg FlagV)                         "More verbose output."
+       , Option []    ["vhdl"]            (NoArg FlagVhdl)                      "Test VHDL code generation in addition to Verilog."
+       , Option []    ["no-check"]        (NoArg FlagNoCheck)                   "Disable verification of output HDL with checker."
+       , Option []    ["no-ghc"]          (NoArg FlagNoGhc)                     "Disable running tests through ghc."
+       , Option []    ["vhdl-checker"]    (ReqArg FlagVhdlChecker "command")    "Set the command to use for checking generated VHDL (default: 'ghdl -s')."
+       , Option []    ["verilog-checker"] (ReqArg FlagVerilogChecker "command") "Set the command to use for checking generated Verilog (default: 'iverilog -Wall -g2012')."
        ]
 
 testCompiler :: [Flag] -> FilePath -> [Test]
 testCompiler flags fn =
       -- Test: compile Haskell source with GHC
-      if FlagNoGhc `elem` flags then []
+      (if FlagNoGhc `elem` flags then []
       else [ testCase (takeBaseName fn ++ " (stack ghc)") $ do
             setCurrentDirectory $ takeDirectory fn
             callCommand $ "stack ghc " ++ fn
-      ] <>
+      ])
+
+      --- Verilog tests ---
+
       -- Test: compile Haskell to Verilog with RWC.
-      [ testCase (takeBaseName fn) $ do
+      <> [ testCase (takeBaseName fn) $ do
             setCurrentDirectory $ takeDirectory fn
             withArgs (fn : extraFlags) RWC.main
-      ] <>
+         ]
+
+      -- Test: check Verilog output.
+      <> (if FlagNoCheck `elem` flags then []
+         else [ testCase (takeBaseName fn ++ " (" ++ verilogCheck ++ ")") $ do
+            setCurrentDirectory $ takeDirectory fn
+            callCommand $ verilogCheck ++ " " ++ fn -<.> "sv"
+         ])
+
+      --- VHDL tests ---
+
       -- Test: compile Haskell to VHDL with RWC.
-      if not (FlagVhdl `elem` flags || FlagNoGhdl `elem` flags) then []
-      else [ testCase (takeBaseName fn <> " (VHDL output)") $ do
+      <> (if FlagVhdl `elem` flags
+         then [ testCase (takeBaseName fn <> " (VHDL output)") $ do
             setCurrentDirectory $ takeDirectory fn
             withArgs ("--vhdl": fn : extraFlags) RWC.main
-      ] <>
-      -- Test: check VHDL output with ghdl.
-      if FlagNoGhdl `elem` flags then []
-      else [ testCase (takeBaseName fn ++ " (" ++ vhdlCheck ++ ")") $ do
+         ] else [])
+
+      -- Test: check VHDL output.
+      <> (if FlagVhdl `elem` flags && FlagNoCheck `notElem` flags
+         then [ testCase (takeBaseName fn ++ " (" ++ vhdlCheck ++ ")") $ do
             setCurrentDirectory $ takeDirectory fn
             callCommand $ vhdlCheck ++ " " ++ fn -<.> "vhdl"
-      ]
+         ] else [])
+
       where extraFlags :: [String]
             extraFlags = if FlagV `elem` flags then ["-v"] else []
 
             vhdlCheck :: String
             vhdlCheck = fromMaybe "ghdl -s" $ msum $ flip map flags $ \ case
-                  FlagChecker c -> Just $ sq c
-                  _             -> Nothing
+                  FlagVhdlChecker c -> Just $ sq c
+                  _                 -> Nothing
+
+            verilogCheck :: String
+            verilogCheck = fromMaybe ("iverilog -Wall -g2012 " <> verilog) $ msum $ flip map flags $ \ case
+                  FlagVerilogChecker c -> Just $ sq c
+                  _                    -> Nothing
+
+            verilog :: FilePath
+            verilog = takeDirectory fn </> "verilog" </> "*.sv"
 
 sq :: String -> String
 sq = \ case

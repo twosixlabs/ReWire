@@ -9,7 +9,7 @@ import ReWire.Annotation (Annote, noAnn, Annotated (ann), unAnn)
 import ReWire.Error (failAt, AstError, MonadError)
 import ReWire.Pretty (showt, prettyPrint)
 import ReWire.Unbound (Name, Fresh, runFreshM, Embed (..) , unbind, n2s)
-import ReWire.BitVector (bitVec, zeros, BV)
+import ReWire.BitVector (bitVec, zeros, BV, nbits)
 
 import Control.Arrow ((&&&))
 import Control.Lens ((^.))
@@ -192,47 +192,47 @@ transBuiltin an' t' an = \ case
             arg' <- transExp arg
             case arg' of
                   C.Lit an' (BV.nat -> i) -> do
-                        finMax <- checkFinTypeMax "rwPrimFinite" t'
-                        unless (i >= 0 && i < fromIntegral finMax)
-                              $ failAt (ann arg) ("transExp: rwPrimFinite: Integer " <> showt i <> " is not representable in Finite " <> showt finMax <> ".")
-                        pure $ C.Lit an' $ BV.bitVec (ceilLog2 $ fromIntegral finMax) i
+                        finSz <- checkFinTypeMax "rwPrimFinite" t'
+                        unless (i >= 0 && i < fromIntegral finSz)
+                              $ failAt (ann arg) ("transExp: rwPrimFinite: Integer " <> showt i <> " is not representable in Finite " <> showt finSz <> ".")
+                        pure $ C.Lit an' $ BV.bitVec (fromIntegral $ nbits finSz) i
                   _ -> failAt (ann arg) "transExp: rwPrimFinite: can't determine argument value at compile-time."
       (M.FiniteMinBound, []) -> do
-            finMax <- checkFinTypeMax "rwPrimFiniteMinBound" t'
-            unless (finMax > 0)
+            finSz <- checkFinTypeMax "rwPrimFiniteMinBound" t'
+            unless (finSz > 0)
                   $ failAt an "transExp: rwPrimFiniteMinBound: Finite 0 is uninhabited."
-            transExp $ finite finMax 0
+            transExp $ finite finSz 0
       (M.FiniteMaxBound, []) -> do
-            finMax <- checkFinTypeMax "rwPrimFiniteMaxBound" t'
-            unless (finMax > 0)
+            finSz <- checkFinTypeMax "rwPrimFiniteMaxBound" t'
+            unless (finSz > 0)
                   $ failAt an "transExp: rwPrimFiniteMaxBound: Finite 0 is uninhabited."
-            transExp $ finite finMax $ finMax - 1
+            transExp $ finite finSz $ finSz - 1
       (M.ToFinite, [arg]) -> do
-            finMax <- checkFinTypeMax "rwPrimToFinite" t'
+            finSz  <- checkFinTypeMax "rwPrimToFinite" t'
             sz     <- sizeOf' "rwPrimToFinite" an t'
             argTy  <- maybe (failAt an' "transExp: rwPrimToFinite: invalid argument type.") pure
                         $ M.typeOf arg
             nBits  <- checkVecArgSize "rwPrimToFinite" (Just argTy)
-            unless (2 ^ nBits <= (fromIntegral finMax :: Integer))
-                  $ failAt (ann arg) ("transExp: rwPrimToFinite: bitvector argument (size " <> showt nBits <> ") is not representable in Finite " <> showt finMax <> ".")
+            unless (2 ^ nBits <= (fromIntegral finSz :: Integer))
+                  $ failAt (ann arg) ("transExp: rwPrimToFinite: bitvector argument (size " <> showt nBits <> ") is not representable in Finite " <> showt finSz <> ".")
             resize an sz arg
       (M.ToFiniteMod, [arg]) -> do
-            finMax   <- checkFinTypeMax "rwPrimToFiniteMod" t'
-            sz       <- sizeOf' "rwPrimToFiniteMod" an t'
-            argTy    <- maybe (failAt an' $ "transExp: rwPrimToFiniteMod: invalid argument type."
+            finSz   <- checkFinTypeMax "rwPrimToFiniteMod" t'
+            sz      <- sizeOf' "rwPrimToFiniteMod" an t'
+            argTy   <- maybe (failAt an' $ "transExp: rwPrimToFiniteMod: invalid argument type."
                                           <> " " <> showt (unAnn (M.typeOf arg))) pure
                         $ M.typeOf arg
-            nBits    <- checkVecArgSize "rwPrimToFiniteMod" (Just argTy)
-            finMaxTy <- maybe (failAt an' "transExp: rwPrimToFiniteMod: typeof lit finMax?") pure
-                     $ M.typeOf $ lit finMax
-            finMaxSz <- sizeOf "rwPrimToFiniteMod" an finMaxTy
-            if 2 ^ nBits <= (fromIntegral finMax :: Integer) then resize an sz arg
-            else resize an sz $ modW argTy (fromIntegral nBits) finMaxTy finMaxSz arg $ lit finMax
+            nBits   <- checkVecArgSize "rwPrimToFiniteMod" (Just argTy)
+            finSzTy <- maybe (failAt an' "transExp: rwPrimToFiniteMod: typeof lit finSz?") pure
+                     $ M.typeOf $ lit finSz
+            sz'     <- sizeOf "rwPrimToFiniteMod" an finSzTy
+            if 2 ^ nBits <= (fromIntegral finSz :: Integer) then resize an sz arg
+            else resize an sz $ modW argTy (fromIntegral nBits) finSzTy sz' arg $ lit finSz
       (M.FromFinite, [arg]) -> do
-            finMax <- checkFinTypeMax "rwPrimFromFinite" (M.typeOf arg)
-            nBits  <- checkVecArgSize "rwPrimFromFinite" t'
-            unless ((fromIntegral finMax :: Integer) <= 2 ^ nBits)
-                  $ failAt (ann arg) ("transExp: rwPrimFromFinite: Finite " <> showt finMax <> " is not representable in bitvector of size " <> showt nBits <> ".")
+            finSz <- checkFinTypeMax "rwPrimFromFinite" (M.typeOf arg)
+            nBits <- checkVecArgSize "rwPrimFromFinite" t'
+            unless ((fromIntegral finSz :: Integer) <= 2 ^ nBits)
+                  $ failAt (ann arg) ("transExp: rwPrimFromFinite: Finite " <> showt finSz <> " is not representable in bitvector of size " <> showt nBits <> ".")
             resize an (fromIntegral nBits) arg
       (toPrim -> Just p, args) -> do
             sz       <- sizeOf' (showt p) an t'
@@ -401,7 +401,7 @@ transBuiltin an' t' an = \ case
 
             checkFinTypeMax :: (MonadError AstError m) => Text -> Maybe M.Ty -> TCM m Natural
             checkFinTypeMax s t = maybe (failAt an' $ "transExp: " <> s <> ": invalid Finite Type: "  <> showt (unAnn t)) pure
-                        $ t >>= M.finMax
+                        $ t >>= M.finSz
 
 transExp :: (MonadError AstError m, Fresh m, MonadState SizeMap m) => M.Exp -> TCM m C.Exp
 transExp e = case e of
@@ -518,7 +518,7 @@ ctorTag an (Just t) d = case M.flattenTyApp t of
       M.TyCon _ c : _ -> do
             ctors      <- getCtors c
             case findIndex ((== n2s d) . n2s) ctors of
-                  Just idx -> pure (toInteger idx, ceilLog2 $ genericLength ctors)
+                  Just idx -> pure (toInteger idx, fromIntegral $ nbits $ genericLength ctors)
                   Nothing  -> failAt an $ "ToCore: ctorTag: unknown ctor: " <> prettyPrint (n2s d) <> " of type " <> prettyPrint (n2s c)
       _               -> failAt an $ "ToCore: ctorTag: unexpected type: " <> prettyPrint t
 
@@ -535,20 +535,16 @@ sizeOf s an t = do
                   M.TyCon _ (n2s -> "Vec") : [M.evalNat -> Just n, t] -> (fromIntegral n *) <$> sizeOf s an t
                   M.TyCon _ (n2s -> "Vec") : [n,t]                    -> failAt an $ "ToCore: " <> s <> ": sizeOf: can't determine the size of a Vec."
                                                                                   <> " (Vec " <> showt (unAnn n) <> " " <> showt (unAnn t) <> ")"
-                  M.TyCon _ (n2s -> "Finite") : [M.evalNat -> Just n] -> pure $ ceilLog2 $ fromIntegral n
-                  M.TyCon _ (n2s -> "Finite") : [n]                     -> failAt an $ "ToCore: " <> s <> ": sizeOf: can't determine the size of a Finite."
+                  M.TyCon _ (n2s -> "Finite") : [M.evalNat -> Just n] -> pure $ fromIntegral $ nbits n
+                  M.TyCon _ (n2s -> "Finite") : [n]                   -> failAt an $ "ToCore: " <> s <> ": sizeOf: can't determine the size of a Finite."
                                                                                   <> " (Finite " <> showt (unAnn n) <> ")"
                   M.TyCon _ c              : _                        -> do
                         ctors      <- getCtors c
                         ctorWidths <- mapM (ctorWidth t) ctors
-                        pure $ ceilLog2 (genericLength ctors) + maximum (0 : ctorWidths)
+                        pure $ fromIntegral (nbits $ genericLength ctors) + maximum (0 : ctorWidths)
                   M.TyApp {}               : _                        -> failAt an $ "ToCore: " <> s <> ": sizeOf: got TyApp after flattening (rwc bug): " <> prettyPrint t
                   M.TyVar {}               : _                        -> pure 0 -- TODO(chathhorn): shouldn't need this.
                   _                                                   -> failAt an $ "ToCore: sizeOf: " <> s <> ": couldn't calculate the size of a type: " <> prettyPrint t
             Just s -> pure s
       put $ Map.insert t s m
       pure s
-
-ceilLog2 :: Integral a => a -> a
-ceilLog2 n | toInteger n < 1 = 0
-ceilLog2 n                   = ceiling $ logBase 2 (fromIntegral n :: Double)

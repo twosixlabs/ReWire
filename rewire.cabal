@@ -35,10 +35,12 @@ data-files:
     tests/regression/Mods/X.hs
     tests/regression/Mods/Y.hs
     tests/regression/Mods/C/X.hs
+    tests/regression/verilog/mymod.sv
     tests/regression/case1.hs
     tests/regression/case2.hs
     tests/regression/dependencyGraph.hs
     tests/regression/dissex.hs
+    tests/regression/dissex2.hs
     tests/regression/exp2.hs
     tests/regression/extern.hs
     tests/regression/fibo1.hs

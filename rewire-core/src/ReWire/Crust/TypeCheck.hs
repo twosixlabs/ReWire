@@ -108,7 +108,7 @@ typeCheck start (ts, syns, vs) = (ts, syns, ) <$> runReaderT tc mempty
 
             concretize :: Data d => Concretes -> d -> d
             concretize cs = transform $ \ case
-                  v@(Var an tan t n) -> maybe v (Var an tan t) $ (unAnn <$> t) >>= \ t' -> Map.lookup (n, t') cs
+                  v@(Var an tan t n) -> maybe v (Var an tan t) $ t >>= (\ t' -> Map.lookup (n, t') cs) . unAnn
                   e                  -> e
 
 freshv :: Fresh m => m Ty

@@ -35,6 +35,7 @@ data-files:
 - tests/integration/OD19/*.hs
 - tests/regression/Mods/*.hs
 - tests/regression/Mods/C/*.hs
+- tests/regression/verilog/*.sv
 - tests/regression/*.hs
 - rewire-user/src/*.hs
 - rewire-user/src/RWC/*.hs
