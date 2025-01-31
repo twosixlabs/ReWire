@@ -238,9 +238,9 @@ compileStart conf topLevel w n_loopfun sigLoop n_startstate sigState0 = do
 compileDefn :: MonadError AstError m => Config -> Defn -> CM m Unit
 compileDefn conf d = Unit (conf^.vhdlPackages) <$> mkDefnEntity d <*> mkDefnArch d
 
-compileProgram :: MonadError AstError m => Config -> C.Program -> m V.Program
+compileProgram :: MonadError AstError m => Config -> C.Device -> m V.Device
 compileProgram conf p = fmap fst $ flip runReaderT (defns p) $ flip runStateT ([], [], 0)
-      $ V.Program
+      $ V.Device
             <$> ((:)
             <$> compileStart
                   conf

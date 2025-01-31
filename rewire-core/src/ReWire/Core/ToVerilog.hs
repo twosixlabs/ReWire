@@ -84,21 +84,26 @@ lookupWidth n = do
                   Reg   [sz] n _ -> pure (n, sz)
                   _              -> failAt noAnn $ "toVerilog: lookupWidth: unexpected multi-dimensional signal (rwc bug): " <> showt n
 
-compileProgram :: (MonadFail m, MonadError AstError m) => Config -> C.Program -> m V.Program
-compileProgram conf p@(C.Program topLevel w loop state0 ds)
-      | conf^.flatten = V.Program . pure <$> runReaderT (compileStart conf topLevel w loop state0) defnMap
+compileProgram :: (MonadFail m, MonadError AstError m) => Config -> C.Device -> m V.Device
+compileProgram conf p@(C.Device topLevel w loop state0 ds)
+      | conf^.flatten = V.Device . pure <$> runReaderT (compileStart conf topLevel w loop state0) defnMap
       | otherwise     = flip runReaderT defnMap $ do
             st' <- compileStart conf topLevel w loop state0
             -- Initial state should be inlined, so we can filter out its defn.
-            ds' <- mapM (compileDefn conf) $ filter (not . singleUse . defnName) $ loop : ds
-            pure $ V.Program $ st' : ds'
+            ds' <- mapM (compileDefn conf) $ filter (not . unused . defnName) $ loop : ds
+            pure $ V.Device $ st' : ds'
       where defnMap :: DefnMap
             defnMap = Map.mapKeys mangle $ C.defnMap p
 
-            singleUse :: GId -> Bool
-            singleUse g = case Map.lookup g $ defnUses p of
-                  Just 1 -> True
-                  _      -> False
+            unused :: GId -> Bool
+            unused g = case Map.lookup g $ defnUses p { C.state0 = nullDefn } of
+                  Nothing -> True
+                  Just 0  -> True
+                  Just 1  -> True
+                  _       -> False
+
+            nullDefn :: C.Defn
+            nullDefn = Defn noAnn "" (Sig noAnn [] 0) C.nil
 
 compileStart :: (MonadError AstError m, MonadFail m, MonadReader DefnMap m)
                  => Config -> Name -> C.Wiring -> C.Defn -> C.Defn -> m Module

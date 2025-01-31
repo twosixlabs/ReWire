@@ -18,8 +18,8 @@ import qualified Data.HashMap.Strict as Map
 type DefnBodyMap = HashMap GId Exp
 
 -- | Removes all zero-length arguments and parameters.
-mergeSlices :: Program -> Program
-mergeSlices p@Program {loop, state0, defns}  = p { loop = reDefn loop, state0 = reDefn state0, defns = reDefn <$> filter ((> 0) . sizeOf) defns }
+mergeSlices :: Device -> Device
+mergeSlices p@Device {loop, state0, defns}  = p { loop = reDefn loop, state0 = reDefn state0, defns = reDefn <$> filter ((> 0) . sizeOf) defns }
       where defns' :: DefnMap
             defns' = Map.fromList $ map (defnName &&& id) allDefns
 
@@ -142,8 +142,8 @@ mergeSlices p@Program {loop, state0, defns}  = p { loop = reDefn loop, state0 = 
 
 
 -- | Remove unused definitions.
-purgeUnused :: Program -> Program
-purgeUnused p@Program { loop, state0, defns } = p { defns = filter ((`elem` uses) . defnName) defns }
+purgeUnused :: Device -> Device
+purgeUnused p@Device { loop, state0, defns } = p { defns = filter ((`elem` uses) . defnName) defns }
       where uses :: [GId]
             uses = uses' [defnName loop, defnName state0]
 
@@ -169,8 +169,8 @@ purgeUnused p@Program { loop, state0, defns } = p { defns = filter ((`elem` uses
 
 -- | Substitute all calls to functions with duplicate bodies to the same
 --   function. Should follow with `purgeUnused`.
-dedupe :: Program -> Program
-dedupe p@Program { loop, state0, defns } = p { loop = ddDefn loop, state0 = ddDefn state0, defns = ddDefn <$> defns }
+dedupe :: Device -> Device
+dedupe p@Device { loop, state0, defns } = p { loop = ddDefn loop, state0 = ddDefn state0, defns = ddDefn <$> defns }
       where ddDefn :: Defn -> Defn
             ddDefn d = d { defnBody = ddExp $ defnBody d }
 
@@ -194,8 +194,8 @@ dedupe p@Program { loop, state0, defns } = p { loop = ddDefn loop, state0 = ddDe
             allDefns = loop : state0 : defns
 
 -- | Attempt to reduce definition bodies to a constant literal value.
-partialEval :: Program -> Program
-partialEval p@Program { loop, state0, defns } = p { loop = evalDefn loop, state0 = evalDefn state0, defns = evalDefn <$> defns }
+partialEval :: Device -> Device
+partialEval p@Device { loop, state0, defns } = p { loop = evalDefn loop, state0 = evalDefn state0, defns = evalDefn <$> defns }
       where defns' :: DefnMap
             defns' = Map.fromList $ map (defnName &&& id) allDefns
 

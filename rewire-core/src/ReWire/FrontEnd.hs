@@ -2,8 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE Trustworthy #-}
 module ReWire.FrontEnd
-      ( loadProgram
-      , LoadPath
+      ( LoadPath
       , compileFile
       ) where
 
@@ -11,10 +10,10 @@ import ReWire.Annotation (unAnn, noAnn)
 import ReWire.Config (Config, Language (..), getOutFile, verbose, target, dump, cycles, inputsFile, source)
 import ReWire.Core.Interp (interp, Ins, run)
 import ReWire.Core.Parse (parseCore)
-import ReWire.Core.Syntax (Program)
+import ReWire.Core.Syntax (Device)
 import ReWire.Core.Transform (mergeSlices, purgeUnused, partialEval, dedupe)
 import ReWire.Error (MonadError, AstError, runSyntaxError, failAt)
-import ReWire.ModCache (printHeader, runCache, getProgram, LoadPath)
+import ReWire.ModCache (printHeader, runCache, getDevice, LoadPath)
 import ReWire.Pretty (Pretty, prettyPrint, fastPrint, showt)
 import qualified ReWire.Config         as Config
 import qualified ReWire.Core.Check     as Core
@@ -39,8 +38,8 @@ import qualified Data.Text.IO        as T
 import qualified Data.Yaml           as YAML
 
 -- | Opens and parses a file and, recursively, its imports.
-loadProgram :: (MonadFail m, MonadError AstError m, MonadState AstError m, MonadIO m) => Config -> FilePath -> m Program
-loadProgram conf fp = runCache $ getProgram conf fp
+loadDevice :: (MonadFail m, MonadError AstError m, MonadState AstError m, MonadIO m) => Config -> FilePath -> m Device
+loadDevice conf fp = runCache $ getDevice conf fp
 
 compileFile :: MonadIO m => Config -> FilePath -> m ()
 compileFile conf filename = do
@@ -49,13 +48,13 @@ compileFile conf filename = do
       runSyntaxError (loadCore >>= Core.check >>= compile)
             >>= either (liftIO . (>> exitFailure) . T.hPutStrLn stderr . prettyPrint) pure
 
-      where loadCore :: (MonadError AstError m, MonadState AstError m, MonadFail m, MonadIO m) => m Core.Program
+      where loadCore :: (MonadError AstError m, MonadState AstError m, MonadFail m, MonadIO m) => m Core.Device
             loadCore = case conf^.source of
-                  Haskell -> loadProgram conf filename 
+                  Haskell -> loadDevice conf filename 
                   RWCore  -> parseCore filename
                   s       -> failAt noAnn $ "Not a supported source language: " <> pack (show s)
 
-            compile :: (MonadFail m, MonadError AstError m, MonadIO m) => Core.Program -> m ()
+            compile :: (MonadFail m, MonadError AstError m, MonadIO m) => Core.Device -> m ()
             compile a = do
                   let b = ( mergeSlices
                         >>> mergeSlices
@@ -90,6 +89,7 @@ compileFile conf filename = do
             writeOutput :: (MonadError AstError m, MonadIO m, Pretty a) => a -> m ()
             writeOutput a = do
                   let fout = getOutFile conf filename
+                  when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: Writing to file: " <> pack fout
                   liftIO $ T.writeFile fout $ if conf^.Config.pretty then prettyPrint a else fastPrint a
 
 -- | Replicates/truncates inputs to fill up exactly ncycles cycles.

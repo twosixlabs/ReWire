@@ -11,7 +11,7 @@ module ReWire.Core.Syntax
   , Prim (..)
   , Defn (..)
   , Wiring (..)
-  , Program (..)
+  , Device (..)
   , Target (..)
   , Size, Index, Name, Value, GId, LId
   , SizeAnnotated (..)
@@ -308,7 +308,7 @@ instance Pretty Defn where
 
 ---
 
-data Program = Program
+data Device = Device
       { topLevel :: !Name
       , wiring   :: !Wiring
       , loop     :: !Defn
@@ -316,12 +316,12 @@ data Program = Program
       , defns    :: ![Defn]
       }
       deriving (Generic, Eq, Ord, Show, Typeable, Data)
-      deriving TextShow via FromGeneric Program
+      deriving TextShow via FromGeneric Device
 
-instance Hashable Program
+instance Hashable Device
 
-instance Pretty Program where
-      pretty (Program n w loop state0 defns) = vsep $ intersperse (text "") $
+instance Pretty Device where
+      pretty (Device n w loop state0 defns) = vsep $ intersperse (text "") $
             [ text "device" <+> text n <> colon
             , pretty w
             , pretty loop
@@ -331,8 +331,8 @@ instance Pretty Program where
 type Uses   = Natural
 type IsPure = Bool
 
-defnMap :: Program -> HashMap GId (Exp, (Uses, IsPure))
-defnMap p@Program { loop, state0, defns } = foldl' defnInfo mempty defns'
+defnMap :: Device -> HashMap GId (Exp, (Uses, IsPure))
+defnMap p@Device { loop, state0, defns } = foldl' defnInfo mempty defns'
       where defnInfo :: HashMap GId (Exp, (Uses, IsPure)) -> Defn -> HashMap GId (Exp, (Uses, IsPure))
             defnInfo m (Defn _ g _ e) = Map.insert g (e, (Map.findWithDefault 0 g uses, Set.member g pures)) m
 
@@ -346,8 +346,8 @@ defnMap p@Program { loop, state0, defns } = foldl' defnInfo mempty defns'
             defns' = loop : state0 : defns
 
 -- | Defns that do not require an implicit clock/reset.
-pureDefns :: Program -> HashSet GId
-pureDefns Program { loop, state0, defns } = fix' purity mempty
+pureDefns :: Device -> HashSet GId
+pureDefns Device { loop, state0, defns } = fix' purity mempty
       where purity :: HashSet GId -> HashSet GId
             purity m = foldl' purity' m defns'
 
@@ -357,9 +357,9 @@ pureDefns Program { loop, state0, defns } = fix' purity mempty
             defns' :: [Defn]
             defns' = loop : state0 : defns
 
-defnUses :: Program -> HashMap GId Uses
-defnUses Program { loop, state0, defns } = Map.fromList [(defnName loop, 1), (defnName state0, 1)]
-      <+> foldr (<+>) Map.empty (expUses . defnBody <$> defns)
+defnUses :: Device -> HashMap GId Uses
+defnUses Device { loop, state0, defns } = Map.fromList [(defnName loop, 1), (defnName state0, 1)]
+      <+> foldr (<+>) Map.empty (expUses . defnBody <$> state0 : loop : defns)
       where expUses :: Exp -> HashMap GId Uses
             expUses = \ case
                   Concat _ e1 e2              -> expUses e1 <+> expUses e2

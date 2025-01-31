@@ -15,7 +15,7 @@ module ReWire.Core.Interp
 
 import ReWire.Config (Config, verbose)
 import ReWire.Core.Syntax
-      ( Program (..)
+      ( Device (..)
       , Name, Value, Index, Size
       , Wiring (..), Prim (..)
       , GId, LId
@@ -71,8 +71,8 @@ run conf m = \ case
                   T.putStr $ mconcat $ (\ (k, v) -> "\t" <> k <> ": " <> BV.showHex v <> "\n") <$> Map.toList b
             (b :) <$> run conf m' ips
 
-interp :: MonadError AstError m => Config -> Program -> MealyT m Ins Outs
-interp _conf (Program _ w loop state0 ds) = interpStart defnMap w loop state0
+interp :: MonadError AstError m => Config -> Device -> MealyT m Ins Outs
+interp _conf (Device _ w loop state0 ds) = interpStart defnMap w loop state0
       where defnMap :: DefnMap
             defnMap = Map.fromList $ map (defnName &&& id) ds
 

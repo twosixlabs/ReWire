@@ -4,7 +4,7 @@
 {-# LANGUAGE Safe #-}
 module ReWire.ModCache
       ( runCache
-      , getProgram
+      , getDevice
       , LoadPath
       , printInfo
       , printInfoHSE
@@ -126,8 +126,8 @@ getModule conf pwd fp = pDebug conf ("Fetching module: " <> pack fp <> " (pwd: "
                   d   -> d </> takeDirectory fp
 
 -- Phase 2 (pre-core) transformations.
-getProgram :: (MonadIO m, MonadFail m, MonadError AstError m, MonadState AstError m) => Config -> FilePath -> Cache m Core.Program
-getProgram conf fp = do
+getDevice :: (MonadIO m, MonadFail m, MonadError AstError m, MonadState AstError m) => Config -> FilePath -> Cache m Core.Device
+getDevice conf fp = do
       (Module ts syns ds,  _)  <- getModule conf "." fp
 
       p <- pure

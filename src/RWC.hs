@@ -72,10 +72,13 @@ main = do
       when (null filenames)  $ exitUsage' ["No input files"]
 
       conf     <- either (exitUsage' . pure) pure $ Config.interpret flags
+      when (conf^.verbose) $ do
+            putStrLn $ "Debug: Flags: " <> show flags
+            putStrLn $ "Debug: Source files: " <> show filenames
 
       systemLP <- getSystemLoadPath
       let conf' = over loadPath (<> (systemLP <> ["."])) conf
 
-      when (conf'^.verbose) $ putStrLn ("loadpath: " <> intercalate "," (conf'^.loadPath))
+      when (conf'^.verbose) $ putStrLn $ "Debug: loadpath: " <> intercalate "," (conf'^.loadPath)
 
       mapM_ (compileFile conf') filenames

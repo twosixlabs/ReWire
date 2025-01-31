@@ -35,7 +35,7 @@ type ConMap = (HashMap (Name M.TyConId) [Name M.DataConId], HashMap (Name M.Data
 type TCM m = ReaderT ConMap (ReaderT (HashMap (Name M.Exp) C.LId) m)
 type StartDefn = (C.Name, C.Wiring, C.GId, C.GId)
 
-toCore :: (Fresh m, MonadError AstError m, MonadFail m) => Config -> Text -> M.FreeProgram -> m C.Program
+toCore :: (Fresh m, MonadError AstError m, MonadFail m) => Config -> Text -> M.FreeProgram -> m C.Device
 toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
       mapM_ (\ x -> ((`runReaderT` conMap) . sizeOf (n2s (M.dataName x)) noAnn . M.TyCon noAnn . M.dataName) x) ts
       let intSz = 128 -- TODO(chathhorn)
@@ -45,7 +45,7 @@ toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
             ([(topLevel, w, loop, state0)], defns)
                   | Just defLoop   <- find ((== loop) . C.defnName) defns
                   , Just defState0 <- find ((== state0) . C.defnName) defns
-                        -> pure $ C.Program topLevel w defLoop defState0 $ filter (neither loop state0 . C.defnName) defns
+                        -> pure $ C.Device topLevel w defLoop defState0 $ filter (neither loop state0 . C.defnName) defns
             _           -> failAt noAnn $ "toCore: no definition found: " <> start)
       where conMap :: ConMap
             conMap = ( Map.fromList $ map (M.dataName &&& map projId . M.dataCons) ts

@@ -5,7 +5,7 @@ module ReWire.Core.Check (check) where
 
 import ReWire.Annotation (ann, noAnn)
 import ReWire.BitVector (BV, width)
-import ReWire.Core.Syntax (isNil, sizeOf, LId, GId, Size, ExternSig (..), Program (..), Defn (..), Pat (..), Exp (..), Sig (..), Target (..), Prim (..))
+import ReWire.Core.Syntax (isNil, sizeOf, LId, GId, Size, ExternSig (..), Device (..), Defn (..), Pat (..), Exp (..), Sig (..), Target (..), Prim (..))
 import ReWire.Error (MonadError, AstError, failAt)
 import ReWire.Pretty (showt)
 
@@ -17,7 +17,7 @@ import qualified Data.HashMap.Strict as Map
 type LIds = HashMap LId Size
 type DefnSigs = HashMap GId (Sig, Exp)
 
-check :: MonadError AstError m => Program -> m Program
+check :: MonadError AstError m => Device -> m Device
 check p = do
       checkLoop defnSigs $ loop p
       checkState0 defnSigs $ state0 p

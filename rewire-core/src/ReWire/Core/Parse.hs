@@ -3,7 +3,7 @@
 {-# LANGUAGE Safe #-}
 module ReWire.Core.Parse (parseCore) where
 
-import ReWire.Core.Syntax (LId, Size, Sig (Sig), Defn (Defn), Program (Program), Pat (..), ExternSig (ExternSig), Name, Target (..), Exp (..), Wiring (..))
+import ReWire.Core.Syntax (LId, Size, Sig (Sig), Defn (Defn), Device (Device), Pat (..), ExternSig (ExternSig), Name, Target (..), Exp (..), Wiring (..))
 import ReWire.BitVector (BV, bitVec, nil)
 import ReWire.Annotation (noAnn)
 import ReWire.Error (failAt, MonadError, AstError)
@@ -21,15 +21,15 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void Text
 
-parseCore :: (MonadError AstError m, MonadIO m) => FilePath -> m Program
+parseCore :: (MonadError AstError m, MonadIO m) => FilePath -> m Device
 parseCore p = liftIO (T.readFile p) >>= either (failAt noAnn . pack . errorBundlePretty) pure . parse (space >> program) p
 
-program :: Parser Program
-program = Program <$> (symbol "device" *> name <* colon) 
-                  <*> wiring
-                  <*> loop
-                  <*> state0
-                  <*> defns
+program :: Parser Device
+program = Device <$> (symbol "device" *> name <* colon) 
+                 <*> wiring
+                 <*> loop
+                 <*> state0
+                 <*> defns
 
 wiring :: Parser Wiring
 wiring = Wiring <$> wires "inputs" <*> wires "outputs" <*> wires "states"
