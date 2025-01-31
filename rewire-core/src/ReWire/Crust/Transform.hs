@@ -22,7 +22,7 @@ import ReWire.Annotation (Annote (..), Annotated (..), unAnn)
 import ReWire.Config (Config, depth)
 import ReWire.Crust.Syntax (Exp (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), TypeSynonym (..), flattenApp)
 import ReWire.Crust.TypeCheck (typeCheckDefn, unify, TySub)
-import ReWire.Crust.Types (typeOf, setTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, rangeTy, (|->), arrowRight, arrowLeft, isReacT)
+import ReWire.Crust.Types (typeOf, setTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT)
 import ReWire.Crust.Util (mkApp, mkError, mkLam, inlineable, mkTupleMPat, mkTuple, mkPairMPat, mkPair, mustInline)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fix, fix', boundedFix)
@@ -441,7 +441,7 @@ purgeUnused except (ts, syns, vs) = (inuseData (fix' extendWithCtorParams $ exte
 
             -- | Also treat as used: all ctors for types returned by externs and ReacT inputs.
             externCtors :: Data a => a -> [Name TyConId]
-            externCtors a = concat $ [maybe [] (ctorNames . rangeTy) $ typeOf e | e@Builtin {} <- query a]
+            externCtors a = concat $ [maybe [] (ctorNames . codomTy) $ typeOf e | e@Builtin {} <- query a]
                   <> [maybe [] ctorNames $ resInputTy t | Defn _ (n2s -> n) (Embed (Poly (unsafeUnbind -> (_, t)))) _ _ <- query a, n `elem` except]
 
             extendWithCtorParams :: [Name TyConId] -> [Name TyConId]

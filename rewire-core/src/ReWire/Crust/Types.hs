@@ -3,7 +3,7 @@
 module ReWire.Crust.Types
       ( TypeAnnotated (typeOf, tyAnn, setTyAnn), tupleTy
       , arr, intTy, strTy, nilTy, refTy, kmonad, (|->)
-      , rangeTy, flattenArrow, pairTy, arrowRight, arrowLeft
+      , codomTy, flattenArrow, pairTy, arrowRight, arrowLeft
       , higherOrder, fundamental, concrete, paramTys
       , finSz, proxyNat, finiteTy, vecSize, vecElemTy, vecTy, evalNat
       , mkArrowTy, poly, poly', listTy, kblank, plusTy, plus
@@ -139,8 +139,8 @@ flattenArrow = \ case
 paramTys :: Ty -> [Ty]
 paramTys = fst . flattenArrow
 
-rangeTy :: Ty -> Ty
-rangeTy = snd . flattenArrow
+codomTy :: Ty -> Ty
+codomTy = snd . flattenArrow
 
 isArrow :: Ty -> Bool
 isArrow = isJust . dstArrow
@@ -242,15 +242,15 @@ tupleTy :: Annote -> [Ty] -> Ty
 tupleTy an = foldr (pairTy an) nilTy
 
 isReacT :: Ty -> Bool
-isReacT = isJust . dstReacT . rangeTy
+isReacT = isJust . dstReacT . codomTy
 
 resInputTy :: Ty -> Maybe Ty
-resInputTy ty = case rangeTy ty of
+resInputTy ty = case codomTy ty of
       TyApp _ (TyApp _ (TyApp _ (TyApp _ (TyCon _ (n2s -> "ReacT")) ip) _) _) _ -> Just ip
       _                                                                         -> Nothing
 
 isStateT :: Ty -> Bool
-isStateT ty = case rangeTy ty of
+isStateT ty = case codomTy ty of
       TyApp an (TyApp _ (TyApp _ (TyCon _ (n2s -> "StateT")) _) m) a -> isStateT (TyApp an m a)
       TyApp _ (TyCon _ (n2s -> "Identity")) _                        -> True
       _                                                              -> False

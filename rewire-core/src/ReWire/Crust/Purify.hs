@@ -6,7 +6,7 @@ module ReWire.Crust.Purify (purify) where
 import ReWire.Annotation (Annote (MsgAnnote, NoAnnote), ann, unAnn, noAnn)
 import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Pat (..), MatchPat (..), DefnAttr (..), DataConId, DataCon (..), Builtin (..), Defn (..), Poly (..), DataDefn (..), FreeProgram, flattenApp)
 import ReWire.Crust.TypeCheck (unify')
-import ReWire.Crust.Types (tupleTy, mkArrowTy, typeOf, arrowLeft, paramTys, isReacT, rangeTy, (|->), isStateT, dstArrow, dstStateT, dstTyApp, dstReacT)
+import ReWire.Crust.Types (tupleTy, mkArrowTy, typeOf, arrowLeft, paramTys, isReacT, codomTy, (|->), isStateT, dstArrow, dstStateT, dstTyApp, dstReacT)
 import ReWire.Crust.Util (mkApp, mkTuplePat, mkTuple, nil, isPrim)
 import ReWire.Error (failAt, MonadError, AstError)
 import ReWire.Pretty (TextShow (showb, showt), fromText, prettyPrint)
@@ -82,7 +82,7 @@ purify start (ts, syns, ds) = do
            )
 
       where getCanonReacTy :: Fresh m => [Defn] -> m (Maybe (Ty, Ty, [Ty], Set Ty))
-            getCanonReacTy = (getCanonReacTy' . catMaybes <$>) . mapM (projDefnTy >=> pure . dstReacT . rangeTy)
+            getCanonReacTy = (getCanonReacTy' . catMaybes <$>) . mapM (projDefnTy >=> pure . dstReacT . codomTy)
 
             getCanonReacTy' :: [(Ty, Ty, [Ty], Ty)] -> Maybe (Ty, Ty, [Ty], Set Ty)
             getCanonReacTy' = \ case
@@ -214,9 +214,9 @@ mkPureEnv ms ((n, Embed phi) : nps) = do
       ((n, purety) :) <$> mkPureEnv ms nps
 
 getStates :: Ty -> [Ty]
-getStates t = case dstReacT $ rangeTy t of
+getStates t = case dstReacT $ codomTy t of
       Just (_, _, sts', _) -> sts'
-      _                    -> fromMaybe [] $ dstTyApp (rangeTy t) >>= dstStateT . fst
+      _                    -> fromMaybe [] $ dstTyApp (codomTy t) >>= dstStateT . fst
 
 lookupPure :: MonadError AstError m => Annote -> Name Exp -> PureEnv -> m Ty
 lookupPure an x = maybe (failAt an $ "No pure binding for variable: " <> n2s x) pure . lookup x
@@ -253,7 +253,7 @@ liftMaybe an msg = maybe (failAt an msg) pure
 purifyResDefn :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Text -> PureEnv -> [Ty] -> Defn -> StateT PSto m Defn
 purifyResDefn start rho ms d = do
       ty            <- projDefnTy d
-      (i, o, _, a)  <- liftMaybe (ann d) "Purify: failed at purifyResDefn" $ dstReacT $ rangeTy ty
+      (i, o, _, a)  <- liftMaybe (ann d) "Purify: failed at purifyResDefn" $ dstReacT $ codomTy ty
       pure_ty       <- purifyTy (ann d) ms $ Just ty
       (args, e)     <- unbind body
 
@@ -266,7 +266,7 @@ purifyResDefn start rho ms d = do
       let args'  = if isStart dname then [] else args
           nstos' = if isStart dname then [] else nstos
           b_pure = bind (args' <> nstos') e'
-          p_pure = if isStart dname then [] |-> rangeTy pure_ty else [] |-> pure_ty
+          p_pure = if isStart dname then [] |-> codomTy pure_ty else [] |-> pure_ty
           d_pure = if isStart dname then s2n "$Pure.start" else dname
 
       pure $ d { defnName = d_pure, defnPolyTy = p_pure, defnBody = Embed b_pure }
@@ -301,7 +301,7 @@ purifyTy an ms (Just t) = case classifyTy t of
             -- >    T1 -> T2 -> ... -> Tn -> In -> S1 -> ... -> Sm -> (Either T (O, R), (S1, (..., Sm)))
       where purifyResTy :: Ty -> Maybe Ty
             purifyResTy t = do
-                  (_, o, _, _) <- dstReacT $ rangeTy t
+                  (_, o, _, _) <- dstReacT $ codomTy t
                   pure $ mkArrowTy (paramTys t <> ms) $ mkRangeTy o ms
 
             -- Takes
@@ -315,7 +315,7 @@ purifyTy an ms (Just t) = case classifyTy t of
             -- into that form.
             purifyStateTTy :: [Ty] -> Ty -> Maybe Ty
             purifyStateTTy ms t = do
-                  a <- snd <$> dstTyApp (rangeTy t)
+                  a <- snd <$> dstTyApp (codomTy t)
                   pure $ mkArrowTy (paramTys t <> ms) $ tupleTy (MsgAnnote "Purify: purifyStateTTy") $ a : ms
 
             classifyTy :: Ty -> TyVariety
