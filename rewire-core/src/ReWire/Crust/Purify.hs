@@ -132,12 +132,11 @@ mkStart start i o ms = Defn
       , defnBody   = appl
       }
       where etor       = mkRangeTy o ms
-            resultTy   = tupleTy (MsgAnnote "Purify: mkStart: resultTy") $ aTy : ms
 
             reacT i o a = TyCon (MsgAnnote "Purify: reacT") (s2n "ReacT") `tyApp` i `tyApp` o `tyApp` a
             startTy     = TyApp (MsgAnnote "Purify: startTy")
                               (reacT i o (TyCon (MsgAnnote "Purify: startTy") (s2n "Identity")))
-                              resultTy
+                              nilTy
 
             unfold     = Builtin (MsgAnnote "Purify: unfold") Nothing (Just $ mkArrowTy [dispatchTy i o ms, etor] startTy) Unfold
             dispatch   = Var (MsgAnnote "Purify: dispatch") Nothing (Just $ dispatchTy i o ms) $ s2n "$Pure.dispatch"
