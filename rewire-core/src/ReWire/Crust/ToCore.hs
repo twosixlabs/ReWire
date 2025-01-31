@@ -415,7 +415,7 @@ transExp e = case e of
                   let argSizes = map C.sizeOf args'
                   pure $ C.Call an sz (C.Global $ showt x) (C.cat args') (map (C.PatVar an) argSizes) C.nil
             M.Con an _ t d            : args                               -> do
-                  (v, w)     <- ctorTag an (M.rangeTy <$> t) d
+                  (v, w)     <- ctorTag an (M.codomTy <$> t) d
                   args'      <- mapM transExp args
                   let argSizes = map C.sizeOf args'
                   (tag, pad) <- ctorRep an (M.typeOf e) (v, w) $ sum argSizes
@@ -467,7 +467,7 @@ transPat = \ case
       M.MatchPatWildCard an _ t -> pure . C.PatWildCard an <$> sizeOf' "MatchPatWildCard" an t
 
 transType :: (Fresh m, MonadError AstError m, MonadState SizeMap m) => M.Ty -> ReaderT ConMap m C.Sig
-transType t = C.Sig (ann t) <$> mapM (sizeOf "transType Param" $ ann t) (M.paramTys t) <*> sizeOf "transType Range" (ann t) (M.rangeTy t)
+transType t = C.Sig (ann t) <$> mapM (sizeOf "transType param" $ ann t) (M.paramTys t) <*> sizeOf "transType codomain" (ann t) (M.codomTy t)
 
 matchTy :: MonadError AstError m => Annote -> M.Ty -> M.Ty -> m TySub
 matchTy an (M.TyApp _ t1 t2) (M.TyApp _ t1' t2') = do
@@ -491,7 +491,7 @@ type TySub = [(Text, M.Ty)]
 
 ctorWidth :: (Fresh m, MonadError AstError m, MonadReader ConMap m, MonadState SizeMap m) => M.Ty -> Name M.DataConId -> m C.Size
 ctorWidth t d = do
-      let t'            =  M.rangeTy t
+      let t'            =  M.codomTy t
       getCtorType d >>= \ case
             Just ct -> do
                   let (targs, tres) = M.flattenArrow ct
