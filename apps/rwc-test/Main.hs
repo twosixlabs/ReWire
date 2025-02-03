@@ -10,7 +10,7 @@ import System.Directory (listDirectory, setCurrentDirectory)
 import System.Environment (getArgs)
 import System.Environment (withArgs)
 import System.Exit (exitFailure)
-import System.FilePath ((</>), (-<.>), takeBaseName, takeDirectory, takeFileName)
+import System.FilePath ((</>), (-<.>), takeBaseName, takeDirectory)
 import System.IO (hPutStr, hPutStrLn, stderr)
 import System.Process (callCommand)
 import Test.Tasty (defaultMain, sequentialTestGroup, TestTree, DependencyType (..))
@@ -146,7 +146,7 @@ exitUsage = hPutStr stderr (usageInfo "Usage: rwc-test [OPTION...]" options) >> 
 
 main :: IO ()
 main = do
-      (flags, extra, errs) <- getOpt Permute options <$> getArgs
+      (flags, _, errs) <- getOpt Permute options <$> getArgs
 
       let testDirs = ["regression"] -- TODO(chathhorn): re-enable integration tests.
 
