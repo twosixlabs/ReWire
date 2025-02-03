@@ -2,7 +2,7 @@
 {-# LANGUAGE Safe #-}
 module ReWire.Crust.Util
       ( Fresh, Name, Embed (..), TRec, Bind, FieldId
-      , paramTys, isPrim, inlineable, mustInline, nil
+      , paramTys, isPrim, inlinable, mustInline, nil
       , mkTuple, mkTuplePat, mkTupleMPat
       , mkPair, mkPairPat, mkPairMPat, flattenLam, mkLam
       , mkApp, mkError, builtin, proxy
@@ -23,8 +23,8 @@ builtin b = lookup b builtins
 isPrim :: Show a => a -> Bool
 isPrim = notElem '.' . show
 
-inlineable :: Defn -> Bool
-inlineable d = case defnAttr d of
+inlinable :: Defn -> Bool
+inlinable d = case defnAttr d of
       Just Inline   -> True
       Just NoInline -> False
       Nothing       -> not $ isPrim $ defnName d

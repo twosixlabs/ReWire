@@ -6,7 +6,7 @@ module ReWire.Crust.Purify (purify) where
 import ReWire.Annotation (Annote (MsgAnnote, NoAnnote), ann, unAnn, noAnn)
 import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Pat (..), MatchPat (..), DefnAttr (..), DataConId, DataCon (..), Builtin (..), Defn (..), Poly (..), DataDefn (..), FreeProgram, flattenApp)
 import ReWire.Crust.TypeCheck (unify')
-import ReWire.Crust.Types (tupleTy, mkArrowTy, typeOf, arrowLeft, paramTys, isReacT, codomTy, (|->), isStateT, dstArrow, dstStateT, dstTyApp, dstReacT)
+import ReWire.Crust.Types (tupleTy, mkArrowTy, typeOf, arrowLeft, paramTys, isReacT, codomTy, (|->), isStateT, dstArrow, dstStateT, dstTyApp, dstReacT, nilTy)
 import ReWire.Crust.Util (mkApp, mkTuplePat, mkTuple, nil, isPrim)
 import ReWire.Error (failAt, MonadError, AstError)
 import ReWire.Pretty (TextShow (showb, showt), fromText, prettyPrint)
@@ -263,19 +263,19 @@ purifyResDefn start rho ms d = do
       --
       -- Below is an egregious hack to compile the start symbol slightly differently.
       --
-      let args'  = if isStart dname then [] else args
-          nstos' = if isStart dname then [] else nstos
+      let args'  = if isStart then [] else args
+          nstos' = if isStart then [] else nstos
+          p_pure = if isStart then [] |-> codomTy pure_ty else [] |-> pure_ty
+          d_pure = if isStart then s2n "$Pure.start" else dname
           b_pure = bind (args' <> nstos') e'
-          p_pure = if isStart dname then [] |-> codomTy pure_ty else [] |-> pure_ty
-          d_pure = if isStart dname then s2n "$Pure.start" else dname
 
       pure $ d { defnName = d_pure, defnPolyTy = p_pure, defnBody = Embed b_pure }
       where dname      = defnName d
             Embed body = defnBody d
             an         = defnAnnote d
 
-            isStart :: Name Exp -> Bool
-            isStart = (== start) . n2s
+            isStart :: Bool
+            isStart = n2s dname == start
 
 ---------------------------
 -- Purifying Types
@@ -375,7 +375,7 @@ purifyStateBody rho stos stys i = classifyCases >=> \ case
 
       -- e1 must be simply-typed, so don't purify it.
       CMatch an e1 mp e2 e3 -> do
-            p <- transPat mp
+            p   <- transPat mp
             e2' <- purifyStateBody rho stos stys i $ mkApp an e2 $ map (mkVar an) $ patVars p
             Case an Nothing (typeOf e2') e1 (bind p e2')  <$> maybe' (purifyStateBody rho stos stys i <$> e3)
 
@@ -384,8 +384,8 @@ purifyStateBody rho stos stys i = classifyCases >=> \ case
             ns          <- freshVars "st" $ a : stys
             (f, es)     <- dstApp g
             g_pure_app  <- mkPureApp an rho f $ es <> map (mkVar an) ns
-            let p        = mkTuplePat an $ map patVar ns
             e'          <- purifyStateBody rho stos stys i e
+            let p        = mkTuplePat an $ map patVar ns
             mkLet an p e' g_pure_app
 
       where replaceAtIndex :: MonadError AstError m => Annote -> Int -> a -> [a] -> m [a]
@@ -680,7 +680,7 @@ mkPureApp an rho rator es = flip (mkApp an) es <$> mkPureVar an rho rator
 dstApp :: MonadError AstError m => Exp -> m (Name Exp, [Exp])
 dstApp e = case flattenApp e of
       Var _ _ _ n : es -> pure (n, es)
-      d                -> failAt (ann e) $ "Purify: tried to dst non-app: " <> showt (unAnn d)
+      _                -> failAt (ann e) $ "Purify: tried to dst non-app: " <> prettyPrint e
 
 -- | Lets are desugared already, so use a case instead (with lifted discriminator).
 mkLet :: Fresh m => Annote -> Pat -> Exp -> Exp -> m Exp
