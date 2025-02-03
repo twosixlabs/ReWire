@@ -158,20 +158,19 @@ getDevice conf fp = do
        >=> pDebug' "[Pass 8] Post-simplification."
        >=> whenDump 8 (printInfo "[Pass 8] Crust: Post-simplify")
        >=> pDebug' "Lifting lambdas (pre-purification)."
-       >=> prePurify
-       >=> shiftLambdas >=> liftLambdas
+       >=> liftLambdas >=> prePurify
        >=> pDebug' "Removing unused definitions (again)."
        >=> pure . purgeUnused (start : (fst <$> builtins))
        >=> pDebug' "[Pass 9] Pre-purification."
        >=> whenDump 9 (printInfo "[Pass 9] Crust: Pre-purification")
        >=> pDebug' "Purifying."
-       >=> purify start
+       >=> shiftLambdas >=> purify start
        >=> pDebug' "[Pass 10] Post-purification."
        >=> whenDump 10 (printInfo "[Pass 10] Crust: Post-purification")
        >=> pDebug' "Lifting lambdas (post-purification)."
        >=> liftLambdas
        >=> pDebug' "Fully apply global function definitions."
-       >=> fullyApplyDefs
+       >=> shiftLambdas >=> fullyApplyDefs
        >=> pDebug' "Removing unused definitions (again)."
        >=> pure . purgeUnused [start]
        >=> pDebug' "[Pass 11] Post-purification."
