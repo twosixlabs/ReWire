@@ -2,22 +2,22 @@ module top_level (input logic [0:0] clk,
   input logic [0:0] rst,
   input logic [6:0] __in0,
   output logic [6:0] __out0);
-  logic [7:0] gzdLLzicase4288;
-  logic [6:0] gzdLLzilambda4277;
+  logic [7:0] gzdLLziPurezidispatch1;
+  logic [6:0] gzdLLziMainzidev;
   logic [8:0] callRes;
-  logic [7:0] gzdLLzicase4290;
-  logic [6:0] gzdLLzilambda4277R1;
+  logic [7:0] gzdLLziPurezidispatch;
+  logic [6:0] gzdLLziMainzidevR1;
   logic [8:0] callResR1;
   logic [0:0] __continue;
   logic [0:0] __resumption_tag;
   logic [0:0] __resumption_tag_next;
-  assign gzdLLzicase4288 = {__resumption_tag, __in0};
-  assign gzdLLzilambda4277 = gzdLLzicase4288[6:0];
-  zdLLzilambda4277  zdLLzilambda4277 (gzdLLzilambda4277[6:0], callRes);
-  assign gzdLLzicase4290 = {__resumption_tag, __in0};
-  assign gzdLLzilambda4277R1 = gzdLLzicase4290[6:0];
-  zdLLzilambda4277  zdLLzilambda4277R1 (gzdLLzilambda4277R1[6:0], callResR1);
-  assign {__continue, __out0, __resumption_tag_next} = (gzdLLzicase4290[7] == 1'h0) ? callResR1 : callRes;
+  assign gzdLLziPurezidispatch1 = {__in0, __resumption_tag};
+  assign gzdLLziMainzidev = gzdLLziPurezidispatch1[7:1];
+  zdLLziMainzidev  zdLLziMainzidev (gzdLLziMainzidev[6:0], callRes);
+  assign gzdLLziPurezidispatch = {__in0, __resumption_tag};
+  assign gzdLLziMainzidevR1 = gzdLLziPurezidispatch[7:1];
+  zdLLziMainzidev  zdLLziMainzidevR1 (gzdLLziMainzidevR1[6:0], callResR1);
+  assign {__continue, __out0, __resumption_tag_next} = (gzdLLziPurezidispatch[0] == 1'h1) ? callResR1 : callRes;
   initial __resumption_tag <= 1'h1;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
@@ -28,7 +28,7 @@ module top_level (input logic [0:0] clk,
   end
 endmodule
 
-module zdLLzilambda4277 (input logic [6:0] arg0,
+module zdLLziMainzidev (input logic [6:0] arg0,
   output logic [8:0] res);
   logic [6:0] resizze;
   logic [13:0] binOp;

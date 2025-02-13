@@ -80,9 +80,10 @@ interpStart :: MonadError AstError m => DefnMap -> Wiring -> Defn -> Defn -> Mea
 interpStart defns w loop state0 = MealyT $ \ _ -> do
             so <- splitOutputs <$> interpDefn defns state0 mempty
             pure (filterOutput so, unfoldMealyT f $ filterDispatch so)
-      -- So:        loop   :: ((R_, s), i) -> R (o, s)
-      --            (state0 :: R (o, s)) = Pause (o0, R_0, s0)
-      --            where R a = Done (a, s) | Pause (o, R_, s)
+      -- So:        loop   :: ((R_, s), i) -> PR (o, s)
+      --            state0 :: PR (o, s)
+      --            state0 = Pause (o0, R_0, s0)
+      --            where PR (o, s) = Done (a, s) | Pause (o, R_, s)
       -- Assuming neither should ever be Done.
       where f :: MonadError AstError m => Sts -> Ins -> m (Outs, Sts)
             f s i = (filterOutput &&& filterDispatch) . splitOutputs <$> interpDefn defns loop (joinInputs $ Map.map nat s <> i)

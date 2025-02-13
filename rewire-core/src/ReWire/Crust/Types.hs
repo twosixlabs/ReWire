@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE Safe #-}
 module ReWire.Crust.Types
-      ( TypeAnnotated (typeOf, tyAnn, setTyAnn), tupleTy
+      ( TypeAnnotated (typeOf, tyAnn, setTyAnn), maybeSetTyAnn, tupleTy
       , arr, intTy, strTy, nilTy, refTy, kmonad, (|->)
       , codomTy, flattenArrow, pairTy, arrowRight, arrowLeft
       , higherOrder, fundamental, concrete, paramTys
@@ -10,19 +11,22 @@ module ReWire.Crust.Types
       , isReacT, isStateT, ctorNames, resInputTy
       , dstArrow, dstStateT, dstTyApp, dstReacT, proxyTy
       , dstNegTy, negTy, dstPoly1, Poly1, minusP1, zeroP1, pickVar, poly1Ty
+      , renumTyVars, prettyTy
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote), Annotated (ann), noAnn)
 import ReWire.Crust.Syntax (Exp (..), Ty (..), Poly (Poly), Pat (..), Kind (..), MatchPat (..), flattenTyApp, TyConId)
-import ReWire.Unbound (Name, Embed (Embed), unsafeUnbind, n2s, s2n, fv, bind)
-import ReWire.Pretty (Pretty (pretty), Doc, hsep, text, punctuate, parens, showt)
+import ReWire.Unbound (Name, Embed (Embed), unsafeUnbind, n2s, s2n, fv, bind, makeName, name2Integer)
+import ReWire.Pretty (Pretty (pretty), Doc, hsep, text, punctuate, parens, showt, prettyPrint)
 
+import Control.Monad.State (MonadState, evalState, gets, modify)
 import Data.Containers.ListUtils (nubOrd)
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable (hash))
-import Data.List (sortOn)
+import Data.List (sortOn, elemIndex)
 import Data.Maybe (isJust)
 import Data.Ratio (numerator, denominator, (%))
+import Data.Text (Text)
 import Numeric.Natural (Natural)
 
 import qualified Data.HashMap.Strict as Map
@@ -33,6 +37,12 @@ class TypeAnnotated a where
       typeOf   :: a -> Maybe Ty
       tyAnn    :: a -> Maybe Poly
       setTyAnn :: Maybe Poly -> a -> a
+
+-- | Set type annotation only if it is not set already.
+maybeSetTyAnn :: TypeAnnotated a => Maybe Poly -> a -> a
+maybeSetTyAnn tan a = case tyAnn a of
+      Nothing -> setTyAnn tan a
+      Just _  -> a
 
 instance TypeAnnotated Exp where
       typeOf = \ case
@@ -128,7 +138,7 @@ infix 1 |->
 arr :: Ty -> Ty -> Ty
 arr t = TyApp (ann t) (TyApp (ann t) (TyCon (ann t) $ s2n "->") t)
 
-infixr 1 `arr`
+infixr 2 `arr`
 
 flattenArrow :: Ty -> ([Ty], Ty)
 flattenArrow = \ case
@@ -415,3 +425,19 @@ dstPoly1 = \ case
             rdiv = \ case
                   (dstTyBinOp -> Just (n2s -> "/", t, dstRat -> Just r)) -> pure (t, r)
                   _                                                      -> Nothing
+
+prettyTy :: Ty -> Text
+prettyTy = prettyPrint . renumTyVars
+
+-- | Re-number all type var names to make them smaller and prettier (but only
+--   unique within this type and not globally).
+renumTyVars :: Ty -> Ty
+renumTyVars = flip evalState mempty . renum
+      where renum :: MonadState (HashMap Text [Integer]) m => Ty -> m Ty
+            renum = \ case
+                  TyApp an a b -> TyApp an <$> renum a <*> renum b
+                  TyVar an k v -> gets (Map.lookup $ n2s v) >>= \ case
+                        Just ns  | Just n <- elemIndex (name2Integer v) ns -> pure (TyVar an k $ makeName (n2s v) $ fromIntegral n)
+                                 | otherwise                               -> modify (Map.insert (n2s v) (ns <> [name2Integer v])) >> pure (TyVar an k $ makeName (n2s v) $ fromIntegral $ length ns)
+                        Nothing                                            -> modify (Map.insert (n2s v) [name2Integer v]) >> pure (TyVar an k $ makeName (n2s v) 0)
+                  t            -> pure t

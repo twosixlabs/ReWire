@@ -1,13 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Safe #-}
+-- {-# LANGUAGE Trustworthy #-}
 module ReWire.Crust.TypeCheck (typeCheck, typeCheckDefn, untype, unify, unify', TySub) where
 
 import ReWire.Annotation (Annote (MsgAnnote), unAnn, ann)
 import ReWire.Crust.Syntax (Exp (..), Ty (..), Kind (..), Poly (..), Pat (..), MatchPat (..), FreeProgram, Defn (..), DataDefn (..), Builtin (..), DataCon (..), DataConId, builtinName)
-import ReWire.Crust.Types (poly, arrowRight, (|->), concrete, kblank, tyAnn, setTyAnn, flattenArrow, strTy, intTy, listTy, vecTy, arr, arrowLeft, dstPoly1, zeroP1, minusP1, pickVar, poly1Ty)
-import ReWire.Crust.Util (mkApp)
+import ReWire.Crust.Types (mkArrowTy, poly, arrowRight, (|->), concrete, kblank, tyAnn, setTyAnn, flattenArrow, strTy, intTy, listTy, vecTy, arr, arrowLeft, dstPoly1, zeroP1, minusP1, pickVar, poly1Ty, prettyTy)
+import ReWire.Crust.Util (transMPat, patVars)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fixOn, fixOn')
 import ReWire.Pretty (showt, prettyPrint, Pretty (..))
@@ -29,6 +31,7 @@ import Data.Text (Text)
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Set as Set
 
+-- import ReWire.Pretty (hsep)
 -- import Debug.Trace (trace)
 -- import Data.Text (unpack)
 
@@ -128,7 +131,12 @@ mgu (TyCon _ c1)                    (TyCon _ c2)     | n2s c1 == n2s c2         
 mgu (TyVar _ _ u)                   tv@(TyVar _ _ v) | hash (show u) > hash (show v) = pure $ Map.fromList [(u, tv)]
 mgu tu@TyVar {}                     (TyVar _ _ v)                                    = pure $ Map.fromList [(v, tu)]
 
+-- TODO: the special-case unifying with ReacT/PuRe is a hack and doesn't cover all cases. Should be removed eventually.
+mgu (TyVar _ _ u)                   t                | u `notElem` fv t, isReacT' t  = tsUnion (Map.fromList [(u, t)]) <$> mgu globalReacT' t
+mgu (TyVar _ _ u)                   t                | u `notElem` fv t, isPuRe' t   = tsUnion (Map.fromList [(u, t)]) <$> mgu globalPuRe t
 mgu (TyVar _ _ u)                   t                | u `notElem` fv t              = pure $ Map.fromList [(u, t)]
+mgu t                               (TyVar _ _ u)    | u `notElem` fv t, isReacT' t  = tsUnion (Map.fromList [(u, t)]) <$> mgu globalReacT' t
+mgu t                               (TyVar _ _ u)    | u `notElem` fv t, isPuRe' t   = tsUnion (Map.fromList [(u, t)]) <$> mgu globalPuRe t
 mgu t                               (TyVar _ _ u)    | u `notElem` fv t              = pure $ Map.fromList [(u, t)]
 
 mgu (dstPoly1 -> Just p1)           (dstPoly1 -> Just p2)                            = case p1 `minusP1` p2 of
@@ -136,11 +144,20 @@ mgu (dstPoly1 -> Just p1)           (dstPoly1 -> Just p2)                       
                   (pickVar -> Just (x, p')) -> pure $ Map.singleton x $ poly1Ty p'
                   _                         -> Nothing
 
+-- TODO: one ReacT assumption.
 mgu (TyApp _ (TyApp _ (TyCon _ (n2s -> "ReacT")) ti ) to )
     (TyApp _ (TyApp _ (TyCon _ (n2s -> "ReacT")) ti') to')                           = do
       s1 <- mgu iTy ti
       s2 <- tsUnion s1 <$> mgu (subst s1 ti) (subst s1 ti')
       s3 <- tsUnion s2 <$> mgu (subst s2 oTy) (subst s2 to)
+      tsUnion s3 <$> mgu (subst s3 to) (subst s3 to')
+
+-- TODO: one PuRe assumption.
+mgu (TyApp _ (TyApp _ (TyCon _ (n2s -> "PuRe")) ts ) to )
+    (TyApp _ (TyApp _ (TyCon _ (n2s -> "PuRe")) ts') to')                            = do
+      s1 <- mgu sPTy ts
+      s2 <- tsUnion s1 <$> mgu (subst s1 ts) (subst s1 ts')
+      s3 <- tsUnion s2 <$> mgu (subst s2 oPTy) (subst s2 to)
       tsUnion s3 <$> mgu (subst s3 to) (subst s3 to')
 
 mgu (TyApp _ tl tr)                 (TyApp _ tl' tr')                                = do
@@ -167,8 +184,8 @@ unify an t1 t2 = do
                   modify $ tsUnion s
                   gets $ flip subst t1'
             _      -> failAt an $ "Types do not unify. Expected and got, respectively:\n"
-                              <> prettyPrint t1' <> "\n"
-                              <> prettyPrint t2'
+                              <> prettyTy t1' <> "\n"
+                              <> prettyTy t2'
 
 inst :: Fresh m => Poly -> m Ty
 inst (Poly pt) = snd <$> unbind pt
@@ -182,19 +199,9 @@ patAssumps = flip patAssumps' mempty
                   PatVar {}                     -> id
                   PatWildCard {}                -> id
 
-patHoles :: Fresh m => MatchPat -> m (HashMap (Name Exp) Poly)
-patHoles = flip patHoles' $ pure mempty
-      where patHoles' :: Fresh m => MatchPat -> m (HashMap (Name Exp) Poly) -> m (HashMap (Name Exp) Poly)
-            patHoles' = \ case
-                  MatchPatCon _ _ _ _ ps   -> flip (foldr patHoles') ps
-                  MatchPatVar _ _ (Just t) -> (flip Map.insert ([] `poly` t) <$> fresh (s2n "PHOLE") <*>)
-                  MatchPatVar {}           -> id
-                  MatchPatWildCard {}      -> id
-
 tcPatCon :: (MonadReader TCEnv m, MonadState TySub m, Fresh m, MonadError AstError m, Pretty pat) => Annote -> Ty -> (Ty -> pat -> m pat) -> Name DataConId -> [pat] -> m ([pat], Ty)
 tcPatCon an t tc i ps = do
       -- trace ("     tcPatCon: " <> show i <> show (hsep (map pretty ps)) <> " :: " <> unpack (prettyPrint t)) $ pure ()
-      -- _ <- infoM "RWC" $ "tcPatCon: " <> concatMap (unpack . prettyPrint) ps
       cas     <- asks cas
       case Map.lookup i cas of
             Nothing  -> failAt an $ "Unknown constructor: " <> prettyPrint i
@@ -233,7 +240,7 @@ tcMatchPat t = \ case
 tcExp :: (Fresh m, MonadError AstError m, MonadReader TCEnv m, MonadState TySub m) => Ty -> Exp -> m (Exp, Ty)
 tcExp tt = \ case
       e | Just pt <- tyAnn e -> do
-            -- trace ("tcExp: type annotation: " ++ show (prettty pt) $ pure ())
+            -- trace ("tcExp: type annotation: " <> show (pretty pt)) $ pure ()
             ta       <- inst pt
             t        <- unify (ann e) ta tt
             (e', t') <- first (setTyAnn $ Just pt) <$> tcExp t (setTyAnn Nothing e)
@@ -248,7 +255,7 @@ tcExp tt = \ case
                   Just es -> tcExp tt $ LitVec an tan Nothing es
       App an tan _ e1 e2 -> do
             -- trace "tcExp: app (1): tc e2" $ pure ()
-            tvx      <- freshv
+            tvx       <- freshv
             (e2', t2) <- tcExp tvx e2
             -- trace "tc: app (2): tc e1" $ pure ()
             (e1', t1) <- tcExp (t2 `arr` tt) e1
@@ -283,35 +290,37 @@ tcExp tt = \ case
                         t <- inst pt
                         t' <- unify an tt t
                         pure (Con an tan (Just t') i, t')
-      Case an tan _ e e1 e2 -> do
-            -- trace ("  tcCase: " <> show (pretty e) <> " :: " <>
+      Case an tan _ disc e els -> do
+            -- trace ("  tcCase: " <> show (pretty disc) <> " :: " <>
             --                unpack (prettyPrint tan)) $ pure ()
             -- trace "tcExp: case" $ pure ()
-            tve        <- freshv
-            (e', tp)   <- tcExp tve e
-            (p, e1')   <- unbind e1
-            p'         <- tcPat tp p
+            tve         <- freshv
+            (disc', tp) <- tcExp tve disc
+            (p, e')     <- unbind e
+            p'          <- tcPat tp p
             let as     = patAssumps p'
             -- trace "tc: case: tc then" $ pure ()
-            (e1'', t1) <- localAssumps (`Map.union` as) $ tcExp tt e1'
-            case e2 of
-                  Nothing -> pure (Case an tan (Just t1) e' (bind p' e1'') Nothing, t1)
-                  Just e2 -> do
+            (e'', t1) <- localAssumps (`Map.union` as) $ tcExp tt e'
+            case els of
+                  Nothing -> pure (Case an tan (Just t1) disc' (bind p' e'') Nothing, t1)
+                  Just els -> do
                         -- trace "tc: case: tc else" $ pure ()
-                        (e2', t2) <- tcExp t1 e2
-                        pure (Case an tan (Just t2) e' (bind p' e1'') (Just e2'), t2)
-      Match an tan _ e p f e2 -> do
+                        (els', t2) <- tcExp t1 els
+                        pure (Case an tan (Just t2) disc' (bind p' e'') (Just els'), t2)
+      Match an tan _ disc p e els -> do
             -- trace "tcExp: match" $ pure ()
-            tve      <- freshv
-            (e', tp) <- tcExp tve e
-            p'       <- tcMatchPat tp p
-            holes    <- patHoles p'
-            (_, tb)  <- localAssumps (`Map.union` holes) $ tcExp tt $ mkApp' an f $ map fst $ Map.toList holes
-            case e2 of
-                  Nothing -> pure (Match an tan (Just tb) e' p' f Nothing, tb)
-                  Just e2 -> do
-                        (e2', t2) <- tcExp tb e2
-                        pure (Match an tan (Just t2) e' p' f (Just e2'), t2)
+            tve         <- freshv
+            (disc', tp) <- tcExp tve disc
+            p'          <- tcMatchPat tp p
+            tps         <- map fst . patVars <$> transMPat p'
+            (e', flattenArrow -> (targs, tres))
+                        <- tcExp (mkArrowTy tps tt) e
+            let tm       = mkArrowTy (drop (length tps) targs) tres
+            case els of
+                  Nothing  -> pure (Match an tan (Just tm) disc' p' e' Nothing, tm)
+                  Just els -> do
+                        (els', t2) <- tcExp tm els
+                        pure (Match an tan (Just t2) disc' p' e' (Just els'), t2)
       Builtin an tan _ b -> do
             -- trace ("tcExp: builtin: " <> show b) $ pure ()
             as <- asks as
@@ -348,9 +357,6 @@ tcExp tt = \ case
                   LitList _ _ _ es -> pure es
                   _                -> Nothing
 
-            mkApp' :: Annote -> Exp -> [Name Exp] -> Exp
-            mkApp' an f holes = mkApp an f $ map (Var an Nothing Nothing) holes
-
             tcElem :: (Fresh m, MonadError AstError m, MonadReader TCEnv m, MonadState TySub m) => ([Exp], Ty) -> Exp -> m ([Exp], Ty)
             tcElem (els, tel) el = do
                   -- trace "tc: tcElem" $ pure ()
@@ -362,9 +368,15 @@ tcDefn :: (Fresh m, MonadError AstError m, MonadReader TCEnv m) => Text -> Defn 
 tcDefn start d  = flip evalStateT mempty $ do
       -- trace ("tcDefn: " <> show (defnName d)) $ pure ()
       let Defn an n (Embed pt) b (Embed e) = force d
-      startTy  <- inst globalStartTy
-      t        <- if isStart $ defnName d then inst pt >>= unify an startTy else inst pt
-      (vs, body) <- unbind e
+      t           <- if
+            | isStart $ defnName d -> do
+                  startTy <- inst globalStartTy
+                  inst pt >>= unify an startTy
+            | isPureStart $ defnName d -> do
+                  pureStartTy <- inst globalPureStartTy
+                  inst pt >>= unify an pureStartTy
+            | otherwise -> inst pt
+      (vs, body)  <- unbind e
       let (targs, _) = flattenArrow t
           tbody      = iterate arrowRight t !! length vs
 
@@ -377,6 +389,9 @@ tcDefn start d  = flip evalStateT mempty $ do
       d' `deepseq` pure d'
       where isStart :: Name Exp -> Bool
             isStart = (== start) . n2s
+
+            isPureStart :: Name Exp -> Bool
+            isPureStart = (== "$Pure.start") . n2s
 
 withAssumps :: (MonadError AstError m, MonadReader TCEnv m) => [DataDefn] -> [Defn] -> m a -> m a
 withAssumps ts vs = localAssumps (`Map.union` as) . localCAssumps (`Map.union` cas)
@@ -407,10 +422,36 @@ iTy = TyVar (MsgAnnote "ReacT input type.") KStar (s2n "?i")
 oTy :: Ty
 oTy = TyVar (MsgAnnote "ReacT output type.") KStar (s2n "?o")
 
-globalReacT :: Ty -> Ty -> Ty
-globalReacT s = TyApp an $ TyApp an (TyApp an (TyApp an (TyCon an $ s2n "ReacT") iTy) oTy) s
+sPTy :: Ty
+sPTy = TyVar (MsgAnnote "PuRe s type.") KStar (s2n "?ps")
+
+oPTy :: Ty
+oPTy = TyVar (MsgAnnote "PuRe o type.") KStar (s2n "?po")
+
+isReacT' :: Ty -> Bool
+isReacT' = \ case
+      TyApp _ (TyApp _ (TyCon _ (n2s -> "ReacT")) _) _ -> True
+      _                                                -> False
+
+globalReacT' :: Ty
+globalReacT' = TyApp an (TyApp an (TyCon an $ s2n "ReacT") iTy) oTy
       where an :: Annote
-            an = MsgAnnote "Expected ReacT type."
+            an = MsgAnnote "Global ReacT type."
+
+globalReacT :: Ty -> Ty -> Ty
+globalReacT = TyApp an . TyApp an globalReacT'
+      where an :: Annote
+            an = MsgAnnote "Global ReacT type."
+
+isPuRe' :: Ty -> Bool
+isPuRe' = \ case
+      TyApp _ (TyApp _ (TyCon _ (n2s -> "PuRe")) _) _ -> True
+      _                                               -> False
+
+globalPuRe :: Ty
+globalPuRe = TyApp an (TyApp an (TyCon an $ s2n "PuRe") sPTy) oPTy
+      where an :: Annote
+            an = MsgAnnote "Global PuRe type."
 
 globalStartTy :: Poly
 globalStartTy = poly [a] $ globalReacT (TyCon an $ s2n "Identity") $ TyVar an KStar a
@@ -419,3 +460,6 @@ globalStartTy = poly [a] $ globalReacT (TyCon an $ s2n "Identity") $ TyVar an KS
 
             a :: Name Ty
             a = s2n "a"
+
+globalPureStartTy :: Poly
+globalPureStartTy = poly [] globalPuRe

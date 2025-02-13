@@ -1,18 +1,19 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Safe #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module ReWire.Crust.Transform
       ( inline, expandTypeSynonyms, reduce
       , neuterExterns
       , shiftLambdas
       , unshiftLambdas
       , liftLambdas
-      , fullyApplyDefs
+      , etaAbsDefs
       , purgeUnused
-      , prePurify
+      , normalizeBind
+      , elimCase
       , simplify
       , specialize
       , freeTyVarsToNil
@@ -21,36 +22,34 @@ module ReWire.Crust.Transform
 
 import ReWire.Annotation (Annote (..), Annotated (..), unAnn)
 import ReWire.Config (Config, depth)
-import ReWire.Crust.Syntax (Exp (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), TypeSynonym (..), flattenApp)
-import ReWire.Crust.TypeCheck (typeCheckDefn, unify, TySub)
-import ReWire.Crust.Types (typeOf, setTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT)
-import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, mkTupleMPat, mkTuple, mkPairMPat, mkPair, mustInline)
+import ReWire.Crust.PrimBasis (primDatas)
+import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), TypeSynonym (..), flattenApp)
+import ReWire.Crust.TypeCheck (typeCheckDefn, unify, unify', TySub)
+import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy)
+import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, mkTupleMPat, mkTuple, mkPairMPat, mkPair, mustInline, patVars, toVar, transPat, transMPat)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fix, fix', boundedFix)
 import ReWire.SYB (transform, transformM, query)
-import ReWire.Unbound (fv, Fresh (fresh), s2n, n2s, substs, subst, unembed, isFreeName, runFreshM, Name (..), unsafeUnbind, bind, unbind, Subst (..), Alpha, Embed (Embed), Bind (B), trec)
+import ReWire.Unbound (freshVar, fv, Fresh (fresh), s2n, n2s, substs, subst, unembed, isFreeName, runFreshM, Name (..), unsafeUnbind, bind, unbind, Subst (..), Alpha, Embed (Embed), Bind, trec)
 
 import Control.Lens ((^.))
-import Control.Arrow (first, (&&&))
-import Control.Monad (liftM2, foldM_, zipWithM, replicateM, (>=>))
+import Control.Arrow ((&&&))
+import Control.Monad (liftM2, foldM, foldM_, zipWithM, (>=>))
 import Control.Monad.State (MonadState, evalStateT, execState, StateT (..), get, gets, modify)
-import Control.Monad.Writer (MonadWriter, tell, runWriterT)
-import Data.Containers.ListUtils (nubOrd, nubOrdOn)
+import Data.Containers.ListUtils (nubOrd)
 import Data.Data (Data)
 import Data.Either (lefts)
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable (hash))
 import Data.List (find, sort)
-import Data.Maybe (fromMaybe, catMaybes, isNothing)
+import Data.Maybe (catMaybes, isNothing)
 import Data.Set (Set, union, (\\))
-import Data.Text (Text)
+import Data.Text (Text, isPrefixOf)
 import Data.Tuple (swap)
 
+import qualified Data.Text as Text
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Set as Set
-
--- import ReWire.Pretty
--- import Debug.Trace (trace)
 
 -- | Removes the Main.main function definition, which is unused by rwc.
 removeMain :: FreeProgram -> FreeProgram
@@ -124,8 +123,8 @@ neuterExterns = transform $ \ case
       e                               -> e
       where isExtern :: Exp -> Bool
             isExtern e = case flattenApp e of
-                  [Builtin _ _ _ Extern, _, _, _, _, _, _] -> True
-                  _                                        -> False
+                  (Builtin _ _ _ Extern, [_, _, _, _, _, _]) -> True
+                  _                                          -> False
 
 -- | Shifts vars bound by top-level lambdas into defs.
 -- > g = \ x1 -> \ x2 -> e
@@ -164,96 +163,103 @@ unshiftLambdas (ts, syns, vs) = (ts, syns, ) <$> mapM unshiftLambdas' vs
 -- > m >>= (\ x -> s >>= g)
 -- also
 -- > m >>= f
--- becomes (to trigger lambda lifting)
+-- becomes
 -- > m >>= \ x -> f x
-prePurify :: (Fresh m, MonadError AstError m) => FreeProgram -> m FreeProgram
-prePurify (ts, syns, ds) = (ts, syns, ) <$> mapM ppDefn ds
-      where ppDefn :: (MonadError AstError m, Fresh m) => Defn -> m Defn
-            ppDefn d@Defn { defnBody = Embed e } = do
+-- and bind RHS is then lambda-lifted. Also lifts to a global definition:
+-- - the first argument to `extrude` to a global definition.
+-- - any `match` expression that appears in the operator position of an application.
+normalizeBind :: (Fresh m, MonadError AstError m) => FreeProgram -> m FreeProgram
+normalizeBind (ts, syns, ds) = (ts, syns, ) <$> (uncurry (<>) <$> runStateT (mapM ppDefn ds) [])
+      where ppDefn :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Defn -> m Defn
+            ppDefn d@Defn { defnName = dn, defnBody = Embed e } = do
                   (xs, e') <- unbind e
-                  e''      <- ppExp e'
+                  e''      <- ppExp (n2s dn) xs e'
                   pure $ d { defnBody = Embed (bind xs e'') }
 
-            ppExp :: (MonadError AstError m, Fresh m) => Exp -> m Exp
-            ppExp = \ case
-                  e | needsRejiggering e -> rejiggerBind e
-                  -- Inline everything on the LHS.
-                  (dstBind -> Just (a, e1, e2)) -> do
-                        e1' <- flatten (filter (\ d -> isReacDefn d && inlinable d) ds) e1
-                        e1'' <- ppExp e1'
-                        e2' <- ppExp e2
-                        rejiggerBind $ mkBind a e1'' e2'
-                  App an tan t e1 e2 -> App an tan t <$> ppExp e1 <*> ppExp e2
-                  Lam an tan t  e -> do
-                        (x, e') <- unbind e
-                        Lam an tan t . bind x <$> ppExp e'
-                  Case an tan t disc e els -> do
-                        (p, e') <- unbind e
-                        Case an tan t <$> ppExp disc <*> (bind p <$> ppExp e') <*> mapM ppExp els
-                  Match an tan t disc p e els -> Match an tan t <$> ppExp disc <*> pure p <*> ppExp e <*> mapM ppExp els
-                  LitList an tan t es         -> LitList an tan t <$> mapM ppExp es
-                  e                           -> pure e
-
-            needsRejiggering :: Exp -> Bool
-            needsRejiggering = \ case
-                  (dstBind -> Just (_, dstBind -> Just (_, _, _), _)) -> True
-                  (dstBind -> Just (_, _, e2)) | not (isLambda e2)    -> True
-                  _                                                   -> False
-
-            rejiggerBind :: (MonadError AstError m, Fresh m) => Exp -> m Exp
-            rejiggerBind = \ case
-                  -- Associate bind to the right (case with a lambda on the right).
-                  -- ma :: m a
-                  -- mb :: m b
-                  -- fb :: b -> m c
-                  -- (>>=1) :: m a -> (a -> m b) -> m b
-                  -- (>>=2) :: m b -> (b -> m c) -> m c
-                  -- (ma >>=1 \ a -> mb) >>=2 fb
+            ppExp :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Text -> [Name Exp] -> Exp -> m Exp
+            ppExp dn bvs = \ case
+                  -- Bind: associate to the right (case with a lambda on the right).
+                  -- > (ma >>= \ a -> mb) >>= fb
                   -- becomes
-                  -- (>>=1) :: m a -> (a -> m c) -> m c
-                  -- (>>=2) :: m b -> (b -> m c) -> m c
-                  -- ma >>=1 (\ a -> (mb >>=2 fb))
+                  -- > ma >>= (\ a -> (mb >>= fb))
                   (dstBind -> Just (a, dstBind -> Just (_, e1, Lam _ _ tx e2), e3)) -> do
                         -- TODO(chathhorn): note eliding type annotation.
                         (x, e2') <- unbind e2
-                        let e' = mkBind a e2' e3
-                        ppExp $ mkBind a e1
-                              $ Lam (ann e2') Nothing tx (bind x e')
+                        ppExp' $ mkBind a e1 $ Lam (ann e2') Nothing tx $ bind x $ mkBind a e2' e3
 
-                  -- Associate bind to the right.
-                  -- fa :: a -> m b
-                  -- fb :: b -> m c
-                  -- (>>=1) :: m a -> (a -> m b) -> m b
-                  -- (>>=2) :: m b -> (b -> m c) -> m c
-                  -- (m >>=1 fa) >>=2 fb
+                  -- Bind: associate to the right.
+                  -- > (m >>= fa) >>= fb
                   -- becomes
-                  -- (>>=1) :: m a -> (a -> m c) -> m c
-                  -- (>>=2) :: m b -> (b -> m c) -> m c
-                  -- m >>=1 (\ x -> fa x >>=2 fb)
+                  -- > m >>= (\ x -> fa x >>= fb)
                   (dstBind -> Just (a, dstBind -> Just (_, e1, e2), e3)) -> do
                         let tx = arrowLeft <$> typeOf e2
-                        x <- fresh $ s2n "rabind"
+                        x <- freshVar "rabind"
                         let e' = mkBind a (mkApp (ann e2) e2 [Var (ann e2) Nothing tx x]) e3
-                        ppExp $ mkBind a e1
-                              $ Lam (ann e2) Nothing tx (bind x e')
-                  -- Lambda-abstract the right side (so it will get lambda-lifted).
-                  (dstBind -> Just (a, e1, e2)) | not (isLambda e2) -> do
-                        let tx = arrowLeft <$> typeOf e2
-                        x <- fresh $ s2n "sbind"
-                        ppExp $ mkBind a e1
-                              $ Lam (ann e2) Nothing tx
-                              $ bind x $ mkApp (ann e2) e2 [Var (ann e2) Nothing tx x]
-                  e -> pure e
+                        ppExp' $ mkBind a e1 $ Lam (ann e2) Nothing tx (bind x e')
 
-            isLambda :: Exp -> Bool
-            isLambda e = case e of
-                  Lam {} -> True
-                  _      -> False
+                  -- Bind: if Match is on the LHS, push the bind into the
+                  -- Match arms.
+                  -- > match disc p e els >>= f
+                  -- becomes
+                  -- > match disc p b (els >>= f)
+                  -- > where b = e >>= f
+                  -- if e has a non-function type, otherwise
+                  -- >       b = \ x1... -> (e x1... >>= f)
+                  (dstBind -> Just (a, Match an tan _ disc p e els, e2)) -> do
+                        pvs <- patVars <$> transMPat p
+                        let e'   = mkLam an pvs $ mkBind a (mkApp an (maybeSetTyAnn tan e) (toVar an <$> pvs)) e2
+                            els' = flip (mkBind a) e2 . maybeSetTyAnn tan <$> els
+                        ppExp' $ Match an Nothing (typeOf e) disc p e' els'
+
+                  -- Bind: inline everything on the LHS, lift the RHS.
+                  (dstBind -> Just (a, e1, e2)) -> do
+                        e2'   <- ppExp' e2 >>= lift' -- lift RHS
+
+                        lams  <- get
+                        e1'   <- ppExp' e1
+                                 >>= flatten (filter (\ d -> isReacDefn d && inlinable d) $ ds <> lams)
+                                 >>= reduceExp
+
+                        let b = mkBind a e1' e2'
+                        if leftAssocBind b || matchBind b then ppExp' b
+                        else pure b
+
+                  -- Lifts matches in the operator position of an application (for toCore and purification).
+                  App an tan t e@Match {} arg                                   -> App an tan t <$> (ppExp' e >>= lift') <*> ppExp' arg
+                  -- Lifts the first argument to extrude (for purification).
+                  App an tan t ex@(Builtin _ _ _ Extrude) e | not $ isExtrude e -> App an tan t ex <$> (ppExp' e >>= lift')
+                  App an tan t e1 e2 -> App an tan t <$> ppExp' e1 <*> ppExp' e2
+                  Lam an tan t  e -> do
+                        (x, e') <- unbind e
+                        Lam an tan t . bind x <$> ppExp dn (bvs <> [x]) e'
+                  Case an tan t disc e els -> do
+                        (p, e') <- unbind e
+                        Case an tan t <$> ppExp' disc <*> (bind p <$> ppExp dn (bvs <> (snd <$> patVars p)) e') <*> mapM ppExp'  els
+                  Match an tan t disc p e els -> Match an tan t <$> ppExp' disc <*> pure p <*> ppExp' e <*> mapM ppExp' els
+                  LitList an tan t es         -> LitList an tan t <$> mapM ppExp' es
+                  LitVec an tan t es          -> LitVec an tan t <$> mapM ppExp' es
+                  e                           -> pure e
+
+                  where ppExp' :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Exp -> m Exp
+                        ppExp' = ppExp dn bvs
+
+                        lift' :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Exp -> m Exp
+                        lift' = lift dn bvs
+
+            leftAssocBind :: Exp -> Bool
+            leftAssocBind = \ case
+                  (dstBind -> Just (_, dstBind -> Just (_, _, _), _)) -> True
+                  _                                                   -> False
+
+            matchBind :: Exp -> Bool
+            matchBind = \ case
+                  (dstBind -> Just (_, Match {}, _)) -> True
+                  _                                  -> False
 
             dstBind :: Exp -> Maybe (Annote, Exp, Exp)
             dstBind e = case flattenApp e of
-                  [Builtin a _ _ Bind, e1, e2] -> Just (a, e1, e2)
-                  _                            -> Nothing
+                  (Builtin a _ _ Bind, [e1, e2]) -> Just (a, e1, e2)
+                  _                              -> Nothing
 
             mkBind :: Annote -> Exp -> Exp -> Exp
             mkBind a e1 e2 = mkApp a (Builtin a Nothing (typeOf e1 `arr'` typeOf e2 `arr'` (arrowRight <$> typeOf e2)) Bind) [e1, e2]
@@ -266,178 +272,161 @@ prePurify (ts, syns, ds) = (ts, syns, ) <$> mapM ppDefn ds
             isReacDefn :: Defn -> Bool
             isReacDefn Defn { defnPolyTy = Embed (Poly (unsafeUnbind -> (_, t))) } = isReacT t
 
+            isExtrude :: Exp -> Bool
+            isExtrude e = case flattenApp e of
+                  (Builtin _ _ _ Extrude, [_, _]) -> True
+                  _                               -> False
+
+
 -- | So if e :: a -> b, then
 -- > g = e
 --   becomes
 -- > g x0 = e x0
 -- except with Match, we add x0 to the list of local ids.
-fullyApplyDefs :: Fresh m => FreeProgram -> m FreeProgram
-fullyApplyDefs (ts, syns, vs) = (ts, syns, ) <$> mapM fullyApplyDefs' vs
-      where fullyApplyDefs' :: Fresh m => Defn -> m Defn
-            fullyApplyDefs' (Defn an n t inl (Embed e)) = Defn an n t inl . Embed <$> fullyApply e
+etaAbsDefs :: Fresh m => FreeProgram -> m FreeProgram
+etaAbsDefs (ts, syns, vs) = (ts, syns, ) <$> mapM etaAbsDefs' vs
+      where etaAbsDefs' :: Fresh m => Defn -> m Defn
+            etaAbsDefs' (Defn an n t inl (Embed e)) = Defn an n t inl . Embed <$> etaAbs e
 
-            fullyApply :: Fresh m => Bind [Name Exp] Exp -> m (Bind [Name Exp] Exp)
-            fullyApply e = do
+            etaAbs :: Fresh m => Bind [Name Exp] Exp -> m (Bind [Name Exp] Exp)
+            etaAbs e = do
                   (vs, e') <- unbind e
                   case typeOf e' of
                         Just (TyApp _ (TyApp _ (TyCon _ (n2s -> "->")) t) _) -> do
-                              x <- fresh $ s2n "$x"
-                              fullyApply $ bind (vs <> [x]) $ appl t (Var (ann e') Nothing (Just t) x) e'
+                              x <- freshVar "$x"
+                              etaAbs $ bind (vs <> [x]) $ appl t (Var (ann e') Nothing (Just t) x) e'
                         _                                                    -> pure e
 
             appl :: Ty -> Exp -> Exp -> Exp
             appl t x = \ case
-                  Match an tan t' e1 p e Nothing    -> Match an tan (arrowRight <$> t') (mkPair an e1 x) (mkPairMPat an p $ MatchPatVar an Nothing $ Just t) e Nothing
-                  Match an tan t' e1 p e (Just els) -> Match an tan (arrowRight <$> t') (mkPair an e1 x) (mkPairMPat an p $ MatchPatVar an Nothing $ Just t) e $ Just $ appl t x els
-                  e                                 -> mkApp (ann e) e [x]
+                  Match an tan t' e1 p e els -> Match an tan (arrowRight <$> t') (mkPair an e1 x) (mkPairMPat an p $ MatchPatVar an Nothing $ Just t) e $ appl t x <$> els
+                  e                          -> mkApp (ann e) e [x]
+
+elimCase :: Fresh m => FreeProgram -> m FreeProgram
+elimCase (ts, syns, ds) = (ts, syns,) <$> mapM ecDefn ds
+      where ecDefn :: Fresh m => Defn -> m Defn
+            ecDefn d@Defn { defnBody = Embed e } = do
+                  (bvs, e') <- unbind e
+                  e''       <- ecExp e'
+                  pure $ d { defnBody = Embed (bind bvs e'') }
+
+            ecExp :: Fresh m => Exp -> m Exp
+            ecExp = \ case
+                  Case an tan t disc b els -> do
+                        (p, b') <- unbind b
+                        Match an tan t <$> ecExp disc <*> pure (transPat p) <*> (mkLam an (patVars p) <$> ecExp b') <*> mapM ecExp els
+                  Match an tan t disc p e els -> Match an tan t <$> ecExp disc <*> pure p <*> ecExp e <*> mapM ecExp els
+                  Lam an tan t b           -> do
+                        (x, b') <- unbind b
+                        Lam an tan t . bind x <$> ecExp b'
+                  App an tan t e1 e2       -> App an tan t <$> ecExp e1 <*> ecExp e2
+                  LitVec an tan t es       -> LitVec an tan t <$> mapM ecExp es
+                  LitList an tan t es      -> LitList an tan t <$> mapM ecExp es
+                  e                        -> pure e
 
 -- | Lifts lambdas and case/match into a top level fun def.
--- TODO(chathhorn): a lot of duplicated code here.
-liftLambdas :: Fresh m => FreeProgram -> m FreeProgram
-liftLambdas (ts, syns, ds) = (ts, syns,) <$> (uncurry (<>) <$> runWriterT (llDefns ds))
-      where llDefns :: (MonadWriter [Defn] m, Fresh m) => [Defn] -> m [Defn]
-            llDefns = mapM llDefn
+--   E.g., lifts
+--   `\ x -> \y -> ... -> e`
+--   to a global definition
+--   `g = \ x -> \ y -> ... -> e`
+liftLambdas :: (Fresh m, MonadError AstError m) => FreeProgram -> m FreeProgram
+liftLambdas (ts, syns, ds) = (ts, syns,) . uncurry (<>) <$> runStateT (mapM llDefn ds) []
 
-            llDefn :: (MonadWriter [Defn] m, Fresh m) => Defn -> m Defn
-            llDefn d@Defn { defnBody = Embed (B p e) } = do
-                  e' <- llDefnBody e
-                  pure $ d { defnBody = Embed (B p e') }
+-- | Don't lambda-lift initial lambdas on RHS of top-level binding.
+llDefn :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Defn -> m Defn
+llDefn d@Defn { defnName = dn, defnBody = Embed e } = do
+      (bvs, e') <- unbind e
+      e''       <- llDefnBody (n2s dn) bvs e'
+      pure $ d { defnBody = Embed (bind bvs e'') }
 
-            -- | Don't lambda-lift initial lambdas on RHS of top-level binding.
-            llDefnBody :: (MonadWriter [Defn] m, Fresh m) => Exp -> m Exp
-            llDefnBody = \ case
-                  Lam an pt t (B p e) -> do
-                        e' <- llDefnBody e
-                        pure $ Lam an pt t (B p e')
-                  e             -> llExp e
+      where llDefnBody :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> [Name Exp] -> Exp -> m Exp
+            llDefnBody dn bvs = \ case
+                  Lam an pt t e -> do
+                        (v, e') <- unbind e
+                        e''     <- llDefnBody dn (bvs <> [v]) e'
+                        pure $ Lam an pt t $ bind v e''
+                  e             -> llExp dn bvs e
 
-llExp :: (MonadWriter [Defn] m, Fresh m) => [(Name Exp, Type)] -> Exp -> m Exp
-llExp boundvars =  transformM $ \ case
-      -- TODO(chathhorn): it would be good to lift
-      -- `\ x -> \y -> ... -> e`
-      -- just once to
-      -- `g = \ x -> \ y -> ... -> e`
-      Lam an tan (Just t) b | Just te <- typeOf $ snd $ unsafeUnbind b -> do
-            (x, e)    <- unbind b
-            -- The only free names should be globally-bound
-            -- variables (and x) at this point and we can also
-            -- assume every bound name in e' was bound at a level
-            -- above e'.
-            let bvs   = bv e
-                fvts  = snd <$> bvs
-            (fvs, e') <- freshen e
+llExp :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Text -> [Name Exp] -> Exp -> m Exp
+llExp dn bvs =  \ case
+      Lam an tan t b -> do
+            (x, b') <- unbind b
+            case b' of
+                  -- Eta-reduce instead of lift (duplicated from reduceExp).
+                  App _ _ _ e1 (Var _ _ _ x')
+                        | not (isBuiltin e1) -- TODO: ugly special case to accomodate purify.
+                        , x == x'
+                        , x `notElem` fv e1 -> llExp' e1
+                  _                         -> do
+                        b'' <- llExp dn (bvs <> [x]) b'
+                        lift' $ Lam an tan t $ bind x b''
 
-            let t' = foldr arr te $ fvts <> [t]
-            f     <- fresh $ s2n "$LL.lambda"
+      -- Lifts anything other than a Var in the first Match branch. This case
+      -- is really just normalizing Match (TODO: consider moving to ToCore?).
+      Match an tan t disc p e els -> do
+            e' <- llExp' e >>= lift'
+            let (v, lvars) = flattenApp e'
+            Match an tan t
+                  <$> llExp' (mkTuple an $ lvars <> [disc])
+                  <*> pure (mkTupleMPat an $ (MatchPatVar an Nothing . typeOf <$> lvars) <> [p])
+                  <*> pure v
+                  <*> mapM llExp' els
+      App an tan t e1 e2  -> App an tan t <$> llExp' e1 <*> llExp' e2
+      LitList an tan t es -> LitList an tan t <$> mapM llExp' es
+      LitVec an tan t es  -> LitVec an tan t <$> mapM llExp' es
+      e                   -> pure e
 
-            tell [Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an (zip fvts fvs <> [(t, x)]) e']
-            pure $ setTyAnn tan $ mkApp an (Var an Nothing (Just t') f) $ map (toVar an . first promote) bvs
-      Case an tan t e1 b e2 | Just te <- typeOf $ snd $ unsafeUnbind b -> do
-            (p, b')    <- unbind b
-            let lvars = toVar an . first promote <$> bv b'
+      where llExp' :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Exp -> m Exp
+            llExp' = llExp dn bvs
 
-            b''   <- case b' of
-                  Var _ _ _ n | isFreeName n, n `notElem` (fst <$> patVars p)
-                        -> pure b'
-                  _     -> do
-                        let bvs  = bv b'
-                            fvts = snd <$> bvs
-                            pvs  = patVars p
-                            pvts = snd <$> pvs
-                        (fvs, body) <- freshen b'
+            lift' :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Exp -> m Exp
+            lift' = lift dn bvs
 
-                        f           <- fresh $ s2n "$LL.case"
-                        let t'       = foldr arr te $ pvts <> fvts
-                        tell [Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an ((swap <$> pvs) <> zip fvts fvs) body]
-                        pure $ Var an Nothing (Just t') f
+            isBuiltin :: Exp -> Bool
+            isBuiltin = \ case
+                  Builtin {} -> True
+                  _          -> False
 
-            let (disc, pat) | null lvars = (e1, transPat p)
-                            | otherwise  = ( mkTuple an $ [e1] <> lvars
-                                           , mkTupleMPat an $ [transPat p] <> map (MatchPatVar an Nothing . typeOf) lvars
-                                           )
+-- | Lifts an expression to a definition and returns an application (to pass
+--   any free variables). Argument is a list of non-global free variables.
+lift :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> [Name Exp] -> Exp -> m Exp
+lift dn bvs e | Just t  <- typeOf e, not $ isGlobal e = do
+      fvs    <- filter ((`elem` bvs) . snd) <$> freevars e
+      let t'  = foldr arr t $ fst <$> fvs
+          an  = ann e
+      f      <- freshVar $ prefix dn
+      d      <- llDefn $ Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an fvs e
+      modify (d :)
+      pure $ setTyAnn (tyAnn e) $ mkApp an (Var an Nothing (Just t') f) $ toVar an <$> fvs
 
-            pure $ Match an tan t disc pat b'' e2
-      -- TODO(chathhorn): This case is really just normalizing Match, consider moving to ToCore.
-      Match an tan t e1 p e els | Just te <- typeOf e, liftable e -> do
-            let bvs  = bv e
-                fvts = snd <$> bvs
-            (fvs, e') <- freshen e
+      where -- | Get well-typed free variables.
+            freevars :: (MonadError AstError m, Data a) => a -> m [(Ty, Name Exp)]
+            freevars a = map swap . Map.toList <$> mapM (foldM unifyVs (TyVar an KStar $ s2n "?lift")) fvs'
+                  where fvs' :: HashMap (Name Exp) [Maybe Ty]
+                        fvs' = Map.fromListWith (<>) [(n, [t]) | Var _ _ t n <- query a, isFreeName n]
 
-            let t' = foldr arr te fvts
-            f     <- fresh $ s2n "$LL.match"
+                        unifyVs :: MonadError AstError m => Ty -> Maybe Ty -> m Ty
+                        unifyVs t1 = \ case
+                              Nothing -> pure t1
+                              Just t2 -> maybe (failAt (ann t1) $ "Mis-typed variables; could not unify: " <> prettyTy t1 <> " with " <> prettyTy t2) pure
+                                       $ unify' t1 t2
 
-            tell [Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an (zip fvts fvs) e']
-            let lvars = toVar an <$> bvs
-            pure $ Match an tan t (mkTuple an $ [e1] <> lvars)
-                        (mkTupleMPat an $ [p] <> map (MatchPatVar an Nothing . typeOf) lvars)
-                        (Var an Nothing (Just t') f) els
-      -- Lifts matches in the operator position of an application.
-      -- TODO(chathhorn): move somewhere else?
-      App an tan _ e@Match {} arg | Just te <- typeOf e -> do
-            let bvs  = bv e
-                fvts = snd <$> bvs
-            (fvs, e') <- freshen e
+                        an :: Annote
+                        an = MsgAnnote "Lift: dummy type variable"
 
-            let t' = foldr arr te fvts
-            f     <- fresh $ s2n "$LL.matchApp"
+            isGlobal :: Exp -> Bool
+            isGlobal = \ case
+                  Var _ _ _ n -> n `notElem` bvs
+                  _           -> False
 
-            tell [Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an (zip fvts fvs) e']
-            pure $ setTyAnn tan $ mkApp an (Var an Nothing (Just t') f) $ map (toVar an) bvs <> [arg]
-      -- Lifts the first argument to extrude (required for purification).
-      App an tan t ex@(Builtin _ _ _ Extrude) e | Just te <- typeOf e, liftable e, not $ isExtrude e -> do
-            let bvs  = bv e
-                fvts = snd <$> bvs
-            (fvs, e') <- freshen e
+            prefix :: Text -> Text
+            prefix x | pre `isPrefixOf` x = x
+                     | "$" `isPrefixOf` x = pre <> Text.drop 1 x
+                     | otherwise          = pre <> x
 
-            let t' = foldr arr te fvts
-            f     <- fresh $ s2n "$LL.extrudeApp"
-
-            tell [Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an (zip fvts fvs) e']
-            pure $ App an tan t ex $ mkApp an (Var an Nothing (Just t') f) $ map (toVar an) bvs
-      e -> pure e
-
-      where isExtrude :: Exp -> Bool
-            isExtrude e = case flattenApp e of
-                  [Builtin _ _ _ Extrude, _, _] -> True
-                  _                             -> False
-
-            liftable :: Exp -> Bool
-            liftable e = case e of
-                  Var {} -> False
-                  _      -> True
-
-            toVar :: Annote -> (Name Exp, Ty) -> Exp
-            toVar an (v, vt) = Var an Nothing (Just vt) v
-
-            freshen :: Fresh m => Exp -> m ([Name Exp], Exp)
-            freshen e = do
-                  fvs      <- replicateM (length $ bv e) $ fresh $ s2n "$LL"
-                  pure (fvs, substs' (zip (fst <$> bv e) fvs) e)
-
-            substs' :: [(Name Exp, Name Exp)] -> Exp -> Exp
-            substs' subs = transform (\ n -> fromMaybe n (lookup n subs))
-
-            -- | Get well-typed(!) bound variables.
-            bv :: Data a => a -> [(Name Exp, Ty)]
-            bv a = nubOrdOn fst [(n, t) | Var _ _ (Just t) n <- query a, not $ isFreeName n]
-
-            -- | Get well-typed(!) pat variables.
-            patVars :: Pat -> [(Name Exp, Ty)]
-            patVars = \ case
-                  PatCon _ _ _ _ ps             -> concatMap patVars ps
-                  PatVar _ _ (Embed (Just t)) x -> [(x, t)]
-                  _                             -> []
-
-            promote :: Name a -> Name a
-            promote = \ case
-                  Bn l k | l >= 0 -> Bn (l - 1) k
-                  b               -> b
-
-            transPat :: Pat -> MatchPat
-            transPat = \ case
-                  PatCon an (Embed tan) (Embed t) (Embed c) ps -> MatchPatCon an tan t c $ map transPat ps
-                  PatVar an (Embed tan) (Embed t) _            -> MatchPatVar an tan t
-                  PatWildCard an (Embed tan) (Embed t)         -> MatchPatWildCard an tan t
+            pre :: Text
+            pre = "$LL."
+lift _ _ e                                            = pure e
 
 -- | Remove all definitions unused by those in the given list.
 purgeUnused :: [Text] -> FreeProgram -> FreeProgram
@@ -466,21 +455,14 @@ purgeUnused except (ts, syns, vs) = (inuseData (fix' extendWithCtorParams $ exte
                                  | otherwise                             = error $ "Something went wrong: can't find symbol: " <> show n
 
             inuseData :: [Name TyConId] -> [Name DataConId] -> [DataDefn] -> [DataDefn]
-            inuseData ts ns = filter (not . null . dataCons) . map (inuseData' ts ns)
+            inuseData ts ns = filter (\ DataDefn {dataName = n, dataCons = cs} -> not (null cs) || n `elem` (dataName <$> primDatas))
+                            . map (inuseData' ts ns)
 
             inuseData' :: [Name TyConId] -> [Name DataConId] -> DataDefn -> DataDefn
             inuseData' ts ns d@(DataDefn an n k cs)
-                  | n     `elem` ts           = d
-                  | n2s n `elem` reservedData = d
-                  | otherwise                 = DataDefn an n k $ filter ((`Set.member` Set.fromList ns) . dataConName) cs
-
-            reservedData :: [Text]
-            reservedData =
-                         [ "PuRe"
-                         , "(,)"
-                         , "()"
-                         , "Bool"
-                         ]
+                  | n `elem` ts                       = d
+                  | n `elem` (dataName <$> primDatas) = d
+                  | otherwise                         = DataDefn an n k $ filter ((`Set.member` Set.fromList ns) . dataConName) cs
 
             -- | Also treat as used: all ctors for types returned by externs and ReacT inputs.
             externCtors :: Data a => a -> [Name TyConId]
@@ -557,8 +539,8 @@ specialize (ts, syns, vs) = do
 
             specExp :: (MonadError AstError m, Fresh m, MonadState SpecMap m) => Exp -> m Exp
             specExp = \ case
-                  e@(App an tan t e' a') | Var _ _ _ g : args <- flattenApp e
-                                         , Just d             <- Map.lookup g gs
+                  e@(App an tan t e' a') | (Var _ _ _ g, args) <- flattenApp e
+                                         , Just d              <- Map.lookup g gs
                                          , inlinable d
                                                -> do
                         args' <- mapM specExp args
@@ -577,14 +559,10 @@ specialize (ts, syns, vs) = do
                   Lam an tan t b                   -> do
                         (vs, b') <- unbind b
                         Lam an tan t . bind vs <$> specExp b'
-                  Case an tan t e p (Just e')      -> do
+                  Case an tan t e p els            -> do
                         (ps, p') <- unbind p
-                        Case an tan t <$> specExp e <*> (bind ps <$> specExp p') <*> (Just <$> specExp e')
-                  Case an tan t e p Nothing        -> do
-                        (ps, p') <- unbind p
-                        Case an tan t <$> specExp e <*> (bind ps <$> specExp p') <*> pure Nothing
-                  Match an tan t e p e' (Just e'') -> Match an tan t <$> specExp e <*> pure p <*> specExp e' <*> (Just <$> specExp e'')
-                  Match an tan t e p e' Nothing    -> Match an tan t <$> specExp e <*> pure p <*> specExp e' <*> pure Nothing
+                        Case an tan t <$> specExp e <*> (bind ps <$> specExp p') <*> mapM specExp els
+                  Match an tan t e p e' els        -> Match an tan t <$> specExp e <*> pure p <*> specExp e' <*> mapM specExp els
                   LitList an tan t es              -> LitList an tan t <$> mapM specExp es
                   LitVec an tan t es               -> LitVec an tan t <$> mapM specExp es
                   e@LitInt {}                      -> pure e
@@ -601,7 +579,7 @@ specialize (ts, syns, vs) = do
             getTy Defn { defnPolyTy = Embed (Poly pt) } = snd <$> unbind pt
 
             mkDefn :: (MonadError AstError m, Fresh m) => AppSig -> Defn -> m Defn
-            mkDefn s (Defn an g (Embed (Poly bgt)) inl (Embed body)) = do
+            mkDefn s _dx@(Defn an g (Embed (Poly bgt)) inl (Embed body)) = do
                   g'              <- fresh g
                   gt              <- snd <$> unbind bgt
                   (tinfo, t')     <- mkTy s gt
@@ -610,7 +588,7 @@ specialize (ts, syns, vs) = do
                        $ Defn an g' (Embed $ Poly $ bind (fv t') t') inl
                        $ Embed $ bind []
                                $ mkLam an (lefts tinfo)
-                               $ mkApp an (mkLam an (zip (fst $ flattenArrow gt) bodyvs) (setTyAnn (Just $ Poly bgt) body'))
+                               $ mkApp an (mkLam an (zip (fst $ flattenArrow gt) bodyvs) body')
                                $ map (either (uncurry $ Var an Nothing . Just) id) tinfo
 
             mkTy :: (Fresh m, MonadError AstError m) => AppSig -> Ty -> m ([Either (Ty, Name Exp) Exp], Ty)
@@ -624,7 +602,7 @@ specialize (ts, syns, vs) = do
                                     pure $ Right $ setTyAnn (Just $ poly' t') e
                               Just e -> pure $ Right $ setTyAnn (Just $ poly' t) e
                               Nothing -> do
-                                    n <- fresh $ s2n "sp"
+                                    n <- freshVar "sp"
                                     pure $ Left (t, n)
 
             mkGApp :: Annote -> Name Exp -> Ty -> [Exp] -> AppSig -> Exp
@@ -644,49 +622,47 @@ reduce (ts, syns, vs) = (ts, syns, ) <$> mapM reduceDefn vs
             reduceDefn (Defn an n pt b (Embed e)) = unbind e >>= \ case
                   (vs, e') -> (Defn an n pt b . Embed) . bind vs <$> reduceExp e'
 
-            reduceExp :: (Fresh m, MonadError AstError m) => Exp -> m Exp
-            reduceExp = \ case
-                  App an tan t e1 e2      -> do
-                        e1' <- reduceExp e1
-                        e2' <- reduceExp e2
-                        case e1' of
-                              Lam _ _ tx e -> do
-                                    (x, e') <- unbind e
-                                    beta <- reduceExp $ subst x (setTyAnn (poly' <$> tx) e2') e' -- TODO(chathhorn): ad-hoc promoting current type to annotation.
-                                    pure $ setTyAnn tan beta
-                              _              -> pure $ App an tan t e1' e2'
-                  Lam an tan t e        -> do
+reduceExp :: (Fresh m, MonadError AstError m) => Exp -> m Exp
+reduceExp = \ case
+      App an tan t e1 e2      -> do
+            e1' <- reduceExp e1
+            e2' <- reduceExp e2
+            case e1' of
+                  Lam _ _ tx e -> do
                         (x, e') <- unbind e
-                        Lam an tan t . bind x <$> reduceExp e'
-                  Case an tan t e e1 e2 -> do
-                        (p, e1') <- unbind e1
-                        e'       <- reduceExp e
-                        case matchPat e' p of
-                              MatchYes sub -> reduceExp $ substs sub e1'
-                              MatchMaybe   -> case e2 of
-                                    Nothing  -> Case an tan t e' <$> (bind p <$> reduceExp e1') <*> pure Nothing
-                                    Just e2' -> -- trace ("MAYBEmatch " ++ show (pretty e')
-                                                --  ++ "\nof " ++ show (pretty p)) $
-                                                Case an tan t e' <$> (bind p <$> reduceExp e1') <*> (Just <$> reduceExp e2')
-                              MatchNo      -> case e2 of
-                                    Nothing  -> -- trace ("ERRORmatch " ++ show (pretty e')
-                                                --    ++ "\nof " ++ show (pretty p)) $ 
-                                                pure $ mkError an t "Pattern match failure (reduced)"
-                                    Just e2' -> -- trace ("NOmatch " ++ show (pretty e')
-                                                --    ++ "\nof " ++ show (pretty p)) $
-                                                reduceExp e2'
-                  -- TODO(chathhorn): handle match?
-                  Match an tan t e p e' Nothing    -> Match an tan t <$> reduceExp e <*> pure p <*> reduceExp e' <*> pure Nothing
-                  Match an tan t e p e' (Just e'') -> Match an tan t <$> reduceExp e <*> pure p <*> reduceExp e' <*> (Just <$> reduceExp e'')
-                  LitList an tan t es              -> LitList an tan t <$> mapM reduceExp es
-                  LitVec an tan t es               -> LitVec an tan t <$> mapM reduceExp es
-                  e@LitInt {}                      -> pure e
-                  e@LitStr {}                      -> pure e
-                  e@Var {}                         -> pure e
-                  e@Con {}                         -> pure e
-                  e@Builtin {}                     -> pure e
+                        beta <- reduceExp $ subst x (setTyAnn (poly' <$> tx) e2') e' -- TODO(chathhorn): ad-hoc promoting current type to annotation.
+                        pure $ setTyAnn tan beta
+                  _              -> pure $ App an tan t e1' e2'
+      Lam an tan t e        -> do
+            (x, e') <- unbind e
+            -- Eta reduce.
+            case e' of
+                  App _ _ _ e1 (Var _ _ _ x')
+                        | x == x'
+                        , x `notElem` fv e1 -> reduceExp e1
+                  _                         -> Lam an tan t . bind x <$> reduceExp e'
+      Case an tan t e e1 e2 -> do
+            (p, e1') <- unbind e1
+            e'       <- reduceExp e
+            case matchPat e' p of
+                  MatchYes sub -> reduceExp $ substs sub e1'
+                  MatchMaybe   -> Case an tan t e' <$> (bind p <$> reduceExp e1') <*> mapM reduceExp e2
+                  MatchNo      -> maybe (pure $ mkError an t "Pattern match failure: non-exhaustive patterns in case") reduceExp e2
+      Match an tan t e p e1 e2 -> do
+            e'       <- reduceExp e
+            case matchMPat e' p of
+                  MatchYes res -> reduceExp $ setTyAnn tan $ mkApp an e1 (snd <$> res)
+                  MatchMaybe   -> Match an tan t e' p <$> reduceExp e1 <*> mapM reduceExp e2
+                  MatchNo      -> maybe (pure $ mkError an t "Pattern match failure: non-exhaustive patterns in case") reduceExp e2
+      LitList an tan t es              -> LitList an tan t <$> mapM reduceExp es
+      LitVec an tan t es               -> LitVec an tan t <$> mapM reduceExp es
+      e@LitInt {}                      -> pure e
+      e@LitStr {}                      -> pure e
+      e@Var {}                         -> pure e
+      e@Con {}                         -> pure e
+      e@Builtin {}                     -> pure e
 
-            mergeMatches :: [MatchResult] -> MatchResult
+      where mergeMatches :: [MatchResult] -> MatchResult
             mergeMatches []     = MatchYes []
             mergeMatches (m:ms) = case mergeMatches ms of
                   MatchYes bs -> case m of
@@ -702,9 +678,19 @@ reduce (ts, syns, vs) = (ts, syns, ) <$> mapM reduceDefn vs
             matchPat :: Exp -> Pat -> MatchResult
             matchPat e = \ case
                   PatCon _ _ _ (Embed i) pats -> case flattenApp e of
-                        Con _ _ _ c : es
+                        (Con _ _ _ c, es)
                               | c == i && length es == length pats -> mergeMatches $ zipWith matchPat es pats
                               | otherwise                          -> MatchNo
                         _                                          -> MatchMaybe
                   PatVar _ _ _ x              -> MatchYes [(x, e)]
                   PatWildCard {}              -> MatchYes []
+
+            matchMPat :: Exp -> MatchPat -> MatchResult
+            matchMPat e = \ case
+                  MatchPatCon _ _ _ i pats    -> case flattenApp e of
+                        (Con _ _ _ c, es)
+                              | c == i && length es == length pats -> mergeMatches $ zipWith matchMPat es pats
+                              | otherwise                          -> MatchNo
+                        _                                          -> MatchMaybe
+                  MatchPatVar {}              -> MatchYes [(s2n "$matchVar", e)]
+                  MatchPatWildCard {}         -> MatchYes []

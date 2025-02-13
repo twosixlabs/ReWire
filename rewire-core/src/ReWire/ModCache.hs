@@ -18,7 +18,7 @@ import ReWire.Crust.PrimBasis (addPrims)
 import ReWire.Crust.Purify (purify)
 import ReWire.Crust.Syntax (FreeProgram, Defn (..), Module (Module), Exp, Ty, Kind, DataConId, TyConId, builtins, Program (Program), prettyFP)
 import ReWire.Crust.ToCore (toCore)
-import ReWire.Crust.Transform (removeMain, simplify, liftLambdas, purgeUnused, fullyApplyDefs, shiftLambdas, neuterExterns, expandTypeSynonyms, inline, prePurify)
+import ReWire.Crust.Transform (removeMain, simplify, liftLambdas, purgeUnused, etaAbsDefs, shiftLambdas, neuterExterns, expandTypeSynonyms, inline, normalizeBind, elimCase)
 import ReWire.Crust.TypeCheck (typeCheck, untype)
 import ReWire.Error (failAt, AstError, MonadError, filePath)
 import ReWire.HSE.Annotate (annotate)
@@ -145,45 +145,44 @@ getDevice conf fp = do
        >=> kindCheck >=> typeCheck start
        >=> pDebug' "[Pass 6] Post-typechecking."
        >=> whenDump 6 (printInfo "[Pass 6] Crust: Post-typechecking")
-       >=> pDebug' "Simplifying and reducing."
-       >=> pDebug' "Removing type annotations."
        >=> pDebug' "Removing Haskell definitions for externs."
        >=> pure . neuterExterns
-       >=> pDebug' "Removing unused definitions."
+       >=> pDebug' "Removing unused definitions (initial attempt)."
        >=> pure . purgeUnused (start : (fst <$> builtins))
        >=> pDebug' "[Pass 7] Pre-simplification."
        >=> whenDump 7 (printInfo "[Pass 7] Crust: Pre-simplify")
+       >=> pDebug' "Eliminating pattern bindings (case expressions)."
+       >=> elimCase
        >=> pDebug' "Partially evaluating and reducing."
        >=> simplify conf
        >=> pDebug' "[Pass 8] Post-simplification."
        >=> whenDump 8 (printInfo "[Pass 8] Crust: Post-simplify")
-       >=> pDebug' "Lifting lambdas (pre-purification)."
-       >=> liftLambdas >=> prePurify
-       >=> pDebug' "Removing unused definitions (again)."
-       >=> pure . purgeUnused (start : (fst <$> builtins))
-       >=> pDebug' "[Pass 9] Pre-purification."
-       >=> whenDump 9 (printInfo "[Pass 9] Crust: Pre-purification")
+       >=> pDebug' "Normalize bind."
+       >=> normalizeBind
+       >=> pDebug' "[Pass 9] Post-bind-normalization."
+       >=> whenDump 9 (printInfo "[Pass 9] Crust: Post-bind-normalization")
+       >=> pDebug' "Lifting, shifting, eta-abstracting lambdas."
+       >=> liftLambdas >=> pure . purgeUnused (start : (fst <$> builtins))
+       >=> shiftLambdas >=> etaAbsDefs
+       >=> pDebug' "[Pass 10] Before purification."
+       >=> whenDump 10 (printInfo "[Pass 10] Crust: Pre-purification")
        >=> pDebug' "Purifying."
-       >=> shiftLambdas >=> purify start
-       >=> pDebug' "[Pass 10] Post-purification."
-       >=> whenDump 10 (printInfo "[Pass 10] Crust: Post-purification")
-       >=> pDebug' "Lifting lambdas (post-purification)."
-       >=> liftLambdas
-       >=> pDebug' "Fully apply global function definitions."
-       >=> shiftLambdas >=> fullyApplyDefs
-       >=> pDebug' "Removing unused definitions (again)."
-       >=> pure . purgeUnused [start]
+       >=> purify start
        >=> pDebug' "[Pass 11] Post-purification."
-       >=> whenDump 11 (printInfo "[Pass 11] Crust: Post-second-lambda-lifting")
-       -- >=> pDebug' "Substituting the unit/nil type for remaining free type variables."
-       -- >=> pure . freeTyVarsToNil
+       >=> whenDump 11 (printInfo "[Pass 11] Crust: Post-purification")
+       >=> pDebug' "Final lifting, shifting, eta-abstracting lambdas."
+       >=> liftLambdas >=> shiftLambdas >=> etaAbsDefs
+       >=> pDebug' "Final purging of unused definitions."
+       >=> pure . purgeUnused [start]
+       >=> pDebug' "[Pass 12] Pre-core."
+       >=> whenDump 12 (printInfo "[Pass 12] Crust: Pre-core")
        >=> pDebug' "Translating to core & HDL."
        >=> toCore conf start
-       >=> pDebug' "[Pass 12] Core."
+       >=> pDebug' "[Pass 13] Core."
        $ (ts, syns, ds)
 
-      when ((conf^.dump) 12) $ liftIO $ do
-            printHeader "[Pass 12] Core"
+      when ((conf^.dump) 13) $ liftIO $ do
+            printHeader "[Pass 13] Core"
             T.putStrLn $ prettyPrint p
             when (conf^.verbose) $ do
                   T.putStrLn "\n## Show core:\n"
@@ -205,27 +204,27 @@ pDebug conf s = when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: " <> s
 
 printHeader :: MonadIO m => Text -> m ()
 printHeader hd = do
-      liftIO $ T.putStrLn   "# ======================================="
-      liftIO $ T.putStrLn $ "# " <> hd
-      liftIO $ T.putStrLn   "# =======================================\n"
+      liftIO $ T.putStrLn   "-- # ======================================="
+      liftIO $ T.putStrLn $ "-- # " <> hd
+      liftIO $ T.putStrLn   "-- # =======================================\n"
 
 printInfo :: MonadIO m => Text -> Bool -> FreeProgram -> m FreeProgram
 printInfo hd verbose fp = do
       let p = Program $ trec fp
       printHeader hd
-      when verbose $ liftIO $ T.putStrLn "## Free kind vars:\n"
-      when verbose $ liftIO $ T.putStrLn $ T.concat $ map (<> "\n") (nubOrd $ map prettyPrint (fv p :: [Name Kind]))
-      when verbose $ liftIO $ T.putStrLn "## Free type vars:\n"
-      when verbose $ liftIO $ T.putStrLn $ T.concat $ map (<> "\n") (nubOrd $ map prettyPrint (fv p :: [Name Ty]))
-      when verbose $ liftIO $ T.putStrLn "## Free tycon vars:\n"
-      when verbose $ liftIO $ T.putStrLn $ T.concat $ map (<> "\n") (nubOrd $ map prettyPrint (fv p :: [Name TyConId]))
-      liftIO $ T.putStrLn "## Free con vars:\n"
-      liftIO $ T.putStrLn $ T.concat $ map (<> "\n") (nubOrd $ map prettyPrint (fv p :: [Name DataConId]))
-      liftIO $ T.putStrLn "## Free exp vars:\n"
-      liftIO $ T.putStrLn $ T.concat $ map (<> "\n") (nubOrd $ map prettyPrint (fv p :: [Name Exp]))
-      liftIO $ T.putStrLn "## Program:\n"
+      when verbose $ liftIO $ T.putStrLn "-- ## Free kind vars:\n"
+      when verbose $ liftIO $ T.putStrLn $ T.concat $ map comVar (nubOrd $ map prettyPrint (fv p :: [Name Kind]))
+      when verbose $ liftIO $ T.putStrLn "-- ## Free type vars:\n"
+      when verbose $ liftIO $ T.putStrLn $ T.concat $ map comVar (nubOrd $ map prettyPrint (fv p :: [Name Ty]))
+      when verbose $ liftIO $ T.putStrLn "-- ## Free tycon vars:\n"
+      when verbose $ liftIO $ T.putStrLn $ T.concat $ map comVar (nubOrd $ map prettyPrint (fv p :: [Name TyConId]))
+      liftIO $ T.putStrLn "-- ## Free con vars:\n"
+      liftIO $ T.putStrLn $ T.concat $ map comVar (nubOrd $ map prettyPrint (fv p :: [Name DataConId]))
+      liftIO $ T.putStrLn "-- ## Free exp vars:\n"
+      liftIO $ T.putStrLn $ T.concat $ map comVar (nubOrd $ map prettyPrint (fv p :: [Name Exp]))
+      liftIO $ T.putStrLn "-- ## Program:\n"
       liftIO $ T.putStrLn $ prettyPrint' $ prettyFP $ if verbose then fp else untype' fp
-      when verbose $ liftIO $ T.putStrLn "\n## Program (show):\n"
+      when verbose $ liftIO $ T.putStrLn "\n-- ## Program (show):\n"
       when verbose $ liftIO $ T.putStrLn $ showt $ unAnn fp
       pure fp
 
@@ -235,17 +234,20 @@ printInfo hd verbose fp = do
             untype'' :: Defn -> Defn
             untype'' d = d { defnBody = untype $ defnBody d }
 
+            comVar :: Text -> Text
+            comVar = (<> "\n") . ("-- " <>)
+
 printInfoHSE :: MonadIO m => Text -> Renamer -> Module -> Bool -> S.Module a -> m (S.Module a)
 printInfoHSE hd rn imps verbose hse = do
       printHeader hd
-      when verbose $ liftIO $ T.putStrLn "\n## Renamer:\n"
+      when verbose $ liftIO $ T.putStrLn "\n-- ## Renamer:\n"
       when verbose $ liftIO $ T.putStrLn $ showt rn
-      when verbose $ liftIO $ T.putStrLn "\n## Exports:\n"
+      when verbose $ liftIO $ T.putStrLn "\n-- ## Exports:\n"
       when verbose $ liftIO $ T.putStrLn $ showt $ allExports rn
-      when verbose $ liftIO $ T.putStrLn "\n## Show imps:\n"
+      when verbose $ liftIO $ T.putStrLn "\n-- ## Show imps:\n"
       when verbose $ liftIO $ T.putStrLn $ showt imps
-      when verbose $ liftIO $ T.putStrLn "\n## Show HSE mod:\n"
+      when verbose $ liftIO $ T.putStrLn "\n-- ## Show HSE mod:\n"
       when verbose $ liftIO $ T.putStrLn $ showt $ void hse
-      when verbose $ liftIO $ T.putStrLn "\n## Pretty HSE mod:\n"
+      when verbose $ liftIO $ T.putStrLn "\n-- ## Pretty HSE mod:\n"
       liftIO $ putStrLn $ P.prettyPrint $ void hse
       pure hse
