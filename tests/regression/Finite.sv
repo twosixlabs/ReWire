@@ -2,22 +2,22 @@ module top_level (input logic [0:0] clk,
   input logic [0:0] rst,
   input logic [6:0] __in0,
   output logic [6:0] __out0);
-  logic [7:0] gzdLLziPurezidispatch1;
-  logic [6:0] gzdLLziMainzidev;
-  logic [8:0] callRes;
-  logic [7:0] gzdLLziPurezidispatch;
-  logic [6:0] gzdLLziMainzidevR1;
-  logic [8:0] callResR1;
+  logic [7:0] zll_pure_dispatch1_in;
+  logic [6:0] zll_main_dev_in;
+  logic [8:0] zll_main_dev_out;
+  logic [7:0] zll_pure_dispatch_in;
+  logic [6:0] zll_main_dev_inR1;
+  logic [8:0] zll_main_dev_outR1;
   logic [0:0] __continue;
   logic [0:0] __resumption_tag;
   logic [0:0] __resumption_tag_next;
-  assign gzdLLziPurezidispatch1 = {__in0, __resumption_tag};
-  assign gzdLLziMainzidev = gzdLLziPurezidispatch1[7:1];
-  zdLLziMainzidev  zdLLziMainzidev (gzdLLziMainzidev[6:0], callRes);
-  assign gzdLLziPurezidispatch = {__in0, __resumption_tag};
-  assign gzdLLziMainzidevR1 = gzdLLziPurezidispatch[7:1];
-  zdLLziMainzidev  zdLLziMainzidevR1 (gzdLLziMainzidevR1[6:0], callResR1);
-  assign {__continue, __out0, __resumption_tag_next} = (gzdLLziPurezidispatch[0] == 1'h1) ? callResR1 : callRes;
+  assign zll_pure_dispatch1_in = {__in0, __resumption_tag};
+  assign zll_main_dev_in = zll_pure_dispatch1_in[7:1];
+  ZLL_Main_dev  inst (zll_main_dev_in[6:0], zll_main_dev_out);
+  assign zll_pure_dispatch_in = {__in0, __resumption_tag};
+  assign zll_main_dev_inR1 = zll_pure_dispatch_in[7:1];
+  ZLL_Main_dev  instR1 (zll_main_dev_inR1[6:0], zll_main_dev_outR1);
+  assign {__continue, __out0, __resumption_tag_next} = (zll_pure_dispatch_in[0] == 1'h1) ? zll_main_dev_outR1 : zll_main_dev_out;
   initial __resumption_tag <= 1'h1;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
@@ -28,19 +28,19 @@ module top_level (input logic [0:0] clk,
   end
 endmodule
 
-module zdLLziMainzidev (input logic [6:0] arg0,
+module ZLL_Main_dev (input logic [6:0] arg0,
   output logic [8:0] res);
-  logic [6:0] resizze;
-  logic [13:0] binOp;
-  logic [6:0] resizzeR1;
-  logic [255:0] binOpR1;
-  logic [127:0] resizzeR2;
-  logic [6:0] gMainzidev;
-  assign resizze = arg0;
-  assign binOp = {resizze[6:0], 7'h01};
-  assign resizzeR1 = binOp[13:7] + binOp[6:0];
-  assign binOpR1 = {128'(resizzeR1[6:0]), 128'h00000000000000000000000000000064};
-  assign resizzeR2 = binOpR1[255:128] % binOpR1[127:0];
-  assign gMainzidev = resizzeR2[6:0];
-  assign res = {1'h1, gMainzidev[6:0], 1'h0};
+  logic [6:0] resize_in;
+  logic [13:0] binop_in;
+  logic [6:0] resize_inR1;
+  logic [255:0] binop_inR1;
+  logic [127:0] resize_inR2;
+  logic [6:0] main_dev_in;
+  assign resize_in = arg0;
+  assign binop_in = {resize_in[6:0], 7'h01};
+  assign resize_inR1 = binop_in[13:7] + binop_in[6:0];
+  assign binop_inR1 = {128'(resize_inR1[6:0]), 128'h00000000000000000000000000000064};
+  assign resize_inR2 = binop_inR1[255:128] % binop_inR1[127:0];
+  assign main_dev_in = resize_inR2[6:0];
+  assign res = {1'h1, main_dev_in[6:0], 1'h0};
 endmodule
