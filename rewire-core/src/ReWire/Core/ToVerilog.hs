@@ -20,6 +20,7 @@ import Control.Lens ((^.), (.~))
 import Control.Monad (liftM2)
 import Control.Monad.Reader (MonadReader, asks, runReaderT)
 import Control.Monad.State (MonadState, runStateT, modify, gets)
+import Data.Char (isAlphaNum)
 import Data.HashMap.Strict (HashMap)
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text)
@@ -39,6 +40,43 @@ freshInit0 = (FreshInit, mempty)
 freshRun0 :: Fresh
 freshRun0 = (FreshRun, mempty)
 
+mangleFresh :: Text -> Text
+mangleFresh x = if isVerilogId x' then x' else mangle x'
+      where subDots :: Text -> Text
+            subDots = T.replace "." "_"
+
+            subDollar :: Text -> Text
+            subDollar = \ case
+                  (T.stripPrefix "$" -> Just x') -> "Z" <> x'
+                  x                              -> x
+
+            subTick :: Text -> Text
+            subTick = T.replace "'" "$"
+
+            isVerilogId :: Text -> Bool
+            isVerilogId = T.all isVerilogId'
+
+            isVerilogId' :: Char -> Bool
+            isVerilogId' c = isAlphaNum c || c == '_' || c == '$'
+
+            x' :: Text
+            x' = subTick $ subDollar $ subDots x
+
+-- | Module names need to be de-conflicted because they aren't immediately
+--   freshened.
+mangleMod :: Text -> Text
+mangleMod x = mangleFresh x'
+      where subDots :: Text -> Text
+            subDots = T.replace "_" "__"
+
+            subDollar :: Text -> Text
+            subDollar = \ case
+                  (T.stripPrefix "Z" -> Just x') -> "ZZ" <> x'
+                  x                              -> x
+
+            x' :: Text
+            x' = subDollar $ subDots x
+
 fresh' :: MonadState SigInfo m => Text -> m Name
 fresh' s = do
       (mode, ctrs) <- gets fst
@@ -56,7 +94,7 @@ fresh' s = do
                   _         -> mempty
 
 fresh :: MonadState SigInfo m => Text -> m Name
-fresh s = mangle <$> fresh' s
+fresh s = fresh' $ T.toLower $ mangleFresh s
 
 newWire :: MonadState SigInfo m => V.Size -> Name -> m LVal
 newWire sz n = do
@@ -93,7 +131,7 @@ compileProgram conf p@(C.Device topLevel w loop state0 ds)
             ds' <- mapM (compileDefn conf) $ filter (not . unused . defnName) $ loop : ds
             pure $ V.Device $ st' : ds'
       where defnMap :: DefnMap
-            defnMap = Map.mapKeys mangle $ C.defnMap p
+            defnMap = Map.mapKeys mangleMod $ C.defnMap p
 
             unused :: GId -> Bool
             unused g = case Map.lookup g $ defnUses p { C.state0 = nullDefn } of
@@ -109,10 +147,10 @@ compileStart :: (MonadError AstError m, MonadFail m, MonadReader DefnMap m)
                  => Config -> Name -> C.Wiring -> C.Defn -> C.Defn -> m Module
 compileStart conf topLevel w loop state0 = do
       ((rStart, ssStart), (_, startSigs)) <- flip runStateT (freshInit0, [])
-            $ compileCall (flatten.~True $ clock.~clock' $ conf) (mangle $ defnName state0) (resumptionSize w') []
+            $ compileCall (flatten.~True $ clock.~clock' $ conf) (mangleMod $ defnName state0) (resumptionSize w') []
 
       ((rLoop, ssLoop),   (_, loopSigs))  <- flip runStateT (freshRun0, [])
-            $ compileCall (clock.~clock' $ conf) (mangle $ defnName loop) (resumptionSize w')
+            $ compileCall (clock.~clock' $ conf) (mangleMod $ defnName loop) (resumptionSize w')
                   $  [ V.cat $ map (LVal . Name . fst) $ dispatchWires w' | not (null $ dispatchWires w') ]
                   <> [ V.cat $ map (LVal . Name . fst) $ inputWires w     | not (null $ inputWires w) ]
 
@@ -205,7 +243,7 @@ compileDefn conf (C.Defn _ n (Sig _ inps outp) body) = do
       ((e, stmts), (_, sigs)) <- flip runStateT (freshRun0, []) $ compileExp conf (map (LVal . Name) argNames) body
       isPure <- isPureDefn n
       let inputs' = if isPure then inputs else [clkPort, rstPort] <> inputs
-      pure $ V.Module (mangle n) (inputs' <> outputs) sigs $ stmts <> [Assign (Name "res") e]
+      pure $ V.Module (mangleMod n) (inputs' <> outputs) sigs $ stmts <> [Assign (Name "res") e]
       where argNames :: [Name]
             argNames = zipWith (\ _ x -> "arg" <> showt x) inps [0::Int ..]
 
@@ -222,7 +260,7 @@ compileDefn conf (C.Defn _ n (Sig _ inps outp) body) = do
             rstPort = Input $ Logic [1] (conf^.reset) []
 
             isPureDefn :: MonadReader DefnMap m => GId -> m Bool
-            isPureDefn g = asks (Map.lookup $ mangle g) >>= \ case
+            isPureDefn g = asks (Map.lookup $ mangleMod g) >>= \ case
                   Just (_, (_, b)) -> pure b
                   _                -> pure False
 
@@ -235,8 +273,8 @@ compileCall conf g sz lvars = asks (Map.lookup g) >>= \ case
             e'         <- wcast sz e
             pure (e', stmts)
       Just (_, (_, isPure))                               -> do
-            mr         <- newWire sz "callRes"
-            inst'      <- fresh' g
+            mr         <- newWire sz $ g <> "_out"
+            inst'      <- fresh' "inst"
             let stmt   = Instantiate g inst' []
                        $ zip (repeat mempty)
                        $ (if isPure then [] else [clk, rst]) <> lvars <> [LVal mr]
@@ -286,7 +324,7 @@ compileExp conf lvars = \ case
       LVar an _ _                                   -> failAt an "ToVerilog: compileExp: encountered unknown LVar."
       Lit _ bv                                      -> pure (bvToExp bv, [])
       C.Concat _ e1 e2                              -> first V.cat <$> compileExps conf lvars (gather e1 <> gather e2)
-      Call _ sz (Global g) e ps els                 -> mkCall ("g" <> g) e ps els $ compileCall conf (mangle g) sz
+      Call _ sz (Global g) e ps els                 -> mkCall g e ps els $ compileCall conf (mangleMod g) sz
       Call an sz (SetRef r) e ps els                -> mkCall2' "setRef" e ps els $ \ (a, b) -> case a of
             a@(LVal (Element _ _)) -> do -- TODO(chathhorn) TODO TODO
                   let wa  = 1
@@ -341,7 +379,7 @@ compileExp conf lvars = \ case
                               (fes, fstmts) <- f $ patApplyLit bv ps
                               pure (if patMatchesLit bv ps then fes else els', stmts <> stmts' <> fstmts)
                         _       -> do
-                              Name n <- newWire (sizeOf e) s
+                              Name n <- newWire (sizeOf e) $ s <> "_in"
                               (fes, fstmts) <- f $ map LVal $ patApply n ps
                               pure  ( let c = patMatches n ps in
                                       if | litTrue c || C.isNil els -> fes
