@@ -2,22 +2,20 @@ module top_level (input logic [0:0] clk,
   input logic [0:0] rst,
   input logic [0:0] __in0,
   output logic [7:0] __out0);
-  logic [8:0] gzdLLzicase4245;
-  logic [8:0] gzdLLzilambda4221;
-  logic [8:0] gzdLLzicase4247;
+  logic [8:0] gzdLLziMainzigo;
+  logic [8:0] gzdLLziMainzigo2;
   logic [16:0] callRes;
-  logic [8:0] gzdLLzicase4247R1;
+  logic [8:0] gzdLLziMainzigo2R1;
   logic [16:0] callResR1;
   logic [0:0] __continue;
   logic [7:0] __st0;
   logic [7:0] __st0_next;
-  assign gzdLLzicase4245 = {__st0, __in0};
-  assign gzdLLzilambda4221 = {gzdLLzicase4245[0], gzdLLzicase4245[8:1]};
-  assign gzdLLzicase4247 = {gzdLLzilambda4221[8], gzdLLzilambda4221[7:0]};
-  zdLLzicase4247  zdLLzicase4247 (gzdLLzicase4247[7:0], callRes);
-  assign gzdLLzicase4247R1 = {gzdLLzilambda4221[8], gzdLLzilambda4221[7:0]};
-  zdLLzicase4247  zdLLzicase4247R1 (gzdLLzicase4247R1[7:0], callResR1);
-  assign {__continue, __out0, __st0_next} = (gzdLLzicase4247R1[8] == 1'h1) ? callResR1 : callRes;
+  assign gzdLLziMainzigo = {__in0, __st0};
+  assign gzdLLziMainzigo2 = {gzdLLziMainzigo[7:0], gzdLLziMainzigo[8]};
+  zdLLziMainzigo2  zdLLziMainzigo2 (gzdLLziMainzigo2[8:1], callRes);
+  assign gzdLLziMainzigo2R1 = {gzdLLziMainzigo[7:0], gzdLLziMainzigo[8]};
+  zdLLziMainzigo2  zdLLziMainzigo2R1 (gzdLLziMainzigo2R1[8:1], callResR1);
+  assign {__continue, __out0, __st0_next} = (gzdLLziMainzigo2R1[0] == 1'h1) ? callResR1 : callRes;
   initial __st0 <= 8'h00;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
@@ -28,19 +26,19 @@ module top_level (input logic [0:0] clk,
   end
 endmodule
 
-module zdLLzicase4247 (input logic [7:0] arg0,
+module zdLLziMainzigo2 (input logic [7:0] arg0,
   output logic [16:0] res);
   logic [7:0] gMainzigo;
-  logic [15:0] gzdLLzilambda4259;
-  logic [15:0] gzdLLzicase4257;
-  logic [16:0] gzdLLzilambda4254;
-  logic [16:0] gzdLLzicase4252;
-  logic [15:0] gzdLLzilambda4223;
+  logic [15:0] gzdLLziMainzigo8;
+  logic [15:0] gzdLLziMainzigo6;
+  logic [16:0] gzdLLziMainzigo5;
+  logic [16:0] gzdLLziMainzigo4;
+  logic [15:0] gzdLLziMainzigo1;
   assign gMainzigo = arg0;
-  assign gzdLLzilambda4259 = {gMainzigo[7:0], gMainzigo[7:0]};
-  assign gzdLLzicase4257 = gzdLLzilambda4259[15:0];
-  assign gzdLLzilambda4254 = {1'h0, gzdLLzicase4257[15:8], gzdLLzicase4257[7:0]};
-  assign gzdLLzicase4252 = gzdLLzilambda4254[16:0];
-  assign gzdLLzilambda4223 = {gzdLLzicase4252[15:8], gzdLLzicase4252[7:0]};
-  assign res = {1'h1, gzdLLzilambda4223[15:8], gzdLLzilambda4223[7:0]};
+  assign gzdLLziMainzigo8 = {gMainzigo[7:0], gMainzigo[7:0]};
+  assign gzdLLziMainzigo6 = gzdLLziMainzigo8[15:0];
+  assign gzdLLziMainzigo5 = {1'h0, gzdLLziMainzigo6[15:8], gzdLLziMainzigo6[7:0]};
+  assign gzdLLziMainzigo4 = gzdLLziMainzigo5[16:0];
+  assign gzdLLziMainzigo1 = {gzdLLziMainzigo4[15:8], gzdLLziMainzigo4[7:0]};
+  assign res = {1'h1, gzdLLziMainzigo1[15:8], gzdLLziMainzigo1[7:0]};
 endmodule

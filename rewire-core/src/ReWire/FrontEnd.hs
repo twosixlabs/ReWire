@@ -63,9 +63,9 @@ compileFile conf filename = do
                         >>> dedupe
                         >>> purgeUnused
                         ) a
-                  when (conf^.verbose)   $ liftIO $ T.putStrLn "Debug: [Pass 13] Reduced core."
+                  when (conf^.verbose)   $ liftIO $ T.putStrLn "Debug: [Pass 14] Reduced core."
                   when (conf^.dump $ 13) $ liftIO $ do
-                        printHeader "[Pass 13] Reduced Core"
+                        printHeader "[Pass 14] Reduced Core"
                         liftIO $ T.putStrLn $ prettyPrint b
                         when (conf^.verbose) $ do
                               liftIO $ T.putStrLn "\n## Show core:\n"

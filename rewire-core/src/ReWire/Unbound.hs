@@ -7,7 +7,8 @@ module ReWire.Unbound
       , UB.trec, UB.untrec, UB.bind, UB.unbind, UB.unembed
       , UB.Name (..), UB.AnyName (..), UB.isFreeName
       , UB.unsafeUnbind
-      , n2s, s2n, bn2s, fv, fvAny
+      , n2s, s2n, bn2s, fv, fvAny, makeName, UB.name2Integer
+      , freshVar
       ) where
 
 import qualified Unbound.Generics.LocallyNameless                    as UB
@@ -27,6 +28,9 @@ s2n :: Text -> UB.Name a
 {-# INLINE s2n #-}
 s2n = UB.s2n . unpack
 
+makeName :: Text -> Integer -> UB.Name a
+makeName = UB.makeName . unpack
+
 -- | Version of name2String that returns an empty string instead of error for
 --   bound variables.
 bn2s :: UB.Name a -> Text
@@ -39,3 +43,5 @@ fv = UB.toListOf UB.fv
 fvAny :: UB.Alpha a => a -> [UB.AnyName]
 fvAny = UB.toListOf UB.fvAny
 
+freshVar :: UB.Fresh m => Text -> m (UB.Name a)
+freshVar = UB.fresh . s2n

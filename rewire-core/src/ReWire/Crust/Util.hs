@@ -5,13 +5,14 @@ module ReWire.Crust.Util
       , paramTys, isPrim, inlinable, mustInline, nil
       , mkTuple, mkTuplePat, mkTupleMPat
       , mkPair, mkPairPat, mkPairMPat, flattenLam, mkLam
-      , mkApp, mkError, builtin, proxy
+      , mkApp, mkError, builtin, proxy, patVars, toVar, toPatVar, transPat, transMPat
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote))
 import ReWire.Crust.Syntax (Exp (..), Ty (..), MatchPat (..), Pat (..), Defn (..), DefnAttr (..), Builtin (..), Poly (..), FieldId, builtins)
 import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairTy, fundamental, mkArrowTy, paramTys)
-import ReWire.Unbound (Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
+import ReWire.Pretty (pretty)
+import ReWire.Unbound (freshVar, Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
 
 import Data.List (foldl')
 import Data.Text (Text)
@@ -48,6 +49,32 @@ nilPat = PatCon (MsgAnnote "nilPat") (Embed Nothing) (Embed $ Just nilTy) (Embed
 
 nilMPat :: MatchPat
 nilMPat = MatchPatCon (MsgAnnote "nilMPat") Nothing (Just nilTy) (s2n "()") []
+
+-- | Get well-typed pat variables.
+patVars :: Pat -> [(Ty, Name Exp)]
+patVars = \ case
+      PatCon _ _ _ _ ps             -> concatMap patVars ps
+      PatVar _ _ (Embed (Just t)) x -> [(t, x)]
+      PatVar _ _ (Embed Nothing) x  -> error $ "Untyped pat var (rwc bug; shouldn't happen): " <> show (pretty x)
+      _                             -> []
+
+toVar :: Annote -> (Ty, Name Exp) -> Exp
+toVar an (vt, v) = Var an Nothing (Just vt) v
+
+toPatVar :: Annote -> (Ty, Name Exp) -> Pat
+toPatVar an (vt, v) = PatVar an (Embed Nothing) (Embed $ Just vt) v
+
+transPat :: Pat -> MatchPat
+transPat = \ case
+      PatCon an (Embed tan) (Embed t) (Embed c) ps -> MatchPatCon an tan t c $ map transPat ps
+      PatVar an (Embed tan) (Embed t) _            -> MatchPatVar an tan t
+      PatWildCard an (Embed tan) (Embed t)         -> MatchPatWildCard an tan t
+
+transMPat :: Fresh m => MatchPat -> m Pat
+transMPat = \ case
+      MatchPatCon an tan t c ps -> PatCon an (Embed tan) (Embed t) (Embed c) <$> mapM transMPat ps
+      MatchPatVar an tan t      -> PatVar an (Embed tan) (Embed t) <$> freshVar "m2c"
+      MatchPatWildCard an tan t -> pure $ PatWildCard an (Embed tan) (Embed t)
 
 mkPair :: Annote -> Exp -> Exp -> Exp
 mkPair an e1 e2 = mkApp an (Con an Nothing t (s2n "(,)")) [e1, e2]

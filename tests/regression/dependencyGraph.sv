@@ -2,99 +2,103 @@ module top_level (input logic [0:0] clk,
   input logic [0:0] rst,
   input logic [9:0] __in0,
   output logic [15:0] __out0);
-  logic [40:0] gzdLLzicase10537;
-  logic [77:0] callRes;
-  logic [40:0] gzdLLzicase10537R1;
-  logic [77:0] callResR1;
-  logic [0:0] __continue;
-  logic [29:0] __padding;
-  logic [0:0] __resumption_tag;
-  logic [29:0] __st0;
-  logic [0:0] __resumption_tag_next;
-  logic [29:0] __st0_next;
-  assign gzdLLzicase10537 = {{__resumption_tag, __st0}, __in0};
-  zdLLzicase10537  zdLLzicase10537 (gzdLLzicase10537[39:10], gzdLLzicase10537[9:0], callRes);
-  assign gzdLLzicase10537R1 = {{__resumption_tag, __st0}, __in0};
-  zdLLzicase10537  zdLLzicase10537R1 (gzdLLzicase10537R1[39:10], gzdLLzicase10537R1[9:0], callResR1);
-  assign {__continue, __padding, __out0, __resumption_tag_next, __st0_next} = (gzdLLzicase10537R1[40] == 1'h0) ? callResR1 : callRes;
-  initial {__resumption_tag, __st0} <= 31'h00000000;
-  always @ (posedge clk or posedge rst) begin
-    if (rst == 1'h1) begin
-      {__resumption_tag, __st0} <= 31'h00000000;
-    end else begin
-      {__resumption_tag, __st0} <= {__resumption_tag_next, __st0_next};
-    end
-  end
-endmodule
-
-module zdLLzicase10537 (input logic [29:0] arg0,
-  input logic [9:0] arg1,
-  output logic [77:0] res);
-  logic [39:0] gReWireziMonadziiterSt9149;
-  logic [69:0] gzdLLzilambda10604;
-  logic [69:0] gzdLLzicase10601;
-  logic [69:0] gzdLLzilambda10429;
+  logic [39:0] gReWireziMonadziiterSt1;
+  logic [69:0] gzdLLziReWireziMonadziiterSt42;
+  logic [69:0] gzdLLziReWireziMonadziiterSt9;
   logic [39:0] gMainziloop;
   logic [29:0] id;
   logic [24:0] gMainziinputToMyState;
-  logic [24:0] gzdLLzicase10367;
-  logic [24:0] gzdLLzicase10370;
-  logic [24:0] gzdLLzicase10374;
-  logic [24:0] gzdLLzicase10379;
-  logic [24:0] gzdLLzicase10384;
+  logic [24:0] gzdLLziMainziinputToMyState13;
+  logic [13:0] gzdLLziMainziinputToMyState12;
+  logic [24:0] gzdLLziMainziinputToMyState11;
+  logic [24:0] gzdLLziMainziinputToMyState10;
+  logic [12:0] gzdLLziMainziinputToMyState8;
+  logic [24:0] gzdLLziMainziinputToMyState6;
+  logic [22:0] gzdLLziMainziinputToMyState5;
+  logic [22:0] gzdLLziMainziinputToMyState4;
+  logic [24:0] gzdLLziMainziinputToMyState2;
+  logic [18:0] gzdLLziMainziinputToMyState1;
+  logic [13:0] gzdLLziMainziinputToMyState;
   logic [44:0] gMainziincrPipeline;
-  logic [44:0] gzdLLzicase10363;
+  logic [44:0] gzdLLziMainziincrPipeline;
   logic [29:0] idR1;
   logic [29:0] resizze;
   logic [255:0] binOp;
   logic [127:0] resizzeR1;
-  logic [44:0] gzdLLzicase10387;
+  logic [44:0] gzdLLziMainziloop;
   logic [14:0] gMainzimyStateToOutput;
-  logic [14:0] gzdLLzicase10390;
-  logic [14:0] gzdLLzicase10393;
-  logic [14:0] gzdLLzicase10396;
-  logic [75:0] gzdLLzilambda10597;
-  logic [75:0] gzdLLzicase10580;
-  logic [77:0] gzdLLzilambda10592;
-  logic [77:0] gzdLLzicase10590;
-  logic [75:0] gzdLLzilambda10439;
-  logic [75:0] gzdLLzicase10437;
-  logic [29:0] gzdLLzicase10550;
-  logic [93:0] gzdLLzilambda10559;
-  logic [93:0] gzdLLzicase10556;
-  logic [45:0] gzdLLzilambda10434;
-  assign gReWireziMonadziiterSt9149 = {arg1, arg0};
-  assign gzdLLzilambda10604 = {gReWireziMonadziiterSt9149[39:30], gReWireziMonadziiterSt9149[29:0], gReWireziMonadziiterSt9149[29:0]};
-  assign gzdLLzicase10601 = {gzdLLzilambda10604[59:0], gzdLLzilambda10604[69:60]};
-  assign gzdLLzilambda10429 = {gzdLLzicase10601[9:0], gzdLLzicase10601[69:40], gzdLLzicase10601[39:10]};
-  assign gMainziloop = {gzdLLzilambda10429[69:60], gzdLLzilambda10429[59:30]};
+  logic [14:0] gzdLLziMainzimyStateToOutput5;
+  logic [8:0] gzdLLziMainzimyStateToOutput4;
+  logic [14:0] gzdLLziMainzimyStateToOutput3;
+  logic [12:0] gzdLLziMainzimyStateToOutput2;
+  logic [14:0] gzdLLziMainzimyStateToOutput1;
+  logic [8:0] gzdLLziMainzimyStateToOutput;
+  logic [75:0] gzdLLziReWireziMonadziiterSt39;
+  logic [75:0] gzdLLziReWireziMonadziiterSt30;
+  logic [77:0] gzdLLziReWireziMonadziiterSt36;
+  logic [77:0] gzdLLziReWireziMonadziiterSt35;
+  logic [75:0] gzdLLziReWireziMonadziiterSt6;
+  logic [75:0] gzdLLziReWireziMonadziiterSt20;
+  logic [75:0] gzdLLziReWireziMonadziiterSt19;
+  logic [75:0] gzdLLziReWireziMonadziiterSt7;
+  logic [29:0] gzdLLziReWireziMonadziiterSt16;
+  logic [93:0] gzdLLziReWireziMonadziiterSt24;
+  logic [93:0] gzdLLziReWireziMonadziiterSt22;
+  logic [45:0] gzdLLziReWireziMonadziiterSt;
+  logic [0:0] __continue;
+  logic [30:0] __padding;
+  logic [29:0] __st0;
+  logic [29:0] __st0_next;
+  assign gReWireziMonadziiterSt1 = {__in0, __st0};
+  assign gzdLLziReWireziMonadziiterSt42 = {gReWireziMonadziiterSt1[39:30], gReWireziMonadziiterSt1[29:0], gReWireziMonadziiterSt1[29:0]};
+  assign gzdLLziReWireziMonadziiterSt9 = {gzdLLziReWireziMonadziiterSt42[69:60], gzdLLziReWireziMonadziiterSt42[59:0]};
+  assign gMainziloop = {gzdLLziReWireziMonadziiterSt9[69:60], gzdLLziReWireziMonadziiterSt9[59:30]};
   assign id = gMainziloop[29:0];
   assign gMainziinputToMyState = {gMainziloop[39:30], id[29:15]};
-  assign gzdLLzicase10367 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
-  assign gzdLLzicase10370 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
-  assign gzdLLzicase10374 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
-  assign gzdLLzicase10379 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
-  assign gzdLLzicase10384 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
-  assign gMainziincrPipeline = {(gzdLLzicase10384[24:23] == 2'h0) ? {gzdLLzicase10384[14], 1'h1, gzdLLzicase10384[18:15], 5'h00, gzdLLzicase10384[18:15]} : ((gzdLLzicase10379[24:23] == 2'h1) ? {gzdLLzicase10379[14], gzdLLzicase10379[13:9], 1'h1, gzdLLzicase10379[22:15]} : (((gzdLLzicase10374[24:23] == 2'h2) && ((gzdLLzicase10374[15] == 1'h1) && (gzdLLzicase10374[13] == 1'h1))) ? {11'h400, gzdLLzicase10374[12:9]} : (((gzdLLzicase10370[24:23] == 2'h2) && ((gzdLLzicase10370[15] == 1'h1) && (gzdLLzicase10370[13] == 1'h0))) ? {6'h20, gzdLLzicase10370[8:0]} : {6'h00, gzdLLzicase10367[8:0]}))), gMainziloop[29:0]};
-  assign gzdLLzicase10363 = gMainziincrPipeline[44:0];
-  assign idR1 = gzdLLzicase10363[29:0];
-  assign resizze = gzdLLzicase10363[29:0];
+  assign gzdLLziMainziinputToMyState13 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
+  assign gzdLLziMainziinputToMyState12 = {gzdLLziMainziinputToMyState13[13:9], gzdLLziMainziinputToMyState13[8:0]};
+  assign gzdLLziMainziinputToMyState11 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
+  assign gzdLLziMainziinputToMyState10 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
+  assign gzdLLziMainziinputToMyState8 = {gzdLLziMainziinputToMyState10[12:9], gzdLLziMainziinputToMyState10[8:0]};
+  assign gzdLLziMainziinputToMyState6 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
+  assign gzdLLziMainziinputToMyState5 = {gzdLLziMainziinputToMyState6[22:15], gzdLLziMainziinputToMyState6[14], gzdLLziMainziinputToMyState6[13:9], gzdLLziMainziinputToMyState6[8:0]};
+  assign gzdLLziMainziinputToMyState4 = {gzdLLziMainziinputToMyState5[22:15], gzdLLziMainziinputToMyState5[13:9], gzdLLziMainziinputToMyState5[14], gzdLLziMainziinputToMyState5[8:0]};
+  assign gzdLLziMainziinputToMyState2 = {gMainziinputToMyState[24:15], gMainziinputToMyState[14:0]};
+  assign gzdLLziMainziinputToMyState1 = {gzdLLziMainziinputToMyState2[18:15], gzdLLziMainziinputToMyState2[14], gzdLLziMainziinputToMyState2[13:9], gzdLLziMainziinputToMyState2[8:0]};
+  assign gzdLLziMainziinputToMyState = {gzdLLziMainziinputToMyState1[18:15], gzdLLziMainziinputToMyState1[14], gzdLLziMainziinputToMyState1[8:0]};
+  assign gMainziincrPipeline = {(gzdLLziMainziinputToMyState2[24:23] == 2'h0) ? {gzdLLziMainziinputToMyState[9], 1'h1, gzdLLziMainziinputToMyState[13:10], 5'h00, gzdLLziMainziinputToMyState[13:10]} : ((gzdLLziMainziinputToMyState6[24:23] == 2'h1) ? {gzdLLziMainziinputToMyState4[9], gzdLLziMainziinputToMyState4[14:10], 1'h1, gzdLLziMainziinputToMyState4[22:15]} : (((gzdLLziMainziinputToMyState10[24:23] == 2'h2) && ((gzdLLziMainziinputToMyState10[15] == 1'h1) && (gzdLLziMainziinputToMyState10[13] == 1'h1))) ? {11'h400, gzdLLziMainziinputToMyState8[12:9]} : (((gzdLLziMainziinputToMyState11[24:23] == 2'h2) && ((gzdLLziMainziinputToMyState11[15] == 1'h1) && (gzdLLziMainziinputToMyState11[13] == 1'h0))) ? {6'h20, gzdLLziMainziinputToMyState11[8:0]} : {6'h00, gzdLLziMainziinputToMyState12[8:0]}))), gMainziloop[29:0]};
+  assign gzdLLziMainziincrPipeline = gMainziincrPipeline[44:0];
+  assign idR1 = gzdLLziMainziincrPipeline[29:0];
+  assign resizze = gzdLLziMainziincrPipeline[29:0];
   assign binOp = {128'(resizze[29:0]), {8'h80{1'h0}}};
   assign resizzeR1 = binOp[255:128] >> binOp[127:0];
-  assign gzdLLzicase10387 = {gzdLLzicase10363[44:30], idR1[29:15], resizzeR1[14:0]};
-  assign gMainzimyStateToOutput = gzdLLzicase10387[14:0];
-  assign gzdLLzicase10390 = gMainzimyStateToOutput[14:0];
-  assign gzdLLzicase10393 = gMainzimyStateToOutput[14:0];
-  assign gzdLLzicase10396 = gMainzimyStateToOutput[14:0];
-  assign gzdLLzilambda10597 = {{((gzdLLzicase10396[14] == 1'h1) && (gzdLLzicase10396[8] == 1'h0)) ? {2'h3, gzdLLzicase10396[13:9], 5'h00, gzdLLzicase10396[3:0]} : (((gzdLLzicase10393[14] == 1'h1) && (gzdLLzicase10393[8] == 1'h1)) ? {2'h1, gzdLLzicase10393[13:9], 1'h1, gzdLLzicase10393[7:0]} : {7'h00, gzdLLzicase10390[8:0]}), gzdLLzicase10387[44:15]}, gzdLLzilambda10429[29:0]};
-  assign gzdLLzicase10580 = gzdLLzilambda10597[75:0];
-  assign gzdLLzilambda10592 = {2'h0, gzdLLzicase10580[75:30], gzdLLzicase10580[29:0]};
-  assign gzdLLzicase10590 = gzdLLzilambda10592[77:0];
-  assign gzdLLzilambda10439 = {gzdLLzicase10590[75:30], gzdLLzicase10590[29:0]};
-  assign gzdLLzicase10437 = {gzdLLzilambda10439[75:30], gzdLLzilambda10439[29:0]};
-  assign gzdLLzicase10550 = gzdLLzicase10437[59:30];
-  assign gzdLLzilambda10559 = {gzdLLzicase10437[75:60], {{2'h1, {6'h2e{1'h0}}}, gzdLLzicase10550[29:0]}};
-  assign gzdLLzicase10556 = {gzdLLzilambda10559[77:0], gzdLLzilambda10559[93:78]};
-  assign gzdLLzilambda10434 = {gzdLLzicase10556[15:0], gzdLLzicase10556[45:16]};
-  assign res = {31'h40000000, gzdLLzilambda10434[45:30], 1'h1, gzdLLzilambda10434[29:0]};
+  assign gzdLLziMainziloop = {gzdLLziMainziincrPipeline[44:30], idR1[29:15], resizzeR1[14:0]};
+  assign gMainzimyStateToOutput = gzdLLziMainziloop[14:0];
+  assign gzdLLziMainzimyStateToOutput5 = gMainzimyStateToOutput[14:0];
+  assign gzdLLziMainzimyStateToOutput4 = gzdLLziMainzimyStateToOutput5[8:0];
+  assign gzdLLziMainzimyStateToOutput3 = gMainzimyStateToOutput[14:0];
+  assign gzdLLziMainzimyStateToOutput2 = {gzdLLziMainzimyStateToOutput3[13:9], gzdLLziMainzimyStateToOutput3[7:0]};
+  assign gzdLLziMainzimyStateToOutput1 = gMainzimyStateToOutput[14:0];
+  assign gzdLLziMainzimyStateToOutput = {gzdLLziMainzimyStateToOutput1[13:9], gzdLLziMainzimyStateToOutput1[3:0]};
+  assign gzdLLziReWireziMonadziiterSt39 = {{((gzdLLziMainzimyStateToOutput1[14] == 1'h1) && (gzdLLziMainzimyStateToOutput1[8] == 1'h0)) ? {2'h3, gzdLLziMainzimyStateToOutput[8:4], 5'h00, gzdLLziMainzimyStateToOutput[3:0]} : (((gzdLLziMainzimyStateToOutput3[14] == 1'h1) && (gzdLLziMainzimyStateToOutput3[8] == 1'h1)) ? {2'h1, gzdLLziMainzimyStateToOutput2[12:8], 1'h1, gzdLLziMainzimyStateToOutput2[7:0]} : {7'h00, gzdLLziMainzimyStateToOutput4[8:0]}), gzdLLziMainziloop[44:15]}, gzdLLziReWireziMonadziiterSt9[29:0]};
+  assign gzdLLziReWireziMonadziiterSt30 = gzdLLziReWireziMonadziiterSt39[75:0];
+  assign gzdLLziReWireziMonadziiterSt36 = {2'h0, gzdLLziReWireziMonadziiterSt30[75:30], gzdLLziReWireziMonadziiterSt30[29:0]};
+  assign gzdLLziReWireziMonadziiterSt35 = gzdLLziReWireziMonadziiterSt36[77:0];
+  assign gzdLLziReWireziMonadziiterSt6 = {gzdLLziReWireziMonadziiterSt35[75:30], gzdLLziReWireziMonadziiterSt35[29:0]};
+  assign gzdLLziReWireziMonadziiterSt20 = {gzdLLziReWireziMonadziiterSt6[29:0], gzdLLziReWireziMonadziiterSt6[75:30]};
+  assign gzdLLziReWireziMonadziiterSt19 = {gzdLLziReWireziMonadziiterSt20[45:30], gzdLLziReWireziMonadziiterSt20[75:46], gzdLLziReWireziMonadziiterSt20[29:0]};
+  assign gzdLLziReWireziMonadziiterSt7 = {gzdLLziReWireziMonadziiterSt19[75:60], gzdLLziReWireziMonadziiterSt19[29:0], gzdLLziReWireziMonadziiterSt19[59:30]};
+  assign gzdLLziReWireziMonadziiterSt16 = gzdLLziReWireziMonadziiterSt7[59:30];
+  assign gzdLLziReWireziMonadziiterSt24 = {gzdLLziReWireziMonadziiterSt7[75:60], {{2'h1, {6'h2e{1'h0}}}, gzdLLziReWireziMonadziiterSt16[29:0]}};
+  assign gzdLLziReWireziMonadziiterSt22 = {gzdLLziReWireziMonadziiterSt24[93:78], gzdLLziReWireziMonadziiterSt24[77:0]};
+  assign gzdLLziReWireziMonadziiterSt = {gzdLLziReWireziMonadziiterSt22[93:78], gzdLLziReWireziMonadziiterSt22[29:0]};
+  assign {__continue, __padding, __out0, __st0_next} = {{1'h1, {5'h1f{1'h0}}}, gzdLLziReWireziMonadziiterSt[45:30], gzdLLziReWireziMonadziiterSt[29:0]};
+  initial __st0 <= 30'h00000000;
+  always @ (posedge clk or posedge rst) begin
+    if (rst == 1'h1) begin
+      __st0 <= 30'h00000000;
+    end else begin
+      __st0 <= __st0_next;
+    end
+  end
 endmodule

@@ -26,7 +26,7 @@ import ReWire.Orphans ()
 import ReWire.Pretty (empty, text, TextShow (showt), FromGeneric (..), Doc, nest, hsep, parens, dquotes, comma, brackets, vsep, (<+>), Pretty (pretty), punctuate)
 import ReWire.Unbound(runFreshM, Embed (..), TRec (..), untrec, Name, SubstName (..), Bind (..), unbind, Alpha (..), aeq, Subst (..), n2s)
 
-import Control.Arrow ((&&&))
+import Control.Arrow ((&&&), second)
 import Control.DeepSeq (NFData (..), deepseq)
 import Data.Containers.ListUtils (nubOrdOn)
 import Data.Data (Typeable, Data (..))
@@ -142,26 +142,11 @@ instance Subst Ty Ty where
       isvar = \ case
             TyVar _ _ x -> Just $ SubstName x
             _           -> Nothing
-instance Subst Ty Annote where
-      subst _ _ x = x
-      substs _ x  = x
-      substBvs _ _ x = x
-instance Subst Ty Natural where
-      subst _ _ x = x
-      substs _ x  = x
-      substBvs _ _ x  = x
-instance Subst Ty Text where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Ty Kind where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Ty Builtin where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
+instance Subst Ty Annote  where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Ty Natural where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Ty Text    where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Ty Kind    where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Ty Builtin where subst _ _ = id; substs _ = id; substBvs _ _ = id
 instance Subst Ty Exp
 instance Subst Ty Pat
 instance Subst Ty MatchPat
@@ -224,6 +209,7 @@ data Builtin = Error | Extern
              | LNot | Not
              | RAnd | RNAnd | ROr | RNor | RXOr | RXNor
              | MSBit
+             | UsingExtern
       deriving (Eq, Generic, Show, Typeable, Data, Bounded, Enum)
       deriving TextShow via FromGeneric Builtin
 
@@ -261,46 +247,16 @@ instance Subst Exp Exp where
       isvar = \ case
             Var _ _ _ x -> Just $ SubstName x
             _           -> Nothing
-instance Subst Exp Annote where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Natural where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Text where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Ty where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Kind where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Pat where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp MatchPat where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp DefnAttr where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Poly where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
-instance Subst Exp Builtin where
-      subst _ _ x = x
-      substs _ x = x
-      substBvs _ _ x  = x
+instance Subst Exp Annote   where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Natural  where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Text     where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Ty       where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Kind     where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Pat      where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp MatchPat where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp DefnAttr where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Poly     where subst _ _ = id; substs _ = id; substBvs _ _ = id
+instance Subst Exp Builtin  where subst _ _ = id; substs _ = id; substBvs _ _ = id
 instance Subst Exp Defn
 
 instance NFData Exp
@@ -320,8 +276,8 @@ instance Annotated Exp where
             LitVec a _ _ _      -> a
 
 -- | Does this exp have a type annotation? Avoids depending on ReWire.Crust.Types.
-typeAnnotated :: Exp -> Bool
-typeAnnotated = isJust . \ case
+typeAnn :: Exp -> Maybe Poly
+typeAnn = \ case
       App _ t _ _ _       -> t
       Lam _ t _ _         -> t
       Var _ t _ _         -> t
@@ -337,42 +293,44 @@ typeAnnotated = isJust . \ case
 instance Parenless Exp where
       parenless e = case flattenApp e of
             -- TODO(chathhorn): rework pretty printing to handle type annotations on applications.
-            (Con _ Nothing _ (n2s -> c) : _)  | isTupleCtor c -> True
-            [e'] | typeAnnotated e'                           -> False
-            [Con {}]                                          -> True
-            [Var {}]                                          -> True
-            [Builtin {}]                                      -> True
-            [LitInt {}]                                       -> True
-            [LitStr {}]                                       -> True
-            [LitList {}]                                      -> True
-            [LitVec {}]                                       -> True
-            _                                                 -> False
+            (Con _ Nothing _ (n2s -> c), _)
+                     | isTupleCtor c       -> True
+            (e', []) | isJust $ typeAnn e' -> False
+            (Con {}, [])                   -> True
+            (Var {}, [])                   -> True
+            (Builtin {}, [])               -> True
+            (LitInt {}, [])                -> True
+            (LitStr {}, [])                -> True
+            (LitList {}, [])               -> True
+            (LitVec {}, [])                -> True
+            _                              -> False
 
 instance Pretty Exp where
-      pretty e = case flattenApp e of
-            (Con _ pt _ (n2s -> c) : es) | isTupleCtor c -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty es
-            [Con _ pt _ n]                               -> ppTyAnn pt $ text $ n2s n
-            [Var _ pt _ n]                               -> ppTyAnn pt $ text $ showt n
-            [Lam _ pt _ e]                               -> ppTyAnn pt $ runFreshM $ do
+      pretty  = \ case
+            e@(App {}) -> ppTyAnn' (parenless e) (typeAnn e) $ case flattenApp e of
+                  (Con _ pt _ (n2s -> c), es) | isTupleCtor c -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty es
+                  (e', es)                                    -> nest 2 $ hsep $ mparens <$> e' : es
+            Con _ pt _ n                               -> ppTyAnn pt $ text $ n2s n
+            Var _ pt _ n                               -> ppTyAnn pt $ text $ showt n
+            Lam _ pt _ e                               -> ppTyAnnP pt $ runFreshM $ do
                   (p, e') <- unbind e
                   pure $ text "\\" <+> text (showt p) <+> text "->" <+> pretty e'
-            [Case _ pt _ e e1 e2]                        -> ppTyAnn pt $ runFreshM $ do
+            Case _ pt _ e e1 e2                        -> ppTyAnnP pt $ runFreshM $ do
                   (p, e1') <- unbind e1
                   pure $ nest 2 $ vsep $
                         [ text "case" <+> pretty e <+> text "of"
                         , pretty p <+> text "->" <+> pretty e1'
                         ] ++ maybe [] (\ e2' -> [text "_" <+> text "->" <+> pretty e2']) e2
-            [Match _ pt _ e p e1 e2]                     -> ppTyAnn pt $ runFreshM $
+            Match _ pt _ e p e1 e2                     -> ppTyAnnP pt $ runFreshM $
                   pure $ nest 2 $ vsep $
                         [ text "match" <+> pretty e <+> text "of"
                         , pretty p <+> text "->" <+> pretty e1
                         ] ++ maybe [] (\ e2' -> [text "_" <+> text "->" <+> pretty e2']) e2
-            [Builtin _ pt _ b]                           -> ppTyAnn pt $ pretty b
-            [LitInt _ pt v]                              -> ppTyAnn pt $ pretty v
-            [LitStr _ pt v]                              -> ppTyAnn pt $ dquotes $ pretty v
-            [LitList _ pt _ vs]                          -> ppTyAnn pt $ brackets $ hsep $ punctuate comma $ map pretty vs
-            [LitVec _ pt _ vs]                           -> ppTyAnn pt $ brackets $ hsep $ punctuate comma $ map pretty vs
-            es                                           -> nest 2 $ hsep $ map mparens es
+            Builtin _ pt _ b                           -> ppTyAnn pt $ pretty b
+            LitInt _ pt v                              -> ppTyAnn pt $ pretty v
+            LitStr _ pt v                              -> ppTyAnn pt $ dquotes $ pretty v
+            LitList _ pt _ vs                          -> ppTyAnn pt $ brackets $ hsep $ punctuate comma $ map pretty vs
+            LitVec _ pt _ vs                           -> ppTyAnn pt $ brackets $ hsep $ punctuate comma $ map pretty vs
 
 ---
 
@@ -406,8 +364,10 @@ instance Pretty Pat where
       pretty = \ case
             PatCon _ (Embed pt) _ (Embed (n2s -> c)) ps | isTupleCtor c -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty ps
             PatCon _ (Embed pt) _ (Embed n) ps                          -> ppTyAnn pt $ text (n2s n) <+> hsep (map mparens ps)
-            PatVar _ (Embed pt) _ n                                     -> ppTyAnn pt $ text $ showt n
-            PatWildCard _ (Embed pt) _                                  -> ppTyAnn pt $ text "_"
+            PatVar _ (Embed pt) (Embed Nothing) n                       -> ppTyAnn pt $ text $ showt n
+            PatVar _ (Embed pt) (Embed (Just t)) n                      -> ppTyAnn pt $ parens $ text (showt n) <+> "::" <+> pretty t
+            PatWildCard _ (Embed pt) (Embed Nothing)                    -> ppTyAnn pt $ text "_"
+            PatWildCard _ (Embed pt) (Embed (Just t))                   -> ppTyAnn pt $ parens $ text "_" <+> "::" <+> pretty t
 
 data MatchPat = MatchPatCon Annote !(Maybe Poly) !(Maybe Ty) !(Name DataConId) ![MatchPat]
               | MatchPatVar Annote !(Maybe Poly) !(Maybe Ty)
@@ -439,8 +399,10 @@ instance Pretty MatchPat where
       pretty = \ case
             MatchPatCon _ pt _ (n2s -> c) ps | isTupleCtor c -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty ps
             MatchPatCon _ pt _ n ps                          -> ppTyAnn pt $ text (n2s n) <+> hsep (map mparens ps)
-            MatchPatVar _ pt t                               -> ppTyAnn pt $ parens $ text "*" <+> text "::" <+> pretty t
-            MatchPatWildCard _ pt t                          -> ppTyAnn pt $ parens $ text "_" <+> text "::" <+> pretty t
+            MatchPatVar _ pt Nothing                         -> ppTyAnn pt $ text "*"
+            MatchPatVar _ pt (Just t)                        -> ppTyAnn pt $ parens $ text "*" <+> text "::" <+> pretty t
+            MatchPatWildCard _ pt Nothing                    -> ppTyAnn pt $ text "_"
+            MatchPatWildCard _ pt (Just t)                   -> ppTyAnn pt $ parens $ text "_" <+> text "::" <+> pretty t
 
 ---
 
@@ -551,8 +513,14 @@ mparens :: (Pretty a, Parenless a) => a -> Doc ann
 mparens a = if parenless a then pretty a else parens $ pretty a
 
 ppTyAnn :: Maybe Poly -> Doc ann -> Doc ann
-ppTyAnn Nothing d = d
-ppTyAnn (Just pt) d = d <+> text "::" <+> pretty pt
+ppTyAnn = ppTyAnn' True
+
+ppTyAnnP :: Maybe Poly -> Doc ann -> Doc ann
+ppTyAnnP = ppTyAnn' False
+
+ppTyAnn' :: Bool -> Maybe Poly -> Doc ann -> Doc ann
+ppTyAnn' _        Nothing   d = d
+ppTyAnn' noparens (Just pt) d = (if noparens then d else parens d) <+> text "::" <+> pretty pt
 
 -- TODO(chathhorn): make FreeProgram newtype.
 prettyFP :: FreeProgram -> Doc ann
@@ -564,11 +532,11 @@ isTupleCtor c = c == "(" <> replicate (length (unpack c) - 2) "," <> ")"
 -- | Turns:
 -- > (App (App (App v e1) e2) e3)
 -- into
--- > [v, e1, e2, e3]
-flattenApp :: Exp -> [Exp]
+-- > (v, [e1, e2, e3])
+flattenApp :: Exp -> (Exp, [Exp])
 flattenApp = \ case
-      App _ _ _ e e' -> flattenApp e <> [e']
-      e              -> [e]
+      App _ _ _ e e' -> second (<> [e']) $ flattenApp e
+      e              -> (e, [])
 
 flattenTyApp :: Ty -> [Ty]
 flattenTyApp = \ case
