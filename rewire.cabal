@@ -55,6 +55,7 @@ data-files:
     tests/regression/Infix.hs
     tests/regression/iter.hs
     tests/regression/iterSt.hs
+    tests/regression/matchBind.hs
     tests/regression/ModsMain.hs
     tests/regression/onestate.hs
     tests/regression/PackUnpack.hs
@@ -106,6 +107,7 @@ data-files:
     tests/regression/Infix.sv
     tests/regression/iter.sv
     tests/regression/iterSt.sv
+    tests/regression/matchBind.sv
     tests/regression/ModsMain.sv
     tests/regression/onestate.sv
     tests/regression/PackUnpack.sv
