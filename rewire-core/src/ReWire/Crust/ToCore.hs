@@ -38,7 +38,7 @@ type ConMap        = (HashMap (Name M.TyConId) [Name M.DataConId], HashMap (Name
 type TCM m         = ReaderT ConMap (ReaderT (HashMap (Name M.Exp) C.LId) m)
 type StartDefn     = (C.Name, C.Wiring, C.GId, C.GId)
 
-toCore :: (Fresh m, MonadError AstError m, MonadFail m) => Config -> Text -> M.FreeProgram -> m C.Device
+toCore :: (Fresh m, MonadError AstError m, MonadFail m) => Config -> Name M.Exp -> M.FreeProgram -> m C.Device
 toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
       mapM_ (\ x -> ((`runReaderT` conMap) . sizeOf (n2s (M.dataName x)) noAnn . M.TyCon noAnn . M.dataName) x) ts
       let intSz = 128 -- TODO(chathhorn)
@@ -50,7 +50,7 @@ toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
                   | Just defLoop   <- find ((== loop) . C.defnName) defns
                   , Just defState0 <- find ((== state0) . C.defnName) defns
                         -> pure $ C.Device topLevel w defLoop defState0 $ filter (neither loop state0 . C.defnName) defns
-            _           -> failAt noAnn $ "toCore: no definition found: " <> start)
+            _           -> failAt noAnn $ "toCore: no definition found: " <> prettyPrint start)
       where conMap :: ConMap
             conMap = ( Map.fromList $ map (M.dataName &&& map projId . M.dataCons) ts
                      , Map.fromList $ map (projId &&& projType) (concatMap M.dataCons ts)
@@ -65,9 +65,9 @@ toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
             neither :: Eq a => a -> a -> a -> Bool
             neither a b c = (c /= a) && (c /= b)
 
-transDefn :: (MonadError AstError m, Fresh m, MonadState S m, MonadFail m) => Config -> Text -> ConMap -> M.Defn -> m (Either StartDefn C.Defn)
+transDefn :: (MonadError AstError m, Fresh m, MonadState S m, MonadFail m) => Config -> Name M.Exp -> ConMap -> M.Defn -> m (Either StartDefn C.Defn)
 transDefn conf start conMap = \ case
-      M.Defn an n (Embed (M.Poly t)) _ (Embed e) | n2s n == start -> do
+      M.Defn an n (Embed (M.Poly t)) _ (Embed e) | n == start -> do
             (_, t')  <- unbind t
             case t' of
                   M.TyApp _ (M.TyApp _ (M.TyApp _ (M.TyApp _ (M.TyCon _ (n2s -> "ReacT")) t_in) t_out) (M.TyCon _ (n2s -> "Identity"))) _ -> do
@@ -87,8 +87,8 @@ transDefn conf start conMap = \ case
                                                          (zip (conf^.outputSigs) (filter (> 0) t_outs'))
                                                          (zip (conf^.stateSigs)  (filter (> 0) t_sts'))
                                     pure $ Left (conf^.top, wires, loop', state0')
-                              _ -> failAt an $ "transDefn: definition of " <> start <> " must have form `unfold n m' where n and m are global IDs; got " <> prettyPrint e'
-                  _ -> failAt an $ "transDefn: " <> start <> " has unsupported type: " <> M.prettyTy t'
+                              _ -> failAt an $ "transDefn: definition of " <> prettyPrint start <> " must have form `unfold n m' where n and m are global IDs; got " <> prettyPrint e'
+                  _ -> failAt an $ "transDefn: " <> prettyPrint start <> " has unsupported type: " <> M.prettyTy t'
       M.Defn an n (Embed (M.Poly t)) _ (Embed e) -> do
             (_, t')  <- unbind t
             (xs, e') <- unbind e
@@ -98,7 +98,7 @@ transDefn conf start conMap = \ case
       where getRegsTy :: MonadError AstError m => M.Ty -> m M.Ty
             getRegsTy = \ case
                   M.TyApp _ (M.TyApp _ (M.TyCon _ (n2s -> "PuRe")) s) _ -> pure s
-                  t                                                     -> failAt (ann t) "transDefn: definition of Main.start must have form `Main.start = unfold n m' where m has type PuRe s o."
+                  t                                                     -> failAt (ann t) $ "transDefn: definition of " <> prettyPrint start <> " must have form `" <> prettyPrint start <> " = unfold n m' where m has type PuRe s o."
 
             -- TODO: come up with a less brittle way to do this.
             detuple :: M.Ty -> [M.Ty]

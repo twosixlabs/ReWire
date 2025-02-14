@@ -44,12 +44,12 @@ projDefnTy Defn { defnPolyTy = Embed t } = poly2Ty t
 -- calculating types that could be inferred.
 
 -- | Transforms functions in state and resumption monads into plain first-order functions.
-purify :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Text -> FreeProgram -> m FreeProgram
+purify :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Name Exp -> FreeProgram -> m FreeProgram
 purify start (ts, syns, ds) = do
       (smds, notSmds)     <- partitionEithers <$> mapM isStateMonadicDefn ds
       (rmds, ods)         <- partitionEithers <$> mapM isReacMonadicDefn notSmds
 
-      maybe (failAt noAnn $ "No definition for start function (" <> start <> ") found!")
+      maybe (failAt noAnn $ "No definition for start function (" <> prettyPrint start <> ") found!")
             (projDefnTy >=> checkStartType)
             $ find (isStart . defnName) rmds
 
@@ -103,7 +103,7 @@ purify start (ts, syns, ds) = do
             isAorR = uncurry (||) . ((== "A_") &&& (== "R_")) . n2s . dataName
 
             isStart :: Name Exp -> Bool
-            isStart = (== start) . n2s
+            isStart = (== start)
 
             checkStartType :: MonadError AstError m => Ty -> m ()
             checkStartType t = case dstReacT t of
@@ -120,10 +120,10 @@ purify start (ts, syns, ds) = do
 -- Correcting mkStart.
 -- In the type of Main.start.
 -- t (return type of Main.start) needs to be combined with ms (list of StateT s, stores).
-mkStart :: Text -> Ty -> Ty -> [Ty] -> Defn
+mkStart :: Name Exp -> Ty -> Ty -> [Ty] -> Defn
 mkStart start i o ms = Defn
       { defnAnnote = MsgAnnote "start function"
-      , defnName   = s2n start
+      , defnName   = start
       , defnPolyTy = [] |-> startTy
       , defnAttr   = Just NoInline
       , defnBody   = appl
@@ -253,7 +253,7 @@ purifyStateDefn rho ms d = do
 liftMaybe :: MonadError AstError m => Annote -> Text -> Maybe a -> m a
 liftMaybe an msg = maybe (failAt an msg) pure
 
-purifyResDefn :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Text -> PureEnv -> [Ty] -> Defn -> StateT PSto m Defn
+purifyResDefn :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Name Exp -> PureEnv -> [Ty] -> Defn -> StateT PSto m Defn
 purifyResDefn start rho ms d = do
       ty            <- projDefnTy d
       (i, o, _, a)  <- liftMaybe (ann d) "Purify: failed at purifyResDefn" $ dstReacT $ codomTy ty
@@ -278,7 +278,7 @@ purifyResDefn start rho ms d = do
             an         = defnAnnote d
 
             isStart :: Bool
-            isStart = n2s dname == start
+            isStart = dname == start
 
 ---------------------------
 -- Purifying Types
@@ -456,7 +456,7 @@ type ResPoint = (DataCon, (Pat, Exp))
 --  stos   -- input states [s1, ..., sm]
 --  tm     -- term to be purified
 purifyResBody :: (Fresh m, MonadError AstError m, MonadIO m)
-              => Text -> PureEnv -> Ty -> Ty -> Ty -> [Exp] -> [Ty] -> Exp -> StateT PSto m Exp
+              => Name Exp -> PureEnv -> Ty -> Ty -> Ty -> [Exp] -> [Ty] -> Exp -> StateT PSto m Exp
 purifyResBody start rho i o a stos ms = classifyRCases >=> \ case
       -- purifyResBody (return e)         = "(Left (e, (s1, (..., sm))))"
       RReturn _ e | Just t <- typeOf e -> mkLeft "RReturn" e t stos
@@ -625,7 +625,7 @@ purifyResBody start rho i o a stos ms = classifyRCases >=> \ case
                         Just c -> pure c
 
             isStart :: Name Exp -> Bool
-            isStart = (== start) . n2s
+            isStart = (== start)
 
 dispatchTy :: Ty -> Ty -> [Ty] -> Ty
 dispatchTy i o ms = mkArrowTy [domTy, i] etor
