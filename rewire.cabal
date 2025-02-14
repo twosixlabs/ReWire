@@ -142,6 +142,64 @@ data-files:
     tests/regression/wordLit.sv
     tests/regression/wordShift.sv
     tests/regression/wordSlice.sv
+    tests/regression/case1.rwc
+    tests/regression/case2.rwc
+    tests/regression/dependencyGraph.rwc
+    tests/regression/dissex.rwc
+    tests/regression/dissex2.rwc
+    tests/regression/exp2.rwc
+    tests/regression/extern.rwc
+    tests/regression/fibo1.rwc
+    tests/regression/fibo2.rwc
+    tests/regression/fibo3.rwc
+    tests/regression/Finite.rwc
+    tests/regression/finite2.rwc
+    tests/regression/fully.rwc
+    tests/regression/funcase.rwc
+    tests/regression/guards.rwc
+    tests/regression/HigherOrderBug.rwc
+    tests/regression/Infix.rwc
+    tests/regression/iter.rwc
+    tests/regression/iterSt.rwc
+    tests/regression/matchBind.rwc
+    tests/regression/ModsMain.rwc
+    tests/regression/onestate.rwc
+    tests/regression/PackUnpack.rwc
+    tests/regression/pats.rwc
+    tests/regression/pats2.rwc
+    tests/regression/PreludeTest.rwc
+    tests/regression/putBug.rwc
+    tests/regression/pvartype.rwc
+    tests/regression/react.rwc
+    tests/regression/records.rwc
+    tests/regression/sigNothing.rwc
+    tests/regression/state.rwc
+    tests/regression/state0.rwc
+    tests/regression/stateTower.rwc
+    tests/regression/synonym.rwc
+    tests/regression/test2.rwc
+    tests/regression/test3.rwc
+    tests/regression/TinyISA.rwc
+    tests/regression/toag.rwc
+    tests/regression/toags.rwc
+    tests/regression/uniquification.rwc
+    tests/regression/UpCounter1.rwc
+    tests/regression/UpCounter2.rwc
+    tests/regression/vectorAppend.rwc
+    tests/regression/vectorCons.rwc
+    tests/regression/vectorIndexProxy.rwc
+    tests/regression/vectorPack.rwc
+    tests/regression/weird1.rwc
+    tests/regression/wordArith.rwc
+    tests/regression/wordBitwise.rwc
+    tests/regression/wordLit.rwc
+    tests/regression/wordShift.rwc
+    tests/regression/wordSlice.rwc
+    tests/regression/fibo1.yaml
+    tests/regression/fibo2.yaml
+    tests/regression/fibo3.yaml
+    tests/regression/UpCounter1.yaml
+    tests/regression/UpCounter2.yaml
     rewire-user/src/ReWire.hs
     rewire-user/src/RWC/Primitives.hs
     rewire-user/src/ReWire/Bits.hs
