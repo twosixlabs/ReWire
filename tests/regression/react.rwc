@@ -1,0 +1,28 @@
+device top_level:
+
+inputs [("__in0",1)]
+outputs [("__out0",1)]
+states []
+
+$Pure.dispatch :: W1 -> W2
+$Pure.dispatch $0 = 2'case 1'$0 of
+    {1'@} -> Main.loop
+
+$Pure.start :: W2
+$Pure.start  = 2'h2
+
+$LL.Main.loop :: W1 -> W2
+$LL.Main.loop $0 = {1'h1, 1'$0}
+
+$LL.Main.loop2 :: W2 -> W2
+$LL.Main.loop2 $0 = 2'case 2'$0 of
+    {1'h0, 1'@} -> $LL.Main.loop
+
+Main.loop :: W1 -> W2
+Main.loop $0 = 2'case {1'h0, 1'case 1'$0 of {1'@} -> ReWire.Prelude.not} of
+    {2'@} -> $LL.Main.loop2
+
+ReWire.Prelude.not :: W1 -> W1
+ReWire.Prelude.not $0 = 1'case 1'$0 of
+    {1'h1} -> 1'h0
+    _ -> 1'h1

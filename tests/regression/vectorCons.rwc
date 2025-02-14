@@ -1,0 +1,38 @@
+device top_level:
+
+inputs [("__in0",64),("__in1",64)]
+outputs [("__out0",64),("__out1",64)]
+states []
+
+$Pure.dispatch :: W128 -> W129
+$Pure.dispatch $0 = 129'case 128'$0 of
+    {128'@} -> Main.loop
+
+$Pure.start :: W129
+$Pure.start  = 129'h100000000000000000000000000000000
+
+$LL.Main.compute :: W64 -> W64 -> W128
+$LL.Main.compute $0 $1 = {56'case 64'$0 of
+    {8'_, 56'@} -> Id
+  , 8'case 128'case {128'case 64'$1 of {64'@} -> Resize, 128'h00000000000000000000000000000000} of
+      {128'@, 128'@} -> RShift of
+    {128'@} -> Resize
+  , 8'case 64'$0 of
+    {8'@, 56'_} -> Id
+  , 56'case 64'$1 of
+    {56'@, 8'_} -> Id}
+
+$LL.Main.loop :: W128 -> W129
+$LL.Main.loop $0 = {1'h1, 128'$0}
+
+$LL.Main.loop2 :: W129 -> W129
+$LL.Main.loop2 $0 = 129'case 129'$0 of
+    {1'h0, 128'@} -> $LL.Main.loop
+
+Main.compute :: W128 -> W128
+Main.compute $0 = 128'case 128'$0 of
+    {64'@, 64'@} -> $LL.Main.compute
+
+Main.loop :: W128 -> W129
+Main.loop $0 = 129'case {1'h0, 128'case 128'$0 of {128'@} -> Main.compute} of
+    {129'@} -> $LL.Main.loop2
