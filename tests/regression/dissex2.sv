@@ -7,28 +7,24 @@ module top_level (input logic [0:0] clk,
   logic [25:0] zll_main_begin_out;
   logic [16:0] zll_main_sig2_in;
   logic [15:0] main_incr_in;
-  logic [23:0] zll_main_incr33_in;
-  logic [23:0] zll_main_incr23_in;
-  logic [25:0] zll_main_incr23_out;
+  logic [23:0] zll_main_incr26_in;
+  logic [25:0] zll_main_incr26_out;
   logic [25:0] zll_main_incr29_in;
   logic [25:0] zll_main_incr27_in;
   logic [23:0] zll_main_incr3_in;
-  logic [23:0] zll_main_incr26_in;
-  logic [23:0] zll_main_incr23_inR1;
-  logic [25:0] zll_main_incr23_outR1;
+  logic [23:0] zll_main_incr26_inR1;
+  logic [25:0] zll_main_incr26_outR1;
   logic [33:0] zll_main_incr22_in;
   logic [33:0] zll_main_incr19_in;
   logic [31:0] zll_main_incr2_in;
-  logic [15:0] zll_main_incr18_in;
-  logic [15:0] zll_main_begin5_in;
-  logic [25:0] zll_main_begin5_out;
+  logic [15:0] zll_main_incr10_in;
+  logic [25:0] zll_main_incr10_out;
   logic [41:0] zll_main_incr14_in;
   logic [41:0] zll_main_incr11_in;
   logic [31:0] zll_main_incr1_in;
   logic [15:0] binop_in;
-  logic [15:0] zll_main_incr10_in;
-  logic [15:0] zll_main_begin5_inR1;
-  logic [25:0] zll_main_begin5_outR1;
+  logic [15:0] zll_main_incr10_inR1;
+  logic [25:0] zll_main_incr10_outR1;
   logic [25:0] zll_main_incr6_in;
   logic [25:0] zll_main_begin_inR1;
   logic [25:0] zll_main_begin_outR1;
@@ -43,29 +39,25 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_begin  inst (zll_main_begin_in[16:9], zll_main_begin_in[8:1], zll_main_begin_out);
   assign zll_main_sig2_in = {zll_main_sig_in[15:8], zll_main_sig_in[7:0], zll_main_sig_in[16]};
   assign main_incr_in = {zll_main_sig2_in[16:9], zll_main_sig2_in[8:1]};
-  assign zll_main_incr33_in = {main_incr_in[15:8], main_incr_in[15:8], main_incr_in[7:0]};
-  assign zll_main_incr23_in = zll_main_incr33_in[23:0];
-  ZLL_Main_incr23  instR1 (zll_main_incr23_in[23:16], zll_main_incr23_in[15:8], zll_main_incr23_in[7:0], zll_main_incr23_out);
-  assign zll_main_incr29_in = zll_main_incr23_out;
+  assign zll_main_incr26_in = {main_incr_in[15:8], main_incr_in[15:8], main_incr_in[7:0]};
+  ZLL_Main_incr26  instR1 (zll_main_incr26_in[23:0], zll_main_incr26_out);
+  assign zll_main_incr29_in = zll_main_incr26_out;
   assign zll_main_incr27_in = zll_main_incr29_in[25:0];
   assign zll_main_incr3_in = {zll_main_incr27_in[23:16], zll_main_incr27_in[15:8], zll_main_incr27_in[7:0]};
-  assign zll_main_incr26_in = {zll_main_incr3_in[7:0], zll_main_incr3_in[15:8], zll_main_incr3_in[7:0]};
-  assign zll_main_incr23_inR1 = zll_main_incr26_in[23:0];
-  ZLL_Main_incr23  instR2 (zll_main_incr23_inR1[23:16], zll_main_incr23_inR1[15:8], zll_main_incr23_inR1[7:0], zll_main_incr23_outR1);
-  assign zll_main_incr22_in = {zll_main_incr3_in[23:16], zll_main_incr23_outR1};
+  assign zll_main_incr26_inR1 = {zll_main_incr3_in[7:0], zll_main_incr3_in[15:8], zll_main_incr3_in[7:0]};
+  ZLL_Main_incr26  instR2 (zll_main_incr26_inR1[23:0], zll_main_incr26_outR1);
+  assign zll_main_incr22_in = {zll_main_incr3_in[23:16], zll_main_incr26_outR1};
   assign zll_main_incr19_in = {zll_main_incr22_in[33:26], zll_main_incr22_in[25:0]};
   assign zll_main_incr2_in = {zll_main_incr19_in[33:26], zll_main_incr19_in[23:16], zll_main_incr19_in[15:8], zll_main_incr19_in[7:0]};
-  assign zll_main_incr18_in = {zll_main_incr2_in[23:16], zll_main_incr2_in[7:0]};
-  assign zll_main_begin5_in = zll_main_incr18_in[15:0];
-  ZLL_Main_begin5  instR3 (zll_main_begin5_in[15:8], zll_main_begin5_in[7:0], zll_main_begin5_out);
-  assign zll_main_incr14_in = {zll_main_incr2_in[23:16], zll_main_incr2_in[31:24], zll_main_begin5_out};
+  assign zll_main_incr10_in = {zll_main_incr2_in[23:16], zll_main_incr2_in[7:0]};
+  ZLL_Main_incr10  instR3 (zll_main_incr10_in[15:0], zll_main_incr10_out);
+  assign zll_main_incr14_in = {zll_main_incr2_in[23:16], zll_main_incr2_in[31:24], zll_main_incr10_out};
   assign zll_main_incr11_in = {zll_main_incr14_in[41:34], zll_main_incr14_in[33:26], zll_main_incr14_in[25:0]};
   assign zll_main_incr1_in = {zll_main_incr11_in[41:34], zll_main_incr11_in[33:26], zll_main_incr11_in[15:8], zll_main_incr11_in[7:0]};
   assign binop_in = {zll_main_incr1_in[23:16], zll_main_incr1_in[31:24]};
-  assign zll_main_incr10_in = {zll_main_incr1_in[15:8], binop_in[15:8] + binop_in[7:0]};
-  assign zll_main_begin5_inR1 = zll_main_incr10_in[15:0];
-  ZLL_Main_begin5  instR4 (zll_main_begin5_inR1[15:8], zll_main_begin5_inR1[7:0], zll_main_begin5_outR1);
-  assign zll_main_incr6_in = zll_main_begin5_outR1;
+  assign zll_main_incr10_inR1 = {zll_main_incr1_in[15:8], binop_in[15:8] + binop_in[7:0]};
+  ZLL_Main_incr10  instR4 (zll_main_incr10_inR1[15:0], zll_main_incr10_outR1);
+  assign zll_main_incr6_in = zll_main_incr10_outR1;
   assign zll_main_begin_inR1 = zll_main_incr6_in[25:0];
   ZLL_Main_begin  instR5 (zll_main_begin_inR1[15:8], zll_main_begin_inR1[7:0], zll_main_begin_outR1);
   assign {__continue, __padding, __out0, __st0_next, __st1_next} = (zll_main_sig2_in[0] == 1'h1) ? zll_main_begin_outR1 : zll_main_begin_out;
@@ -83,31 +75,30 @@ module ZLL_Main_begin (input logic [7:0] arg0,
   input logic [7:0] arg1,
   output logic [25:0] res);
   logic [15:0] main_sig_in;
-  logic [23:0] zll_main_sig10_in;
-  logic [23:0] zll_main_incr23_in;
-  logic [25:0] zll_main_incr23_out;
+  logic [23:0] zll_main_incr26_in;
+  logic [25:0] zll_main_incr26_out;
   logic [25:0] zll_main_sig6_in;
   logic [25:0] zll_main_sig4_in;
   logic [23:0] zll_main_sig1_in;
   assign main_sig_in = {arg0, arg1};
-  assign zll_main_sig10_in = {main_sig_in[15:8], main_sig_in[15:8], main_sig_in[7:0]};
-  assign zll_main_incr23_in = zll_main_sig10_in[23:0];
-  ZLL_Main_incr23  inst (zll_main_incr23_in[23:16], zll_main_incr23_in[15:8], zll_main_incr23_in[7:0], zll_main_incr23_out);
-  assign zll_main_sig6_in = zll_main_incr23_out;
+  assign zll_main_incr26_in = {main_sig_in[15:8], main_sig_in[15:8], main_sig_in[7:0]};
+  ZLL_Main_incr26  inst (zll_main_incr26_in[23:0], zll_main_incr26_out);
+  assign zll_main_sig6_in = zll_main_incr26_out;
   assign zll_main_sig4_in = zll_main_sig6_in[25:0];
   assign zll_main_sig1_in = {zll_main_sig4_in[23:16], zll_main_sig4_in[15:8], zll_main_sig4_in[7:0]};
   assign res = {2'h2, zll_main_sig1_in[23:16], zll_main_sig1_in[15:8], zll_main_sig1_in[7:0]};
 endmodule
 
-module ZLL_Main_begin5 (input logic [7:0] arg0,
-  input logic [7:0] arg1,
+module ZLL_Main_incr10 (input logic [15:0] arg0,
   output logic [25:0] res);
-  assign res = {10'h100, arg0, arg1};
+  logic [15:0] zll_main_begin5_in;
+  assign zll_main_begin5_in = arg0;
+  assign res = {10'h100, zll_main_begin5_in[15:8], zll_main_begin5_in[7:0]};
 endmodule
 
-module ZLL_Main_incr23 (input logic [7:0] arg0,
-  input logic [7:0] arg1,
-  input logic [7:0] arg2,
+module ZLL_Main_incr26 (input logic [23:0] arg0,
   output logic [25:0] res);
-  assign res = {2'h0, arg0, arg1, arg2};
+  logic [23:0] zll_main_incr23_in;
+  assign zll_main_incr23_in = arg0;
+  assign res = {2'h0, zll_main_incr23_in[23:16], zll_main_incr23_in[15:8], zll_main_incr23_in[7:0]};
 endmodule

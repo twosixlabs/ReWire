@@ -5,7 +5,7 @@ module top_level (input logic [0:0] clk,
   logic [0:0] __continue;
   logic [0:0] __resumption_tag;
   logic [0:0] __resumption_tag_next;
-  assign {__continue, __out0, __resumption_tag_next} = 2'h2;
+  assign {__continue, __out0, __resumption_tag_next} = 1'h0;
   initial __resumption_tag <= 1'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin

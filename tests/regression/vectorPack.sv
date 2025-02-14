@@ -92,50 +92,16 @@ module top_level (input logic [0:0] clk,
   end
 endmodule
 
-module ZLL_Main_compute (input logic [63:0] arg0,
-  input logic [2:0] arg1,
+module ZLL_Main_compute2 (input logic [63:0] arg0,
+  input logic [63:0] arg1,
+  input logic [2:0] arg2,
   output logic [7:0] res);
-  logic [63:0] resize_in;
-  logic [2:0] resize_inR1;
+  logic [2:0] resize_in;
   logic [255:0] binop_in;
-  logic [255:0] binop_inR1;
-  logic [127:0] resize_inR2;
-  logic [2:0] resize_inR3;
-  logic [255:0] binop_inR2;
-  logic [255:0] binop_inR3;
-  logic [127:0] resize_inR4;
-  logic [2:0] resize_inR5;
-  logic [255:0] binop_inR4;
-  logic [255:0] binop_inR5;
-  logic [255:0] binop_inR6;
-  logic [255:0] binop_inR7;
-  logic [127:0] resize_inR6;
-  assign resize_in = arg0;
-  assign resize_inR1 = arg1;
-  assign binop_in = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000002};
-  assign binop_inR1 = {binop_in[255:128] * binop_in[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR2 = binop_inR1[255:128] % binop_inR1[127:0];
-  assign resize_inR3 = resize_inR2[2:0];
-  assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000001};
-  assign binop_inR3 = {binop_inR2[255:128] + binop_inR2[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR4 = binop_inR3[255:128] % binop_inR3[127:0];
-  assign resize_inR5 = resize_inR4[2:0];
-  assign binop_inR4 = {128'h00000000000000000000000000000008, 128'(resize_inR5[2:0])};
-  assign binop_inR5 = {binop_inR4[255:128] - binop_inR4[127:0], 128'h00000000000000000000000000000001};
-  assign binop_inR6 = {binop_inR5[255:128] - binop_inR5[127:0], 128'h00000000000000000000000000000008};
-  assign binop_inR7 = {128'(resize_in[63:0]), binop_inR6[255:128] * binop_inR6[127:0]};
-  assign resize_inR6 = binop_inR7[255:128] >> binop_inR7[127:0];
-  assign res = resize_inR6[7:0];
-endmodule
-
-module ZLL_Main_compute1 (input logic [63:0] arg0,
-  input logic [2:0] arg1,
-  output logic [7:0] res);
-  logic [63:0] resize_in;
   logic [2:0] resize_inR1;
-  logic [255:0] binop_in;
   logic [255:0] binop_inR1;
-  logic [127:0] resize_inR2;
+  logic [67:0] zll_main_compute1_in;
+  logic [63:0] resize_inR2;
   logic [2:0] resize_inR3;
   logic [255:0] binop_inR2;
   logic [255:0] binop_inR3;
@@ -147,52 +113,70 @@ module ZLL_Main_compute1 (input logic [63:0] arg0,
   logic [2:0] resize_inR7;
   logic [255:0] binop_inR6;
   logic [255:0] binop_inR7;
+  logic [127:0] resize_inR8;
+  logic [2:0] resize_inR9;
   logic [255:0] binop_inR8;
   logic [255:0] binop_inR9;
-  logic [127:0] resize_inR8;
-  assign resize_in = arg0;
-  assign resize_inR1 = arg1;
-  assign binop_in = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign binop_inR1 = {binop_in[255:128] - binop_in[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR2 = binop_inR1[255:128] % binop_inR1[127:0];
-  assign resize_inR3 = resize_inR2[2:0];
-  assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000002};
-  assign binop_inR3 = {binop_inR2[255:128] * binop_inR2[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR4 = binop_inR3[255:128] % binop_inR3[127:0];
-  assign resize_inR5 = resize_inR4[2:0];
-  assign binop_inR4 = {128'(resize_inR5[2:0]), 128'h00000000000000000000000000000001};
-  assign binop_inR5 = {binop_inR4[255:128] + binop_inR4[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR6 = binop_inR5[255:128] % binop_inR5[127:0];
-  assign resize_inR7 = resize_inR6[2:0];
-  assign binop_inR6 = {128'h00000000000000000000000000000008, 128'(resize_inR7[2:0])};
-  assign binop_inR7 = {binop_inR6[255:128] - binop_inR6[127:0], 128'h00000000000000000000000000000001};
-  assign binop_inR8 = {binop_inR7[255:128] - binop_inR7[127:0], 128'h00000000000000000000000000000008};
-  assign binop_inR9 = {128'(resize_in[63:0]), binop_inR8[255:128] * binop_inR8[127:0]};
-  assign resize_inR8 = binop_inR9[255:128] >> binop_inR9[127:0];
-  assign res = resize_inR8[7:0];
-endmodule
-
-module ZLL_Main_compute2 (input logic [63:0] arg0,
-  input logic [63:0] arg1,
-  input logic [2:0] arg2,
-  output logic [7:0] res);
-  logic [2:0] resize_in;
-  logic [255:0] binop_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_inR1;
-  logic [67:0] zll_main_compute1_in;
-  logic [7:0] zll_main_compute1_out;
+  logic [255:0] binop_inR10;
+  logic [255:0] binop_inR11;
+  logic [127:0] resize_inR10;
   logic [67:0] zll_main_compute_in;
-  logic [7:0] zll_main_compute_out;
+  logic [63:0] resize_inR11;
+  logic [2:0] resize_inR12;
+  logic [255:0] binop_inR12;
+  logic [255:0] binop_inR13;
+  logic [127:0] resize_inR13;
+  logic [2:0] resize_inR14;
+  logic [255:0] binop_inR14;
+  logic [255:0] binop_inR15;
+  logic [127:0] resize_inR15;
+  logic [2:0] resize_inR16;
+  logic [255:0] binop_inR16;
+  logic [255:0] binop_inR17;
+  logic [255:0] binop_inR18;
+  logic [255:0] binop_inR19;
+  logic [127:0] resize_inR17;
   assign resize_in = arg2;
   assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
   assign resize_inR1 = arg2;
   assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
   assign zll_main_compute1_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute1  inst (zll_main_compute1_in[67:4], zll_main_compute1_in[3:1], zll_main_compute1_out);
+  assign resize_inR2 = zll_main_compute1_in[67:4];
+  assign resize_inR3 = zll_main_compute1_in[3:1];
+  assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000003};
+  assign binop_inR3 = {binop_inR2[255:128] - binop_inR2[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR4 = binop_inR3[255:128] % binop_inR3[127:0];
+  assign resize_inR5 = resize_inR4[2:0];
+  assign binop_inR4 = {128'(resize_inR5[2:0]), 128'h00000000000000000000000000000002};
+  assign binop_inR5 = {binop_inR4[255:128] * binop_inR4[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR6 = binop_inR5[255:128] % binop_inR5[127:0];
+  assign resize_inR7 = resize_inR6[2:0];
+  assign binop_inR6 = {128'(resize_inR7[2:0]), 128'h00000000000000000000000000000001};
+  assign binop_inR7 = {binop_inR6[255:128] + binop_inR6[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR8 = binop_inR7[255:128] % binop_inR7[127:0];
+  assign resize_inR9 = resize_inR8[2:0];
+  assign binop_inR8 = {128'h00000000000000000000000000000008, 128'(resize_inR9[2:0])};
+  assign binop_inR9 = {binop_inR8[255:128] - binop_inR8[127:0], 128'h00000000000000000000000000000001};
+  assign binop_inR10 = {binop_inR9[255:128] - binop_inR9[127:0], 128'h00000000000000000000000000000008};
+  assign binop_inR11 = {128'(resize_inR2[63:0]), binop_inR10[255:128] * binop_inR10[127:0]};
+  assign resize_inR10 = binop_inR11[255:128] >> binop_inR11[127:0];
   assign zll_main_compute_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute  instR1 (zll_main_compute_in[67:4], zll_main_compute_in[3:1], zll_main_compute_out);
-  assign res = (zll_main_compute_in[0] == 1'h1) ? zll_main_compute_out : zll_main_compute1_out;
+  assign resize_inR11 = zll_main_compute_in[67:4];
+  assign resize_inR12 = zll_main_compute_in[3:1];
+  assign binop_inR12 = {128'(resize_inR12[2:0]), 128'h00000000000000000000000000000002};
+  assign binop_inR13 = {binop_inR12[255:128] * binop_inR12[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR13 = binop_inR13[255:128] % binop_inR13[127:0];
+  assign resize_inR14 = resize_inR13[2:0];
+  assign binop_inR14 = {128'(resize_inR14[2:0]), 128'h00000000000000000000000000000001};
+  assign binop_inR15 = {binop_inR14[255:128] + binop_inR14[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR15 = binop_inR15[255:128] % binop_inR15[127:0];
+  assign resize_inR16 = resize_inR15[2:0];
+  assign binop_inR16 = {128'h00000000000000000000000000000008, 128'(resize_inR16[2:0])};
+  assign binop_inR17 = {binop_inR16[255:128] - binop_inR16[127:0], 128'h00000000000000000000000000000001};
+  assign binop_inR18 = {binop_inR17[255:128] - binop_inR17[127:0], 128'h00000000000000000000000000000008};
+  assign binop_inR19 = {128'(resize_inR11[63:0]), binop_inR18[255:128] * binop_inR18[127:0]};
+  assign resize_inR17 = binop_inR19[255:128] >> binop_inR19[127:0];
+  assign res = (zll_main_compute_in[0] == 1'h1) ? resize_inR17[7:0] : resize_inR10[7:0];
 endmodule
 
 module ZLL_Main_compute6 (input logic [63:0] arg0,
@@ -401,93 +385,6 @@ module ZLL_Main_compute8 (input logic [63:0] arg0,
   assign res = (zll_main_compute3_in[0] == 1'h1) ? resize_inR13[7:0] : resize_inR8[7:0];
 endmodule
 
-module ZLL_Main_compute12 (input logic [63:0] arg0,
-  input logic [63:0] arg1,
-  input logic [2:0] arg2,
-  output logic [7:0] res);
-  logic [2:0] resize_in;
-  logic [255:0] binop_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_inR1;
-  logic [67:0] zll_main_compute1_in;
-  logic [7:0] zll_main_compute1_out;
-  logic [67:0] zll_main_compute_in;
-  logic [7:0] zll_main_compute_out;
-  assign resize_in = arg2;
-  assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
-  assign resize_inR1 = arg2;
-  assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign zll_main_compute1_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute1  inst (zll_main_compute1_in[67:4], zll_main_compute1_in[3:1], zll_main_compute1_out);
-  assign zll_main_compute_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute  instR1 (zll_main_compute_in[67:4], zll_main_compute_in[3:1], zll_main_compute_out);
-  assign res = (zll_main_compute_in[0] == 1'h1) ? zll_main_compute_out : zll_main_compute1_out;
-endmodule
-
-module ZLL_Main_compute14 (input logic [63:0] arg0,
-  input logic [2:0] arg1,
-  output logic [7:0] res);
-  logic [63:0] resize_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_in;
-  logic [255:0] binop_inR1;
-  logic [127:0] resize_inR2;
-  logic [2:0] resize_inR3;
-  logic [255:0] binop_inR2;
-  logic [255:0] binop_inR3;
-  logic [255:0] binop_inR4;
-  logic [255:0] binop_inR5;
-  logic [127:0] resize_inR4;
-  assign resize_in = arg0;
-  assign resize_inR1 = arg1;
-  assign binop_in = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000002};
-  assign binop_inR1 = {binop_in[255:128] * binop_in[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR2 = binop_inR1[255:128] % binop_inR1[127:0];
-  assign resize_inR3 = resize_inR2[2:0];
-  assign binop_inR2 = {128'h00000000000000000000000000000008, 128'(resize_inR3[2:0])};
-  assign binop_inR3 = {binop_inR2[255:128] - binop_inR2[127:0], 128'h00000000000000000000000000000001};
-  assign binop_inR4 = {binop_inR3[255:128] - binop_inR3[127:0], 128'h00000000000000000000000000000008};
-  assign binop_inR5 = {128'(resize_in[63:0]), binop_inR4[255:128] * binop_inR4[127:0]};
-  assign resize_inR4 = binop_inR5[255:128] >> binop_inR5[127:0];
-  assign res = resize_inR4[7:0];
-endmodule
-
-module ZLL_Main_compute15 (input logic [63:0] arg0,
-  input logic [2:0] arg1,
-  output logic [7:0] res);
-  logic [63:0] resize_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_in;
-  logic [255:0] binop_inR1;
-  logic [127:0] resize_inR2;
-  logic [2:0] resize_inR3;
-  logic [255:0] binop_inR2;
-  logic [255:0] binop_inR3;
-  logic [127:0] resize_inR4;
-  logic [2:0] resize_inR5;
-  logic [255:0] binop_inR4;
-  logic [255:0] binop_inR5;
-  logic [255:0] binop_inR6;
-  logic [255:0] binop_inR7;
-  logic [127:0] resize_inR6;
-  assign resize_in = arg0;
-  assign resize_inR1 = arg1;
-  assign binop_in = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign binop_inR1 = {binop_in[255:128] - binop_in[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR2 = binop_inR1[255:128] % binop_inR1[127:0];
-  assign resize_inR3 = resize_inR2[2:0];
-  assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000002};
-  assign binop_inR3 = {binop_inR2[255:128] * binop_inR2[127:0], 128'h00000000000000000000000000000008};
-  assign resize_inR4 = binop_inR3[255:128] % binop_inR3[127:0];
-  assign resize_inR5 = resize_inR4[2:0];
-  assign binop_inR4 = {128'h00000000000000000000000000000008, 128'(resize_inR5[2:0])};
-  assign binop_inR5 = {binop_inR4[255:128] - binop_inR4[127:0], 128'h00000000000000000000000000000001};
-  assign binop_inR6 = {binop_inR5[255:128] - binop_inR5[127:0], 128'h00000000000000000000000000000008};
-  assign binop_inR7 = {128'(resize_in[63:0]), binop_inR6[255:128] * binop_inR6[127:0]};
-  assign resize_inR6 = binop_inR7[255:128] >> binop_inR7[127:0];
-  assign res = resize_inR6[7:0];
-endmodule
-
 module ZLL_Main_compute16 (input logic [63:0] arg0,
   input logic [63:0] arg1,
   input logic [2:0] arg2,
@@ -497,18 +394,66 @@ module ZLL_Main_compute16 (input logic [63:0] arg0,
   logic [2:0] resize_inR1;
   logic [255:0] binop_inR1;
   logic [67:0] zll_main_compute15_in;
-  logic [7:0] zll_main_compute15_out;
+  logic [63:0] resize_inR2;
+  logic [2:0] resize_inR3;
+  logic [255:0] binop_inR2;
+  logic [255:0] binop_inR3;
+  logic [127:0] resize_inR4;
+  logic [2:0] resize_inR5;
+  logic [255:0] binop_inR4;
+  logic [255:0] binop_inR5;
+  logic [127:0] resize_inR6;
+  logic [2:0] resize_inR7;
+  logic [255:0] binop_inR6;
+  logic [255:0] binop_inR7;
+  logic [255:0] binop_inR8;
+  logic [255:0] binop_inR9;
+  logic [127:0] resize_inR8;
   logic [67:0] zll_main_compute14_in;
-  logic [7:0] zll_main_compute14_out;
+  logic [63:0] resize_inR9;
+  logic [2:0] resize_inR10;
+  logic [255:0] binop_inR10;
+  logic [255:0] binop_inR11;
+  logic [127:0] resize_inR11;
+  logic [2:0] resize_inR12;
+  logic [255:0] binop_inR12;
+  logic [255:0] binop_inR13;
+  logic [255:0] binop_inR14;
+  logic [255:0] binop_inR15;
+  logic [127:0] resize_inR13;
   assign resize_in = arg2;
   assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
   assign resize_inR1 = arg2;
   assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
   assign zll_main_compute15_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute15  inst (zll_main_compute15_in[67:4], zll_main_compute15_in[3:1], zll_main_compute15_out);
+  assign resize_inR2 = zll_main_compute15_in[67:4];
+  assign resize_inR3 = zll_main_compute15_in[3:1];
+  assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000003};
+  assign binop_inR3 = {binop_inR2[255:128] - binop_inR2[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR4 = binop_inR3[255:128] % binop_inR3[127:0];
+  assign resize_inR5 = resize_inR4[2:0];
+  assign binop_inR4 = {128'(resize_inR5[2:0]), 128'h00000000000000000000000000000002};
+  assign binop_inR5 = {binop_inR4[255:128] * binop_inR4[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR6 = binop_inR5[255:128] % binop_inR5[127:0];
+  assign resize_inR7 = resize_inR6[2:0];
+  assign binop_inR6 = {128'h00000000000000000000000000000008, 128'(resize_inR7[2:0])};
+  assign binop_inR7 = {binop_inR6[255:128] - binop_inR6[127:0], 128'h00000000000000000000000000000001};
+  assign binop_inR8 = {binop_inR7[255:128] - binop_inR7[127:0], 128'h00000000000000000000000000000008};
+  assign binop_inR9 = {128'(resize_inR2[63:0]), binop_inR8[255:128] * binop_inR8[127:0]};
+  assign resize_inR8 = binop_inR9[255:128] >> binop_inR9[127:0];
   assign zll_main_compute14_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute14  instR1 (zll_main_compute14_in[67:4], zll_main_compute14_in[3:1], zll_main_compute14_out);
-  assign res = (zll_main_compute14_in[0] == 1'h1) ? zll_main_compute14_out : zll_main_compute15_out;
+  assign resize_inR9 = zll_main_compute14_in[67:4];
+  assign resize_inR10 = zll_main_compute14_in[3:1];
+  assign binop_inR10 = {128'(resize_inR10[2:0]), 128'h00000000000000000000000000000002};
+  assign binop_inR11 = {binop_inR10[255:128] * binop_inR10[127:0], 128'h00000000000000000000000000000008};
+  assign resize_inR11 = binop_inR11[255:128] % binop_inR11[127:0];
+  assign resize_inR12 = resize_inR11[2:0];
+  assign binop_inR12 = {128'h00000000000000000000000000000008, 128'(resize_inR12[2:0])};
+  assign binop_inR13 = {binop_inR12[255:128] - binop_inR12[127:0], 128'h00000000000000000000000000000001};
+  assign binop_inR14 = {binop_inR13[255:128] - binop_inR13[127:0], 128'h00000000000000000000000000000008};
+  assign binop_inR15 = {128'(resize_inR9[63:0]), binop_inR14[255:128] * binop_inR14[127:0]};
+  assign resize_inR13 = binop_inR15[255:128] >> binop_inR15[127:0];
+  assign res = (zll_main_compute14_in[0] == 1'h1) ? resize_inR13[7:0] : resize_inR8[7:0];
 endmodule
 
 module ZLL_Main_compute18 (input logic [63:0] arg0,
@@ -556,22 +501,22 @@ module ZLL_Main_compute18 (input logic [63:0] arg0,
   logic [255:0] binop_inR11;
   logic [127:0] resize_inR10;
   logic [131:0] zll_main_compute13_in;
-  logic [130:0] zll_main_compute12_in;
-  logic [7:0] zll_main_compute12_out;
-  logic [130:0] zll_main_compute12_inR1;
-  logic [7:0] zll_main_compute12_outR1;
-  logic [130:0] zll_main_compute12_inR2;
-  logic [7:0] zll_main_compute12_outR2;
-  logic [130:0] zll_main_compute12_inR3;
-  logic [7:0] zll_main_compute12_outR3;
-  logic [130:0] zll_main_compute12_inR4;
-  logic [7:0] zll_main_compute12_outR4;
-  logic [130:0] zll_main_compute12_inR5;
-  logic [7:0] zll_main_compute12_outR5;
-  logic [130:0] zll_main_compute12_inR6;
-  logic [7:0] zll_main_compute12_outR6;
-  logic [130:0] zll_main_compute12_inR7;
-  logic [7:0] zll_main_compute12_outR7;
+  logic [130:0] zll_main_compute2_in;
+  logic [7:0] zll_main_compute2_out;
+  logic [130:0] zll_main_compute2_inR1;
+  logic [7:0] zll_main_compute2_outR1;
+  logic [130:0] zll_main_compute2_inR2;
+  logic [7:0] zll_main_compute2_outR2;
+  logic [130:0] zll_main_compute2_inR3;
+  logic [7:0] zll_main_compute2_outR3;
+  logic [130:0] zll_main_compute2_inR4;
+  logic [7:0] zll_main_compute2_outR4;
+  logic [130:0] zll_main_compute2_inR5;
+  logic [7:0] zll_main_compute2_outR5;
+  logic [130:0] zll_main_compute2_inR6;
+  logic [7:0] zll_main_compute2_outR6;
+  logic [130:0] zll_main_compute2_inR7;
+  logic [7:0] zll_main_compute2_outR7;
   logic [63:0] resize_inR11;
   logic [2:0] resize_inR12;
   logic [255:0] binop_inR12;
@@ -628,23 +573,23 @@ module ZLL_Main_compute18 (input logic [63:0] arg0,
   assign binop_inR11 = {128'(resize_inR2[63:0]), binop_inR10[255:128] * binop_inR10[127:0]};
   assign resize_inR10 = binop_inR11[255:128] >> binop_inR11[127:0];
   assign zll_main_compute13_in = {arg0, arg1, arg2, binop_in[255:128] < binop_in[127:0]};
-  assign zll_main_compute12_in = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h0};
-  ZLL_Main_compute12  instR8 (zll_main_compute12_in[130:67], zll_main_compute12_in[66:3], zll_main_compute12_in[2:0], zll_main_compute12_out);
-  assign zll_main_compute12_inR1 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h1};
-  ZLL_Main_compute12  instR9 (zll_main_compute12_inR1[130:67], zll_main_compute12_inR1[66:3], zll_main_compute12_inR1[2:0], zll_main_compute12_outR1);
-  assign zll_main_compute12_inR2 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h2};
-  ZLL_Main_compute12  instR10 (zll_main_compute12_inR2[130:67], zll_main_compute12_inR2[66:3], zll_main_compute12_inR2[2:0], zll_main_compute12_outR2);
-  assign zll_main_compute12_inR3 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h3};
-  ZLL_Main_compute12  instR11 (zll_main_compute12_inR3[130:67], zll_main_compute12_inR3[66:3], zll_main_compute12_inR3[2:0], zll_main_compute12_outR3);
-  assign zll_main_compute12_inR4 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h4};
-  ZLL_Main_compute12  instR12 (zll_main_compute12_inR4[130:67], zll_main_compute12_inR4[66:3], zll_main_compute12_inR4[2:0], zll_main_compute12_outR4);
-  assign zll_main_compute12_inR5 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h5};
-  ZLL_Main_compute12  instR13 (zll_main_compute12_inR5[130:67], zll_main_compute12_inR5[66:3], zll_main_compute12_inR5[2:0], zll_main_compute12_outR5);
-  assign zll_main_compute12_inR6 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h6};
-  ZLL_Main_compute12  instR14 (zll_main_compute12_inR6[130:67], zll_main_compute12_inR6[66:3], zll_main_compute12_inR6[2:0], zll_main_compute12_outR6);
-  assign zll_main_compute12_inR7 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h7};
-  ZLL_Main_compute12  instR15 (zll_main_compute12_inR7[130:67], zll_main_compute12_inR7[66:3], zll_main_compute12_inR7[2:0], zll_main_compute12_outR7);
-  assign resize_inR11 = {zll_main_compute12_out, zll_main_compute12_outR1, zll_main_compute12_outR2, zll_main_compute12_outR3, zll_main_compute12_outR4, zll_main_compute12_outR5, zll_main_compute12_outR6, zll_main_compute12_outR7};
+  assign zll_main_compute2_in = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h0};
+  ZLL_Main_compute2  instR8 (zll_main_compute2_in[130:67], zll_main_compute2_in[66:3], zll_main_compute2_in[2:0], zll_main_compute2_out);
+  assign zll_main_compute2_inR1 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h1};
+  ZLL_Main_compute2  instR9 (zll_main_compute2_inR1[130:67], zll_main_compute2_inR1[66:3], zll_main_compute2_inR1[2:0], zll_main_compute2_outR1);
+  assign zll_main_compute2_inR2 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h2};
+  ZLL_Main_compute2  instR10 (zll_main_compute2_inR2[130:67], zll_main_compute2_inR2[66:3], zll_main_compute2_inR2[2:0], zll_main_compute2_outR2);
+  assign zll_main_compute2_inR3 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h3};
+  ZLL_Main_compute2  instR11 (zll_main_compute2_inR3[130:67], zll_main_compute2_inR3[66:3], zll_main_compute2_inR3[2:0], zll_main_compute2_outR3);
+  assign zll_main_compute2_inR4 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h4};
+  ZLL_Main_compute2  instR12 (zll_main_compute2_inR4[130:67], zll_main_compute2_inR4[66:3], zll_main_compute2_inR4[2:0], zll_main_compute2_outR4);
+  assign zll_main_compute2_inR5 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h5};
+  ZLL_Main_compute2  instR13 (zll_main_compute2_inR5[130:67], zll_main_compute2_inR5[66:3], zll_main_compute2_inR5[2:0], zll_main_compute2_outR5);
+  assign zll_main_compute2_inR6 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h6};
+  ZLL_Main_compute2  instR14 (zll_main_compute2_inR6[130:67], zll_main_compute2_inR6[66:3], zll_main_compute2_inR6[2:0], zll_main_compute2_outR6);
+  assign zll_main_compute2_inR7 = {zll_main_compute13_in[131:68], zll_main_compute13_in[67:4], 3'h7};
+  ZLL_Main_compute2  instR15 (zll_main_compute2_inR7[130:67], zll_main_compute2_inR7[66:3], zll_main_compute2_inR7[2:0], zll_main_compute2_outR7);
+  assign resize_inR11 = {zll_main_compute2_out, zll_main_compute2_outR1, zll_main_compute2_outR2, zll_main_compute2_outR3, zll_main_compute2_outR4, zll_main_compute2_outR5, zll_main_compute2_outR6, zll_main_compute2_outR7};
   assign resize_inR12 = zll_main_compute13_in[3:1];
   assign binop_inR12 = {128'(resize_inR12[2:0]), 128'h00000000000000000000000000000002};
   assign binop_inR13 = {binop_inR12[255:128] * binop_inR12[127:0], 128'h00000000000000000000000000000008};
@@ -809,52 +754,6 @@ module ZLL_Main_compute20 (input logic [63:0] arg0,
   assign res = (zll_main_compute9_in[0] == 1'h1) ? resize_inR15[7:0] : resize_inR10[7:0];
 endmodule
 
-module ZLL_Main_compute23 (input logic [63:0] arg0,
-  input logic [63:0] arg1,
-  input logic [2:0] arg2,
-  output logic [7:0] res);
-  logic [2:0] resize_in;
-  logic [255:0] binop_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_inR1;
-  logic [67:0] zll_main_compute1_in;
-  logic [7:0] zll_main_compute1_out;
-  logic [67:0] zll_main_compute_in;
-  logic [7:0] zll_main_compute_out;
-  assign resize_in = arg2;
-  assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
-  assign resize_inR1 = arg2;
-  assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign zll_main_compute1_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute1  inst (zll_main_compute1_in[67:4], zll_main_compute1_in[3:1], zll_main_compute1_out);
-  assign zll_main_compute_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute  instR1 (zll_main_compute_in[67:4], zll_main_compute_in[3:1], zll_main_compute_out);
-  assign res = (zll_main_compute_in[0] == 1'h1) ? zll_main_compute_out : zll_main_compute1_out;
-endmodule
-
-module ZLL_Main_compute27 (input logic [63:0] arg0,
-  input logic [63:0] arg1,
-  input logic [2:0] arg2,
-  output logic [7:0] res);
-  logic [2:0] resize_in;
-  logic [255:0] binop_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_inR1;
-  logic [67:0] zll_main_compute15_in;
-  logic [7:0] zll_main_compute15_out;
-  logic [67:0] zll_main_compute14_in;
-  logic [7:0] zll_main_compute14_out;
-  assign resize_in = arg2;
-  assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
-  assign resize_inR1 = arg2;
-  assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign zll_main_compute15_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute15  inst (zll_main_compute15_in[67:4], zll_main_compute15_in[3:1], zll_main_compute15_out);
-  assign zll_main_compute14_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute14  instR1 (zll_main_compute14_in[67:4], zll_main_compute14_in[3:1], zll_main_compute14_out);
-  assign res = (zll_main_compute14_in[0] == 1'h1) ? zll_main_compute14_out : zll_main_compute15_out;
-endmodule
-
 module ZLL_Main_compute29 (input logic [63:0] arg0,
   input logic [63:0] arg1,
   input logic [2:0] arg2,
@@ -864,22 +763,22 @@ module ZLL_Main_compute29 (input logic [63:0] arg0,
   logic [2:0] resize_inR1;
   logic [255:0] binop_inR1;
   logic [131:0] zll_main_compute28_in;
-  logic [130:0] zll_main_compute27_in;
-  logic [7:0] zll_main_compute27_out;
-  logic [130:0] zll_main_compute27_inR1;
-  logic [7:0] zll_main_compute27_outR1;
-  logic [130:0] zll_main_compute27_inR2;
-  logic [7:0] zll_main_compute27_outR2;
-  logic [130:0] zll_main_compute27_inR3;
-  logic [7:0] zll_main_compute27_outR3;
-  logic [130:0] zll_main_compute27_inR4;
-  logic [7:0] zll_main_compute27_outR4;
-  logic [130:0] zll_main_compute27_inR5;
-  logic [7:0] zll_main_compute27_outR5;
-  logic [130:0] zll_main_compute27_inR6;
-  logic [7:0] zll_main_compute27_outR6;
-  logic [130:0] zll_main_compute27_inR7;
-  logic [7:0] zll_main_compute27_outR7;
+  logic [130:0] zll_main_compute16_in;
+  logic [7:0] zll_main_compute16_out;
+  logic [130:0] zll_main_compute16_inR1;
+  logic [7:0] zll_main_compute16_outR1;
+  logic [130:0] zll_main_compute16_inR2;
+  logic [7:0] zll_main_compute16_outR2;
+  logic [130:0] zll_main_compute16_inR3;
+  logic [7:0] zll_main_compute16_outR3;
+  logic [130:0] zll_main_compute16_inR4;
+  logic [7:0] zll_main_compute16_outR4;
+  logic [130:0] zll_main_compute16_inR5;
+  logic [7:0] zll_main_compute16_outR5;
+  logic [130:0] zll_main_compute16_inR6;
+  logic [7:0] zll_main_compute16_outR6;
+  logic [130:0] zll_main_compute16_inR7;
+  logic [7:0] zll_main_compute16_outR7;
   logic [63:0] resize_inR2;
   logic [2:0] resize_inR3;
   logic [255:0] binop_inR2;
@@ -896,22 +795,22 @@ module ZLL_Main_compute29 (input logic [63:0] arg0,
   logic [255:0] binop_inR9;
   logic [127:0] resize_inR8;
   logic [131:0] zll_main_compute24_in;
-  logic [130:0] zll_main_compute23_in;
-  logic [7:0] zll_main_compute23_out;
-  logic [130:0] zll_main_compute23_inR1;
-  logic [7:0] zll_main_compute23_outR1;
-  logic [130:0] zll_main_compute23_inR2;
-  logic [7:0] zll_main_compute23_outR2;
-  logic [130:0] zll_main_compute23_inR3;
-  logic [7:0] zll_main_compute23_outR3;
-  logic [130:0] zll_main_compute23_inR4;
-  logic [7:0] zll_main_compute23_outR4;
-  logic [130:0] zll_main_compute23_inR5;
-  logic [7:0] zll_main_compute23_outR5;
-  logic [130:0] zll_main_compute23_inR6;
-  logic [7:0] zll_main_compute23_outR6;
-  logic [130:0] zll_main_compute23_inR7;
-  logic [7:0] zll_main_compute23_outR7;
+  logic [130:0] zll_main_compute2_in;
+  logic [7:0] zll_main_compute2_out;
+  logic [130:0] zll_main_compute2_inR1;
+  logic [7:0] zll_main_compute2_outR1;
+  logic [130:0] zll_main_compute2_inR2;
+  logic [7:0] zll_main_compute2_outR2;
+  logic [130:0] zll_main_compute2_inR3;
+  logic [7:0] zll_main_compute2_outR3;
+  logic [130:0] zll_main_compute2_inR4;
+  logic [7:0] zll_main_compute2_outR4;
+  logic [130:0] zll_main_compute2_inR5;
+  logic [7:0] zll_main_compute2_outR5;
+  logic [130:0] zll_main_compute2_inR6;
+  logic [7:0] zll_main_compute2_outR6;
+  logic [130:0] zll_main_compute2_inR7;
+  logic [7:0] zll_main_compute2_outR7;
   logic [63:0] resize_inR9;
   logic [2:0] resize_inR10;
   logic [255:0] binop_inR10;
@@ -928,23 +827,23 @@ module ZLL_Main_compute29 (input logic [63:0] arg0,
   assign resize_inR1 = arg2;
   assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
   assign zll_main_compute28_in = {arg2, arg0, arg1, binop_inR1[255:128] < binop_inR1[127:0]};
-  assign zll_main_compute27_in = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h0};
-  ZLL_Main_compute27  inst (zll_main_compute27_in[130:67], zll_main_compute27_in[66:3], zll_main_compute27_in[2:0], zll_main_compute27_out);
-  assign zll_main_compute27_inR1 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h1};
-  ZLL_Main_compute27  instR1 (zll_main_compute27_inR1[130:67], zll_main_compute27_inR1[66:3], zll_main_compute27_inR1[2:0], zll_main_compute27_outR1);
-  assign zll_main_compute27_inR2 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h2};
-  ZLL_Main_compute27  instR2 (zll_main_compute27_inR2[130:67], zll_main_compute27_inR2[66:3], zll_main_compute27_inR2[2:0], zll_main_compute27_outR2);
-  assign zll_main_compute27_inR3 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h3};
-  ZLL_Main_compute27  instR3 (zll_main_compute27_inR3[130:67], zll_main_compute27_inR3[66:3], zll_main_compute27_inR3[2:0], zll_main_compute27_outR3);
-  assign zll_main_compute27_inR4 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h4};
-  ZLL_Main_compute27  instR4 (zll_main_compute27_inR4[130:67], zll_main_compute27_inR4[66:3], zll_main_compute27_inR4[2:0], zll_main_compute27_outR4);
-  assign zll_main_compute27_inR5 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h5};
-  ZLL_Main_compute27  instR5 (zll_main_compute27_inR5[130:67], zll_main_compute27_inR5[66:3], zll_main_compute27_inR5[2:0], zll_main_compute27_outR5);
-  assign zll_main_compute27_inR6 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h6};
-  ZLL_Main_compute27  instR6 (zll_main_compute27_inR6[130:67], zll_main_compute27_inR6[66:3], zll_main_compute27_inR6[2:0], zll_main_compute27_outR6);
-  assign zll_main_compute27_inR7 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h7};
-  ZLL_Main_compute27  instR7 (zll_main_compute27_inR7[130:67], zll_main_compute27_inR7[66:3], zll_main_compute27_inR7[2:0], zll_main_compute27_outR7);
-  assign resize_inR2 = {zll_main_compute27_out, zll_main_compute27_outR1, zll_main_compute27_outR2, zll_main_compute27_outR3, zll_main_compute27_outR4, zll_main_compute27_outR5, zll_main_compute27_outR6, zll_main_compute27_outR7};
+  assign zll_main_compute16_in = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h0};
+  ZLL_Main_compute16  inst (zll_main_compute16_in[130:67], zll_main_compute16_in[66:3], zll_main_compute16_in[2:0], zll_main_compute16_out);
+  assign zll_main_compute16_inR1 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h1};
+  ZLL_Main_compute16  instR1 (zll_main_compute16_inR1[130:67], zll_main_compute16_inR1[66:3], zll_main_compute16_inR1[2:0], zll_main_compute16_outR1);
+  assign zll_main_compute16_inR2 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h2};
+  ZLL_Main_compute16  instR2 (zll_main_compute16_inR2[130:67], zll_main_compute16_inR2[66:3], zll_main_compute16_inR2[2:0], zll_main_compute16_outR2);
+  assign zll_main_compute16_inR3 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h3};
+  ZLL_Main_compute16  instR3 (zll_main_compute16_inR3[130:67], zll_main_compute16_inR3[66:3], zll_main_compute16_inR3[2:0], zll_main_compute16_outR3);
+  assign zll_main_compute16_inR4 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h4};
+  ZLL_Main_compute16  instR4 (zll_main_compute16_inR4[130:67], zll_main_compute16_inR4[66:3], zll_main_compute16_inR4[2:0], zll_main_compute16_outR4);
+  assign zll_main_compute16_inR5 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h5};
+  ZLL_Main_compute16  instR5 (zll_main_compute16_inR5[130:67], zll_main_compute16_inR5[66:3], zll_main_compute16_inR5[2:0], zll_main_compute16_outR5);
+  assign zll_main_compute16_inR6 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h6};
+  ZLL_Main_compute16  instR6 (zll_main_compute16_inR6[130:67], zll_main_compute16_inR6[66:3], zll_main_compute16_inR6[2:0], zll_main_compute16_outR6);
+  assign zll_main_compute16_inR7 = {zll_main_compute28_in[128:65], zll_main_compute28_in[64:1], 3'h7};
+  ZLL_Main_compute16  instR7 (zll_main_compute16_inR7[130:67], zll_main_compute16_inR7[66:3], zll_main_compute16_inR7[2:0], zll_main_compute16_outR7);
+  assign resize_inR2 = {zll_main_compute16_out, zll_main_compute16_outR1, zll_main_compute16_outR2, zll_main_compute16_outR3, zll_main_compute16_outR4, zll_main_compute16_outR5, zll_main_compute16_outR6, zll_main_compute16_outR7};
   assign resize_inR3 = zll_main_compute28_in[131:129];
   assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000003};
   assign binop_inR3 = {binop_inR2[255:128] - binop_inR2[127:0], 128'h00000000000000000000000000000008};
@@ -960,23 +859,23 @@ module ZLL_Main_compute29 (input logic [63:0] arg0,
   assign binop_inR9 = {128'(resize_inR2[63:0]), binop_inR8[255:128] * binop_inR8[127:0]};
   assign resize_inR8 = binop_inR9[255:128] >> binop_inR9[127:0];
   assign zll_main_compute24_in = {arg2, arg0, arg1, binop_in[255:128] < binop_in[127:0]};
-  assign zll_main_compute23_in = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h0};
-  ZLL_Main_compute23  instR8 (zll_main_compute23_in[130:67], zll_main_compute23_in[66:3], zll_main_compute23_in[2:0], zll_main_compute23_out);
-  assign zll_main_compute23_inR1 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h1};
-  ZLL_Main_compute23  instR9 (zll_main_compute23_inR1[130:67], zll_main_compute23_inR1[66:3], zll_main_compute23_inR1[2:0], zll_main_compute23_outR1);
-  assign zll_main_compute23_inR2 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h2};
-  ZLL_Main_compute23  instR10 (zll_main_compute23_inR2[130:67], zll_main_compute23_inR2[66:3], zll_main_compute23_inR2[2:0], zll_main_compute23_outR2);
-  assign zll_main_compute23_inR3 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h3};
-  ZLL_Main_compute23  instR11 (zll_main_compute23_inR3[130:67], zll_main_compute23_inR3[66:3], zll_main_compute23_inR3[2:0], zll_main_compute23_outR3);
-  assign zll_main_compute23_inR4 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h4};
-  ZLL_Main_compute23  instR12 (zll_main_compute23_inR4[130:67], zll_main_compute23_inR4[66:3], zll_main_compute23_inR4[2:0], zll_main_compute23_outR4);
-  assign zll_main_compute23_inR5 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h5};
-  ZLL_Main_compute23  instR13 (zll_main_compute23_inR5[130:67], zll_main_compute23_inR5[66:3], zll_main_compute23_inR5[2:0], zll_main_compute23_outR5);
-  assign zll_main_compute23_inR6 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h6};
-  ZLL_Main_compute23  instR14 (zll_main_compute23_inR6[130:67], zll_main_compute23_inR6[66:3], zll_main_compute23_inR6[2:0], zll_main_compute23_outR6);
-  assign zll_main_compute23_inR7 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h7};
-  ZLL_Main_compute23  instR15 (zll_main_compute23_inR7[130:67], zll_main_compute23_inR7[66:3], zll_main_compute23_inR7[2:0], zll_main_compute23_outR7);
-  assign resize_inR9 = {zll_main_compute23_out, zll_main_compute23_outR1, zll_main_compute23_outR2, zll_main_compute23_outR3, zll_main_compute23_outR4, zll_main_compute23_outR5, zll_main_compute23_outR6, zll_main_compute23_outR7};
+  assign zll_main_compute2_in = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h0};
+  ZLL_Main_compute2  instR8 (zll_main_compute2_in[130:67], zll_main_compute2_in[66:3], zll_main_compute2_in[2:0], zll_main_compute2_out);
+  assign zll_main_compute2_inR1 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h1};
+  ZLL_Main_compute2  instR9 (zll_main_compute2_inR1[130:67], zll_main_compute2_inR1[66:3], zll_main_compute2_inR1[2:0], zll_main_compute2_outR1);
+  assign zll_main_compute2_inR2 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h2};
+  ZLL_Main_compute2  instR10 (zll_main_compute2_inR2[130:67], zll_main_compute2_inR2[66:3], zll_main_compute2_inR2[2:0], zll_main_compute2_outR2);
+  assign zll_main_compute2_inR3 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h3};
+  ZLL_Main_compute2  instR11 (zll_main_compute2_inR3[130:67], zll_main_compute2_inR3[66:3], zll_main_compute2_inR3[2:0], zll_main_compute2_outR3);
+  assign zll_main_compute2_inR4 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h4};
+  ZLL_Main_compute2  instR12 (zll_main_compute2_inR4[130:67], zll_main_compute2_inR4[66:3], zll_main_compute2_inR4[2:0], zll_main_compute2_outR4);
+  assign zll_main_compute2_inR5 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h5};
+  ZLL_Main_compute2  instR13 (zll_main_compute2_inR5[130:67], zll_main_compute2_inR5[66:3], zll_main_compute2_inR5[2:0], zll_main_compute2_outR5);
+  assign zll_main_compute2_inR6 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h6};
+  ZLL_Main_compute2  instR14 (zll_main_compute2_inR6[130:67], zll_main_compute2_inR6[66:3], zll_main_compute2_inR6[2:0], zll_main_compute2_outR6);
+  assign zll_main_compute2_inR7 = {zll_main_compute24_in[128:65], zll_main_compute24_in[64:1], 3'h7};
+  ZLL_Main_compute2  instR15 (zll_main_compute2_inR7[130:67], zll_main_compute2_inR7[66:3], zll_main_compute2_inR7[2:0], zll_main_compute2_outR7);
+  assign resize_inR9 = {zll_main_compute2_out, zll_main_compute2_outR1, zll_main_compute2_outR2, zll_main_compute2_outR3, zll_main_compute2_outR4, zll_main_compute2_outR5, zll_main_compute2_outR6, zll_main_compute2_outR7};
   assign resize_inR10 = zll_main_compute24_in[131:129];
   assign binop_inR10 = {128'(resize_inR10[2:0]), 128'h00000000000000000000000000000002};
   assign binop_inR11 = {binop_inR10[255:128] * binop_inR10[127:0], 128'h00000000000000000000000000000008};
@@ -990,52 +889,6 @@ module ZLL_Main_compute29 (input logic [63:0] arg0,
   assign res = (zll_main_compute24_in[0] == 1'h1) ? resize_inR13[7:0] : resize_inR8[7:0];
 endmodule
 
-module ZLL_Main_compute33 (input logic [63:0] arg0,
-  input logic [63:0] arg1,
-  input logic [2:0] arg2,
-  output logic [7:0] res);
-  logic [2:0] resize_in;
-  logic [255:0] binop_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_inR1;
-  logic [67:0] zll_main_compute1_in;
-  logic [7:0] zll_main_compute1_out;
-  logic [67:0] zll_main_compute_in;
-  logic [7:0] zll_main_compute_out;
-  assign resize_in = arg2;
-  assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
-  assign resize_inR1 = arg2;
-  assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign zll_main_compute1_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute1  inst (zll_main_compute1_in[67:4], zll_main_compute1_in[3:1], zll_main_compute1_out);
-  assign zll_main_compute_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute  instR1 (zll_main_compute_in[67:4], zll_main_compute_in[3:1], zll_main_compute_out);
-  assign res = (zll_main_compute_in[0] == 1'h1) ? zll_main_compute_out : zll_main_compute1_out;
-endmodule
-
-module ZLL_Main_compute37 (input logic [63:0] arg0,
-  input logic [63:0] arg1,
-  input logic [2:0] arg2,
-  output logic [7:0] res);
-  logic [2:0] resize_in;
-  logic [255:0] binop_in;
-  logic [2:0] resize_inR1;
-  logic [255:0] binop_inR1;
-  logic [67:0] zll_main_compute15_in;
-  logic [7:0] zll_main_compute15_out;
-  logic [67:0] zll_main_compute14_in;
-  logic [7:0] zll_main_compute14_out;
-  assign resize_in = arg2;
-  assign binop_in = {128'(resize_in[2:0]), 128'h00000000000000000000000000000003};
-  assign resize_inR1 = arg2;
-  assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
-  assign zll_main_compute15_in = {arg1, arg2, binop_inR1[255:128] < binop_inR1[127:0]};
-  ZLL_Main_compute15  inst (zll_main_compute15_in[67:4], zll_main_compute15_in[3:1], zll_main_compute15_out);
-  assign zll_main_compute14_in = {arg0, arg2, binop_in[255:128] < binop_in[127:0]};
-  ZLL_Main_compute14  instR1 (zll_main_compute14_in[67:4], zll_main_compute14_in[3:1], zll_main_compute14_out);
-  assign res = (zll_main_compute14_in[0] == 1'h1) ? zll_main_compute14_out : zll_main_compute15_out;
-endmodule
-
 module ZLL_Main_compute39 (input logic [63:0] arg0,
   input logic [63:0] arg1,
   input logic [2:0] arg2,
@@ -1045,22 +898,22 @@ module ZLL_Main_compute39 (input logic [63:0] arg0,
   logic [2:0] resize_inR1;
   logic [255:0] binop_inR1;
   logic [131:0] zll_main_compute38_in;
-  logic [130:0] zll_main_compute37_in;
-  logic [7:0] zll_main_compute37_out;
-  logic [130:0] zll_main_compute37_inR1;
-  logic [7:0] zll_main_compute37_outR1;
-  logic [130:0] zll_main_compute37_inR2;
-  logic [7:0] zll_main_compute37_outR2;
-  logic [130:0] zll_main_compute37_inR3;
-  logic [7:0] zll_main_compute37_outR3;
-  logic [130:0] zll_main_compute37_inR4;
-  logic [7:0] zll_main_compute37_outR4;
-  logic [130:0] zll_main_compute37_inR5;
-  logic [7:0] zll_main_compute37_outR5;
-  logic [130:0] zll_main_compute37_inR6;
-  logic [7:0] zll_main_compute37_outR6;
-  logic [130:0] zll_main_compute37_inR7;
-  logic [7:0] zll_main_compute37_outR7;
+  logic [130:0] zll_main_compute16_in;
+  logic [7:0] zll_main_compute16_out;
+  logic [130:0] zll_main_compute16_inR1;
+  logic [7:0] zll_main_compute16_outR1;
+  logic [130:0] zll_main_compute16_inR2;
+  logic [7:0] zll_main_compute16_outR2;
+  logic [130:0] zll_main_compute16_inR3;
+  logic [7:0] zll_main_compute16_outR3;
+  logic [130:0] zll_main_compute16_inR4;
+  logic [7:0] zll_main_compute16_outR4;
+  logic [130:0] zll_main_compute16_inR5;
+  logic [7:0] zll_main_compute16_outR5;
+  logic [130:0] zll_main_compute16_inR6;
+  logic [7:0] zll_main_compute16_outR6;
+  logic [130:0] zll_main_compute16_inR7;
+  logic [7:0] zll_main_compute16_outR7;
   logic [63:0] resize_inR2;
   logic [2:0] resize_inR3;
   logic [255:0] binop_inR2;
@@ -1081,22 +934,22 @@ module ZLL_Main_compute39 (input logic [63:0] arg0,
   logic [255:0] binop_inR11;
   logic [127:0] resize_inR10;
   logic [131:0] zll_main_compute34_in;
-  logic [130:0] zll_main_compute33_in;
-  logic [7:0] zll_main_compute33_out;
-  logic [130:0] zll_main_compute33_inR1;
-  logic [7:0] zll_main_compute33_outR1;
-  logic [130:0] zll_main_compute33_inR2;
-  logic [7:0] zll_main_compute33_outR2;
-  logic [130:0] zll_main_compute33_inR3;
-  logic [7:0] zll_main_compute33_outR3;
-  logic [130:0] zll_main_compute33_inR4;
-  logic [7:0] zll_main_compute33_outR4;
-  logic [130:0] zll_main_compute33_inR5;
-  logic [7:0] zll_main_compute33_outR5;
-  logic [130:0] zll_main_compute33_inR6;
-  logic [7:0] zll_main_compute33_outR6;
-  logic [130:0] zll_main_compute33_inR7;
-  logic [7:0] zll_main_compute33_outR7;
+  logic [130:0] zll_main_compute2_in;
+  logic [7:0] zll_main_compute2_out;
+  logic [130:0] zll_main_compute2_inR1;
+  logic [7:0] zll_main_compute2_outR1;
+  logic [130:0] zll_main_compute2_inR2;
+  logic [7:0] zll_main_compute2_outR2;
+  logic [130:0] zll_main_compute2_inR3;
+  logic [7:0] zll_main_compute2_outR3;
+  logic [130:0] zll_main_compute2_inR4;
+  logic [7:0] zll_main_compute2_outR4;
+  logic [130:0] zll_main_compute2_inR5;
+  logic [7:0] zll_main_compute2_outR5;
+  logic [130:0] zll_main_compute2_inR6;
+  logic [7:0] zll_main_compute2_outR6;
+  logic [130:0] zll_main_compute2_inR7;
+  logic [7:0] zll_main_compute2_outR7;
   logic [63:0] resize_inR11;
   logic [2:0] resize_inR12;
   logic [255:0] binop_inR12;
@@ -1117,23 +970,23 @@ module ZLL_Main_compute39 (input logic [63:0] arg0,
   assign resize_inR1 = arg2;
   assign binop_inR1 = {128'(resize_inR1[2:0]), 128'h00000000000000000000000000000003};
   assign zll_main_compute38_in = {arg2, arg0, arg1, binop_inR1[255:128] < binop_inR1[127:0]};
-  assign zll_main_compute37_in = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h0};
-  ZLL_Main_compute37  inst (zll_main_compute37_in[130:67], zll_main_compute37_in[66:3], zll_main_compute37_in[2:0], zll_main_compute37_out);
-  assign zll_main_compute37_inR1 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h1};
-  ZLL_Main_compute37  instR1 (zll_main_compute37_inR1[130:67], zll_main_compute37_inR1[66:3], zll_main_compute37_inR1[2:0], zll_main_compute37_outR1);
-  assign zll_main_compute37_inR2 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h2};
-  ZLL_Main_compute37  instR2 (zll_main_compute37_inR2[130:67], zll_main_compute37_inR2[66:3], zll_main_compute37_inR2[2:0], zll_main_compute37_outR2);
-  assign zll_main_compute37_inR3 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h3};
-  ZLL_Main_compute37  instR3 (zll_main_compute37_inR3[130:67], zll_main_compute37_inR3[66:3], zll_main_compute37_inR3[2:0], zll_main_compute37_outR3);
-  assign zll_main_compute37_inR4 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h4};
-  ZLL_Main_compute37  instR4 (zll_main_compute37_inR4[130:67], zll_main_compute37_inR4[66:3], zll_main_compute37_inR4[2:0], zll_main_compute37_outR4);
-  assign zll_main_compute37_inR5 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h5};
-  ZLL_Main_compute37  instR5 (zll_main_compute37_inR5[130:67], zll_main_compute37_inR5[66:3], zll_main_compute37_inR5[2:0], zll_main_compute37_outR5);
-  assign zll_main_compute37_inR6 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h6};
-  ZLL_Main_compute37  instR6 (zll_main_compute37_inR6[130:67], zll_main_compute37_inR6[66:3], zll_main_compute37_inR6[2:0], zll_main_compute37_outR6);
-  assign zll_main_compute37_inR7 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h7};
-  ZLL_Main_compute37  instR7 (zll_main_compute37_inR7[130:67], zll_main_compute37_inR7[66:3], zll_main_compute37_inR7[2:0], zll_main_compute37_outR7);
-  assign resize_inR2 = {zll_main_compute37_out, zll_main_compute37_outR1, zll_main_compute37_outR2, zll_main_compute37_outR3, zll_main_compute37_outR4, zll_main_compute37_outR5, zll_main_compute37_outR6, zll_main_compute37_outR7};
+  assign zll_main_compute16_in = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h0};
+  ZLL_Main_compute16  inst (zll_main_compute16_in[130:67], zll_main_compute16_in[66:3], zll_main_compute16_in[2:0], zll_main_compute16_out);
+  assign zll_main_compute16_inR1 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h1};
+  ZLL_Main_compute16  instR1 (zll_main_compute16_inR1[130:67], zll_main_compute16_inR1[66:3], zll_main_compute16_inR1[2:0], zll_main_compute16_outR1);
+  assign zll_main_compute16_inR2 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h2};
+  ZLL_Main_compute16  instR2 (zll_main_compute16_inR2[130:67], zll_main_compute16_inR2[66:3], zll_main_compute16_inR2[2:0], zll_main_compute16_outR2);
+  assign zll_main_compute16_inR3 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h3};
+  ZLL_Main_compute16  instR3 (zll_main_compute16_inR3[130:67], zll_main_compute16_inR3[66:3], zll_main_compute16_inR3[2:0], zll_main_compute16_outR3);
+  assign zll_main_compute16_inR4 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h4};
+  ZLL_Main_compute16  instR4 (zll_main_compute16_inR4[130:67], zll_main_compute16_inR4[66:3], zll_main_compute16_inR4[2:0], zll_main_compute16_outR4);
+  assign zll_main_compute16_inR5 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h5};
+  ZLL_Main_compute16  instR5 (zll_main_compute16_inR5[130:67], zll_main_compute16_inR5[66:3], zll_main_compute16_inR5[2:0], zll_main_compute16_outR5);
+  assign zll_main_compute16_inR6 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h6};
+  ZLL_Main_compute16  instR6 (zll_main_compute16_inR6[130:67], zll_main_compute16_inR6[66:3], zll_main_compute16_inR6[2:0], zll_main_compute16_outR6);
+  assign zll_main_compute16_inR7 = {zll_main_compute38_in[128:65], zll_main_compute38_in[64:1], 3'h7};
+  ZLL_Main_compute16  instR7 (zll_main_compute16_inR7[130:67], zll_main_compute16_inR7[66:3], zll_main_compute16_inR7[2:0], zll_main_compute16_outR7);
+  assign resize_inR2 = {zll_main_compute16_out, zll_main_compute16_outR1, zll_main_compute16_outR2, zll_main_compute16_outR3, zll_main_compute16_outR4, zll_main_compute16_outR5, zll_main_compute16_outR6, zll_main_compute16_outR7};
   assign resize_inR3 = zll_main_compute38_in[131:129];
   assign binop_inR2 = {128'(resize_inR3[2:0]), 128'h00000000000000000000000000000003};
   assign binop_inR3 = {binop_inR2[255:128] - binop_inR2[127:0], 128'h00000000000000000000000000000008};
@@ -1153,23 +1006,23 @@ module ZLL_Main_compute39 (input logic [63:0] arg0,
   assign binop_inR11 = {128'(resize_inR2[63:0]), binop_inR10[255:128] * binop_inR10[127:0]};
   assign resize_inR10 = binop_inR11[255:128] >> binop_inR11[127:0];
   assign zll_main_compute34_in = {arg2, arg0, arg1, binop_in[255:128] < binop_in[127:0]};
-  assign zll_main_compute33_in = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h0};
-  ZLL_Main_compute33  instR8 (zll_main_compute33_in[130:67], zll_main_compute33_in[66:3], zll_main_compute33_in[2:0], zll_main_compute33_out);
-  assign zll_main_compute33_inR1 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h1};
-  ZLL_Main_compute33  instR9 (zll_main_compute33_inR1[130:67], zll_main_compute33_inR1[66:3], zll_main_compute33_inR1[2:0], zll_main_compute33_outR1);
-  assign zll_main_compute33_inR2 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h2};
-  ZLL_Main_compute33  instR10 (zll_main_compute33_inR2[130:67], zll_main_compute33_inR2[66:3], zll_main_compute33_inR2[2:0], zll_main_compute33_outR2);
-  assign zll_main_compute33_inR3 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h3};
-  ZLL_Main_compute33  instR11 (zll_main_compute33_inR3[130:67], zll_main_compute33_inR3[66:3], zll_main_compute33_inR3[2:0], zll_main_compute33_outR3);
-  assign zll_main_compute33_inR4 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h4};
-  ZLL_Main_compute33  instR12 (zll_main_compute33_inR4[130:67], zll_main_compute33_inR4[66:3], zll_main_compute33_inR4[2:0], zll_main_compute33_outR4);
-  assign zll_main_compute33_inR5 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h5};
-  ZLL_Main_compute33  instR13 (zll_main_compute33_inR5[130:67], zll_main_compute33_inR5[66:3], zll_main_compute33_inR5[2:0], zll_main_compute33_outR5);
-  assign zll_main_compute33_inR6 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h6};
-  ZLL_Main_compute33  instR14 (zll_main_compute33_inR6[130:67], zll_main_compute33_inR6[66:3], zll_main_compute33_inR6[2:0], zll_main_compute33_outR6);
-  assign zll_main_compute33_inR7 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h7};
-  ZLL_Main_compute33  instR15 (zll_main_compute33_inR7[130:67], zll_main_compute33_inR7[66:3], zll_main_compute33_inR7[2:0], zll_main_compute33_outR7);
-  assign resize_inR11 = {zll_main_compute33_out, zll_main_compute33_outR1, zll_main_compute33_outR2, zll_main_compute33_outR3, zll_main_compute33_outR4, zll_main_compute33_outR5, zll_main_compute33_outR6, zll_main_compute33_outR7};
+  assign zll_main_compute2_in = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h0};
+  ZLL_Main_compute2  instR8 (zll_main_compute2_in[130:67], zll_main_compute2_in[66:3], zll_main_compute2_in[2:0], zll_main_compute2_out);
+  assign zll_main_compute2_inR1 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h1};
+  ZLL_Main_compute2  instR9 (zll_main_compute2_inR1[130:67], zll_main_compute2_inR1[66:3], zll_main_compute2_inR1[2:0], zll_main_compute2_outR1);
+  assign zll_main_compute2_inR2 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h2};
+  ZLL_Main_compute2  instR10 (zll_main_compute2_inR2[130:67], zll_main_compute2_inR2[66:3], zll_main_compute2_inR2[2:0], zll_main_compute2_outR2);
+  assign zll_main_compute2_inR3 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h3};
+  ZLL_Main_compute2  instR11 (zll_main_compute2_inR3[130:67], zll_main_compute2_inR3[66:3], zll_main_compute2_inR3[2:0], zll_main_compute2_outR3);
+  assign zll_main_compute2_inR4 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h4};
+  ZLL_Main_compute2  instR12 (zll_main_compute2_inR4[130:67], zll_main_compute2_inR4[66:3], zll_main_compute2_inR4[2:0], zll_main_compute2_outR4);
+  assign zll_main_compute2_inR5 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h5};
+  ZLL_Main_compute2  instR13 (zll_main_compute2_inR5[130:67], zll_main_compute2_inR5[66:3], zll_main_compute2_inR5[2:0], zll_main_compute2_outR5);
+  assign zll_main_compute2_inR6 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h6};
+  ZLL_Main_compute2  instR14 (zll_main_compute2_inR6[130:67], zll_main_compute2_inR6[66:3], zll_main_compute2_inR6[2:0], zll_main_compute2_outR6);
+  assign zll_main_compute2_inR7 = {zll_main_compute34_in[128:65], zll_main_compute34_in[64:1], 3'h7};
+  ZLL_Main_compute2  instR15 (zll_main_compute2_inR7[130:67], zll_main_compute2_inR7[66:3], zll_main_compute2_inR7[2:0], zll_main_compute2_outR7);
+  assign resize_inR11 = {zll_main_compute2_out, zll_main_compute2_outR1, zll_main_compute2_outR2, zll_main_compute2_outR3, zll_main_compute2_outR4, zll_main_compute2_outR5, zll_main_compute2_outR6, zll_main_compute2_outR7};
   assign resize_inR12 = zll_main_compute34_in[131:129];
   assign binop_inR12 = {128'(resize_inR12[2:0]), 128'h00000000000000000000000000000002};
   assign binop_inR13 = {binop_inR12[255:128] * binop_inR12[127:0], 128'h00000000000000000000000000000008};

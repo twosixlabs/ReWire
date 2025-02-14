@@ -49,7 +49,7 @@ module top_level (input logic [0:0] clk,
   assign id_inR1 = {zll_main_go1_in[1], zll_main_go1_in[0]};
   assign rewirezupreludezuzazazuinR1 = {(id_inR1[0] == 1'h1) ? id_inR1[1] : zll_main_go3_outR1, zll_main_go1_in[0]};
   ReWirezuPreludezuzaza  instR3 (rewirezupreludezuzazazuinR1[1], rewirezupreludezuzazazuinR1[0], rewirezupreludezuzaza_outR1);
-  assign {__continue, __out0, __resumption_tag_next} = (zll_pure_dispatch1_in[3:1] == 3'h1) ? {1'h1, rewirezupreludezuzaza_outR1, 4'h0} : ((lit_inR1[3:1] == 3'h2) ? 6'h28 : ((zll_pure_dispatch4_in[3:1] == 3'h3) ? {1'h1, rewirezupreludezuzaza_out, 4'h4} : ((zll_pure_dispatch5_in[3:1] == 3'h4) ? ((zll_main_go9_in[0] == 1'h1) ? {5'h11, zll_main_go9_in[1]} : {1'h1, zll_main_go10_in[1], 3'h3, zll_main_go10_in[1]}) : 6'h28)));
+  assign {__continue, __out0, __resumption_tag_next} = (zll_pure_dispatch1_in[3:1] == 3'h1) ? {rewirezupreludezuzaza_outR1, 4'h0} : ((lit_inR1[3:1] == 3'h2) ? 5'h08 : ((zll_pure_dispatch4_in[3:1] == 3'h3) ? {rewirezupreludezuzaza_out, 4'h4} : ((zll_pure_dispatch5_in[3:1] == 3'h4) ? ((zll_main_go9_in[0] == 1'h1) ? {4'h1, zll_main_go9_in[1]} : {zll_main_go10_in[1], 3'h3, zll_main_go10_in[1]}) : 5'h08)));
   initial __resumption_tag <= 4'h8;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin

@@ -9,8 +9,7 @@ module top_level (input logic [0:0] clk,
   logic [8:0] zll_pure_dispatch4_in;
   logic [2:0] main_dev_in;
   logic [8:0] lit_in;
-  logic [8:0] zll_pure_dispatch2_in;
-  logic [2:0] lit_inR1;
+  logic [8:0] lit_inR1;
   logic [8:0] zll_pure_dispatch1_in;
   logic [5:0] zll_pure_dispatch_in;
   logic [5:0] zll_main_dev1_in;
@@ -23,12 +22,11 @@ module top_level (input logic [0:0] clk,
   assign zll_pure_dispatch4_in = {__in0, __resumption_tag};
   assign main_dev_in = zll_pure_dispatch4_in[8:6];
   assign lit_in = {__in0, __resumption_tag};
-  assign zll_pure_dispatch2_in = {__in0, __resumption_tag};
-  assign lit_inR1 = zll_pure_dispatch2_in[8:6];
+  assign lit_inR1 = {__in0, __resumption_tag};
   assign zll_pure_dispatch1_in = {__in0, __resumption_tag};
   assign zll_pure_dispatch_in = {zll_pure_dispatch1_in[8:6], zll_pure_dispatch1_in[2:0]};
   assign zll_main_dev1_in = {zll_pure_dispatch_in[2:0], zll_pure_dispatch_in[5:3]};
-  assign {__continue, __out0, __out1, __resumption_tag_next} = (zll_pure_dispatch1_in[5:3] == 3'h1) ? {8'h80, zll_main_dev1_in[5:3]} : ((zll_pure_dispatch2_in[5:3] == 3'h2) ? 11'h620 : ((lit_in[5:3] == 3'h3) ? 11'h410 : ((zll_pure_dispatch4_in[5:3] == 3'h4) ? {8'h81, main_dev_in[2:0]} : {2'h3, zll_main_dev_in[5:3], 6'h20})));
+  assign {__continue, __out0, __out1, __resumption_tag_next} = (zll_pure_dispatch1_in[5:3] == 3'h1) ? {7'h00, zll_main_dev1_in[5:3]} : ((lit_inR1[5:3] == 3'h2) ? 10'h220 : ((lit_in[5:3] == 3'h3) ? 10'h010 : ((zll_pure_dispatch4_in[5:3] == 3'h4) ? {7'h01, main_dev_in[2:0]} : {1'h1, zll_main_dev_in[5:3], 6'h20})));
   initial __resumption_tag <= 6'h18;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
