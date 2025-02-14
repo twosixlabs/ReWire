@@ -26,7 +26,6 @@ import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable (hash))
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
-import Data.Text (Text)
 
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Set as Set
@@ -63,11 +62,11 @@ lookupAll :: Eq a => a -> [(a, b)] -> [b]
 lookupAll a = map snd . filter ((== a) . fst)
 
 typeCheckDefn :: (Fresh m, MonadError AstError m) => [DataDefn] -> [Defn] -> Defn -> m Defn
-typeCheckDefn ts vs d = runReaderT (withAssumps ts vs $ tcDefn "" d) mempty
+typeCheckDefn ts vs d = runReaderT (withAssumps ts vs $ tcDefn (s2n "") d) mempty
 
 -- | Type-annotate the AST, but also eliminate uses of polymorphic
 --   definitions by creating new definitions specialized to non-polymorphic types.
-typeCheck :: (Fresh m, MonadError AstError m) => Text -> FreeProgram -> m FreeProgram
+typeCheck :: (Fresh m, MonadError AstError m) => Name Exp -> FreeProgram -> m FreeProgram
 typeCheck start (ts, syns, vs) = (ts, syns, ) <$> runReaderT tc mempty
       where conc :: Concretes -> Defn -> [Defn]
             conc cs (Defn an n _ b e) = mapMaybe conc' $ lookupAll n $ Map.keys cs
@@ -364,7 +363,7 @@ tcExp tt = \ case
                   pure (els <> [el'], tel')
 
 
-tcDefn :: (Fresh m, MonadError AstError m, MonadReader TCEnv m) => Text -> Defn -> m Defn
+tcDefn :: (Fresh m, MonadError AstError m, MonadReader TCEnv m) => Name Exp -> Defn -> m Defn
 tcDefn start d  = flip evalStateT mempty $ do
       -- trace ("tcDefn: " <> show (defnName d)) $ pure ()
       let Defn an n (Embed pt) b (Embed e) = force d
@@ -388,7 +387,7 @@ tcDefn start d  = flip evalStateT mempty $ do
       let d'  = Defn an n (Embed pt) b $ Embed $ bind vs body''
       d' `deepseq` pure d'
       where isStart :: Name Exp -> Bool
-            isStart = (== start) . n2s
+            isStart = (== start)
 
             isPureStart :: Name Exp -> Bool
             isPureStart = (== "$Pure.start") . n2s

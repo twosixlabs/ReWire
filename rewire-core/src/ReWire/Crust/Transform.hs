@@ -22,7 +22,6 @@ module ReWire.Crust.Transform
 
 import ReWire.Annotation (Annote (..), Annotated (..), unAnn)
 import ReWire.Config (Config, depth)
-import ReWire.Crust.PrimBasis (primDatas)
 import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), TypeSynonym (..), flattenApp)
 import ReWire.Crust.TypeCheck (typeCheckDefn, unify, unify', TySub)
 import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy)
@@ -428,13 +427,13 @@ lift dn bvs e | Just t  <- typeOf e, not $ isGlobal e = do
             pre = "$LL."
 lift _ _ e                                            = pure e
 
--- | Remove all definitions unused by those in the given list.
-purgeUnused :: [Text] -> FreeProgram -> FreeProgram
-purgeUnused except (ts, syns, vs) = (inuseData (fix' extendWithCtorParams $ externCtors vs') (fv $ trec vs') ts, syns, vs')
+-- | Remove all definitions and types unused by those in the given lists.
+purgeUnused :: [Name Exp] -> [Name TyConId] -> FreeProgram -> FreeProgram
+purgeUnused except exceptTs (ts, syns, vs) = (inuseData (fix' extendWithCtorParams $ externCtors vs') (fv $ trec vs') ts, syns, vs')
       where vs' :: [Defn]
             vs' = inuseDefn except vs
 
-            inuseDefn :: [Text] -> [Defn] -> [Defn]
+            inuseDefn :: [Name Exp] -> [Defn] -> [Defn]
             inuseDefn except ds = map toDefn $ Set.elems $ execState (inuseDefn' ds') ds'
                   where inuseDefn' :: MonadState (Set (Name Exp)) m => Set (Name Exp) -> m ()
                         inuseDefn' ns | Set.null ns = pure () -- TODO(chathhorn): rewrite using fix?
@@ -445,7 +444,7 @@ purgeUnused except (ts, syns, vs) = (inuseData (fix' extendWithCtorParams $ exte
                               inuseDefn' $ inuse' \\ inuse
 
                         ds' :: Set (Name Exp)
-                        ds' = Set.fromList $ filter (flip elem except . n2s) $ map defnName ds
+                        ds' = Set.fromList $ filter (flip elem except) $ map defnName ds
 
                         fvs :: Set (Name Exp) -> Set (Name Exp)
                         fvs = Set.fromList . concatMap (fv . unembed . defnBody . toDefn) . Set.elems
@@ -455,19 +454,19 @@ purgeUnused except (ts, syns, vs) = (inuseData (fix' extendWithCtorParams $ exte
                                  | otherwise                             = error $ "Something went wrong: can't find symbol: " <> show n
 
             inuseData :: [Name TyConId] -> [Name DataConId] -> [DataDefn] -> [DataDefn]
-            inuseData ts ns = filter (\ DataDefn {dataName = n, dataCons = cs} -> not (null cs) || n `elem` (dataName <$> primDatas))
+            inuseData ts ns = filter (\ DataDefn {dataName = n, dataCons = cs} -> not (null cs) || n `elem` exceptTs)
                             . map (inuseData' ts ns)
 
             inuseData' :: [Name TyConId] -> [Name DataConId] -> DataDefn -> DataDefn
             inuseData' ts ns d@(DataDefn an n k cs)
-                  | n `elem` ts                       = d
-                  | n `elem` (dataName <$> primDatas) = d
-                  | otherwise                         = DataDefn an n k $ filter ((`Set.member` Set.fromList ns) . dataConName) cs
+                  | n `elem` ts       = d
+                  | n `elem` exceptTs = d
+                  | otherwise         = DataDefn an n k $ filter ((`Set.member` Set.fromList ns) . dataConName) cs
 
             -- | Also treat as used: all ctors for types returned by externs and ReacT inputs.
             externCtors :: Data a => a -> [Name TyConId]
             externCtors a = concat $ [maybe [] (ctorNames . codomTy) $ typeOf e | e@Builtin {} <- query a]
-                  <> [maybe [] ctorNames $ resInputTy t | Defn _ (n2s -> n) (Embed (Poly (unsafeUnbind -> (_, t)))) _ _ <- query a, n `elem` except]
+                  <> [maybe [] ctorNames $ resInputTy t | Defn _ n (Embed (Poly (unsafeUnbind -> (_, t)))) _ _ <- query a, n `elem` except]
 
             extendWithCtorParams :: [Name TyConId] -> [Name TyConId]
             extendWithCtorParams = nubOrd . sort . foldr extend' []
