@@ -17,14 +17,13 @@ module top_level (input logic [0:0] clk,
   logic [15:0] binop_inR4;
   logic [8:0] zll_main_loop2_in;
   logic [8:0] zll_main_loop_in;
-  logic [8:0] zll_main_loop_out;
   logic [127:0] resize_inS0;
   logic [7:0] unop_inS0;
   logic [7:0] unop_inS0R1;
   logic [15:0] binop_inS0;
   logic [15:0] binop_inS0R1;
   logic [15:0] binop_inS0R2;
-  logic [8:0] zll_main_loop3_inS0;
+  logic [8:0] zll_main_loop2_inS0;
   logic [8:0] zll_main_loop_inS0;
   logic [0:0] __continue;
   logic [23:0] __resumption_tag;
@@ -35,8 +34,8 @@ module top_level (input logic [0:0] clk,
   assign binop_inS0 = {~unop_inS0[7:0], ~unop_inS0R1[7:0]};
   assign binop_inS0R1 = {binop_inS0[15:8] & binop_inS0[7:0], 8'(128'h00000000000000000000000000000002)};
   assign binop_inS0R2 = {8'h02, binop_inS0R1[15:8] ~^ binop_inS0R1[7:0]};
-  assign zll_main_loop3_inS0 = {1'h0, binop_inS0R2[15:8] | binop_inS0R2[7:0]};
-  assign zll_main_loop_inS0 = zll_main_loop3_inS0[8:0];
+  assign zll_main_loop2_inS0 = {1'h0, binop_inS0R2[15:8] | binop_inS0R2[7:0]};
+  assign zll_main_loop_inS0 = zll_main_loop2_inS0[8:0];
   assign main_loop_in = __resumption_tag;
   assign main_compute_in = main_loop_in[23:0];
   assign zll_main_compute1_in = main_compute_in[23:0];
@@ -50,8 +49,7 @@ module top_level (input logic [0:0] clk,
   assign binop_inR4 = {binop_inR1[15:8] ^ binop_inR1[7:0], binop_inR3[15:8] ~^ binop_inR3[7:0]};
   assign zll_main_loop2_in = {1'h0, binop_inR4[15:8] | binop_inR4[7:0]};
   assign zll_main_loop_in = zll_main_loop2_in[8:0];
-  ZLL_Main_loop  inst (zll_main_loop_in[7:0], zll_main_loop_out);
-  assign {__continue, __out0, __resumption_tag_next} = zll_main_loop_out;
+  assign {__continue, __out0, __resumption_tag_next} = {1'h1, zll_main_loop_in[7:0]};
   initial __resumption_tag <= 24'h000000;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
@@ -60,9 +58,4 @@ module top_level (input logic [0:0] clk,
       __resumption_tag <= __resumption_tag_next;
     end
   end
-endmodule
-
-module ZLL_Main_loop (input logic [7:0] arg0,
-  output logic [8:0] res);
-  assign res = {1'h1, arg0};
 endmodule
