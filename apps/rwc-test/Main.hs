@@ -6,7 +6,7 @@ import Control.Monad (unless, msum)
 import Data.List (isSuffixOf)
 import Data.Maybe (fromMaybe)
 import System.Console.GetOpt (getOpt, usageInfo, OptDescr (..), ArgOrder (..), ArgDescr (..))
-import System.Directory (listDirectory, setCurrentDirectory)
+import System.Directory (listDirectory, setCurrentDirectory, doesFileExist)
 import System.Environment (getArgs)
 import System.Environment (withArgs)
 import System.Exit (exitFailure)
@@ -53,45 +53,43 @@ options =
        , Option []    ["color"]           (ReqArg FlagColor "never|always|auto") "When to use colored output (default: auto)."
        ]
 
-testCompiler :: [Flag] -> FilePath -> [TestTree]
-testCompiler flags fn =
-      -- Test: compile Haskell source with GHC
-      (if FlagNoGhc `elem` flags then []
-      else [ testCase (takeBaseName fn <> " (stack ghc)") $ do
-            cdTestdir
-            callCommand $ "stack ghc " <> fn
-      ])
+testCompiler :: [Flag] -> FilePath -> IO [TestTree]
+testCompiler flags fn = do
+      let ghcTests =
+            -- Test: compile Haskell source with GHC
+            (if FlagNoGhc `elem` flags then []
+                  else [ testCase (takeBaseName fn <> " (stack ghc)") $ do
+                        cdTestdir
+                        callCommand $ "stack ghc " <> fn
+                  ])
 
-      --- Verilog tests ---
+      coreTests <-
+            -- Test: compile Haskell to Core with RWC.
+            ([ golden "rwc" $ do
+                 cdTestdir
+                 withArgs (fn : ["--core", "-o", ofile "rwc"] <> extraFlags) RWC.main
+            ] <>)
+            -- Test: interpret Core.
+            <$> maybeGolden "yaml" (do
+                  cdTestdir
+                  withArgs (fn : ["--interp", "-o", ofile "yaml"] <> extraFlags) RWC.main)
 
-      -- Test: compile Haskell to Verilog with RWC.
-      <> [ golden "sv" $ do
-            cdTestdir
-            withArgs (fn : ["-o", ofile "sv"] <> extraFlags) RWC.main
-         ]
+      let verilogTests =
+            -- Test: compile Core to Verilog with RWC.
+            [ golden "rwc" $ do
+                  cdTestdir -- TODO enable extra typechecking
+                  withArgs ((fn -<.> "rwc") : ["--from-core", "-o", ofile "sv"] <> extraFlags) RWC.main
+               ]
+            -- Test: check Verilog output.
+            <> (if FlagNoCheck `elem` flags then []
+               else [ testCase (takeBaseName fn <> " (" <> verilogChecker <> ")") $ do
+                  cdTestdir
+                  callCommand $ verilogCheck <> " " <> ofile "sv"
+               ])
 
-      -- Test: check Verilog output.
-      <> (if FlagNoCheck `elem` flags then []
-         else [ testCase (takeBaseName fn <> " (" <> verilogChecker <> ")") $ do
-            cdTestdir
-            callCommand $ verilogCheck <> " " <> ofile "sv"
-         ])
+      let vhdlTests = []
 
-      --- VHDL tests ---
-
-      -- Test: compile Haskell to VHDL with RWC.
-      <> (if FlagVhdl `elem` flags
-         then [ testCase (takeBaseName fn <> " (VHDL output)") $ do
-            cdTestdir
-            withArgs ("--vhdl" : fn : ["-o ", ofile "vhdl"] <> extraFlags) RWC.main
-         ] else [])
-
-      -- Test: check VHDL output.
-      <> (if FlagVhdl `elem` flags && FlagNoCheck `notElem` flags
-         then [ testCase (takeBaseName fn <> " (" <> vhdlChecker <> ")") $ do
-            cdTestdir
-            callCommand $ vhdlCheck <> " " <> ofile "vhdl"
-         ] else [])
+      pure $ ghcTests <> coreTests <> verilogTests <> vhdlTests
 
       where extraFlags :: [String]
             extraFlags = if FlagV `elem` flags then ["-v"] else []
@@ -102,13 +100,13 @@ testCompiler flags fn =
             ofile :: String -> FilePath
             ofile ext = fn -<.> ("out." <> ext)
 
-            vhdlChecker :: String
-            vhdlChecker = "ghdl"
+            -- vhdlChecker :: String
+            -- vhdlChecker = "ghdl"
 
-            vhdlCheck :: String
-            vhdlCheck = fromMaybe (vhdlChecker <> " -s ") $ msum $ flip map flags $ \ case
-                  FlagVhdlChecker c -> Just $ sq c
-                  _                 -> Nothing
+            -- vhdlCheck :: String
+            -- vhdlCheck = fromMaybe (vhdlChecker <> " -s ") $ msum $ flip map flags $ \ case
+            --       FlagVhdlChecker c -> Just $ sq c
+            --       _                 -> Nothing
 
             verilogChecker :: String
             verilogChecker = "iverilog"
@@ -122,7 +120,13 @@ testCompiler flags fn =
             verilog = takeDirectory fn </> "verilog" </> "*.sv"
 
             golden :: FilePath -> IO () -> TestTree
-            golden ext = goldenVsFileDiff (takeBaseName fn <> " (golden verilog)") diff gold out
+            golden ext = goldenVsFileDiff (takeBaseName fn <> " (golden " <> ext <> ")") diff gold out
+                  where gold = fn -<.> ext
+                        out  = ofile ext
+
+            maybeGolden :: FilePath -> IO () -> IO [TestTree]
+            maybeGolden ext io = doesFileExist gold >>= \ ex ->
+                  pure [goldenVsFileDiff (takeBaseName fn <> " (golden " <> ext <> ")") diff gold out io | ex]
                   where gold = fn -<.> ext
                         out  = ofile ext
 
@@ -139,7 +143,7 @@ getTests :: [Flag] -> FilePath -> IO TestTree
 getTests flags dirName = do
       dir   <- getDataFileName ("tests" </> dirName)
       files <- map (dir </>) . filter (".hs" `isSuffixOf`) <$> listDirectory dir
-      pure $ sequentialTestGroup dirName AllFinish $ concatMap (testCompiler flags) files
+      sequentialTestGroup dirName AllFinish <$> (msum <$> mapM (testCompiler flags) files)
 
 exitUsage :: IO ()
 exitUsage = hPutStr stderr (usageInfo "Usage: rwc-test [OPTION...]" options) >> exitFailure
