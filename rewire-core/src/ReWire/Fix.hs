@@ -1,14 +1,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Safe #-}
-module ReWire.Fix (fix, fix', fixOn, boundedFixOn, fixOn', fixUntil, boundedFix) where
+module ReWire.Fix (fix, fix', fixOn, boundedFixOn, fixOn', fixUntil, boundedFix, fixPure) where
 
 import ReWire.Error (MonadError, AstError, failAt)
 import ReWire.Annotation (noAnn)
 
+import Control.Monad.Identity (Identity (runIdentity))
 import Data.Hashable (Hashable (hash))
 import Data.Text (Text)
 import Numeric.Natural (Natural)
+
+fixPure :: Hashable a => Natural -> (a -> a) -> a -> a
+fixPure n f = runIdentity . boundedFix (\ a a' -> hash a == hash a') n (pure . f)
 
 fix :: (MonadError AstError m, Hashable a) => Text -> Natural -> (a -> m a) -> a -> m a
 fix = fixOn hash

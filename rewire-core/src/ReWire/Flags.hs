@@ -19,4 +19,6 @@ data Flag = FlagO !String
           | FlagInterpret !(Maybe String) | FlagCycles !String
           | FlagEvalDepth !String
           | FlagPretty
+          | FlagDebugTypeCheck
+          | FlagRtlOpt !String
       deriving (Eq, Show)
