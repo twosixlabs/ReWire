@@ -1,18 +1,21 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE Safe #-}
 module ReWire.Core.ToVerilog (compileProgram) where
 
-import ReWire.Config (Config, flatten, resetFlags, ResetFlag (..), clock, reset)
 import ReWire.Annotation (noAnn, ann)
+import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.), szBitRep)
+import ReWire.Config (Config, flatten, resetFlags, ResetFlag (..), clock, reset)
+import ReWire.Core.Interp (patApply', patMatches', subRange, dispatchWires, pausePrefix, extraWires, resumptionSize, Wiring')
 import ReWire.Core.Mangle (mangle)
 import ReWire.Core.Syntax as C hiding (Name, Size, Index)
 import ReWire.Error (failAt, AstError, MonadError)
-import ReWire.Verilog.Syntax as V
-import ReWire.Core.Interp (patApply', patMatches', subRange, dispatchWires, pausePrefix, extraWires, resumptionSize, Wiring')
+import ReWire.Fix (fix')
 import ReWire.Pretty (prettyPrint, showt)
-import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.), szBitRep)
+import ReWire.Verilog.Syntax as V
+
 import qualified ReWire.BitVector as BV
 
 import Control.Arrow ((&&&), first, second)
@@ -22,11 +25,14 @@ import Control.Monad.Reader (MonadReader, asks, runReaderT)
 import Control.Monad.State (MonadState, runStateT, modify, gets)
 import Data.Char (isAlphaNum)
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet)
+import Data.List (foldl')
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text)
 import Numeric.Natural (Natural)
 
 import qualified Data.HashMap.Strict as Map
+import qualified Data.HashSet        as Set
 import qualified Data.Text           as T
 
 data FreshMode = FreshInit | FreshRun
@@ -124,24 +130,21 @@ lookupWidth n = do
 
 compileProgram :: (MonadFail m, MonadError AstError m) => Config -> C.Device -> m V.Device
 compileProgram conf p@(C.Device topLevel w loop state0 ds)
-      | conf^.flatten = V.Device . pure <$> runReaderT (compileStart conf topLevel w loop state0) defnMap
-      | otherwise     = flip runReaderT defnMap $ do
+      | conf^.flatten = V.Device . pure <$> runReaderT (compileStart conf topLevel w loop state0) defnMap'
+      | otherwise     = flip runReaderT defnMap' $ do
             st' <- compileStart conf topLevel w loop state0
             -- Initial state should be inlined, so we can filter out its defn.
-            ds' <- mapM (compileDefn conf) $ filter (not . unused . defnName) $ loop : ds
+            ds' <- mapM (compileDefn conf) $ filter (inuse . defnName) $ loop : ds
             pure $ V.Device $ st' : ds'
-      where defnMap :: DefnMap
-            defnMap = Map.mapKeys mangleMod $ C.defnMap p
+      where defnMap' :: DefnMap
+            defnMap' = Map.mapKeys mangleMod $ defnMap p
 
-            unused :: GId -> Bool
-            unused g = case Map.lookup g $ defnUses p { C.state0 = nullDefn } of
-                  Nothing -> True
-                  Just 0  -> True
-                  Just 1  -> True
-                  _       -> False
-
-            nullDefn :: C.Defn
-            nullDefn = Defn noAnn "" (Sig noAnn [] 0) C.nil
+            inuse :: GId -> Bool
+            inuse g = case Map.lookup g $ defnUses p of
+                  Nothing -> False
+                  Just 0  -> False
+                  Just 1  -> False
+                  _       -> True
 
 compileStart :: (MonadError AstError m, MonadFail m, MonadReader DefnMap m)
                  => Config -> Name -> C.Wiring -> C.Defn -> C.Defn -> m Module
@@ -154,8 +157,9 @@ compileStart conf topLevel w loop state0 = do
                   $  [ V.cat $ map (LVal . Name . fst) $ dispatchWires w' | not (null $ dispatchWires w') ]
                   <> [ V.cat $ map (LVal . Name . fst) $ inputWires w     | not (null $ inputWires w) ]
 
-      let mod       = Module topLevel $ inputs <> outputs
-          loopStmts = ssLoop <> [ Assign lvPause rLoop ]
+      let mod                    = Module topLevel $ inputs <> outputs
+          loopStmts | loopSz > 0 = ssLoop <> [ Assign lvPause rLoop ]
+                    | otherwise  = []
 
       if T.null clock' then pure $ mod (loopSigs <> sigs) loopStmts
       else do
@@ -173,6 +177,9 @@ compileStart conf topLevel w loop state0 = do
             resetSig :: Maybe Signal
             resetSig | T.null reset' = Nothing
                      | otherwise     = pure $ mkSignal (reset', 1)
+
+            loopSz :: Size
+            loopSz | Sig _ _ sz <- defnSig loop = sz
 
             inputs :: [Port]
             inputs = map Input $ catMaybes [clockSig, resetSig] <> map mkSignal (inputWires w)
@@ -241,8 +248,8 @@ compileStart conf topLevel w loop state0 = do
 compileDefn :: (MonadFail m, MonadError AstError m, MonadReader DefnMap m) => Config -> C.Defn -> m V.Module
 compileDefn conf (C.Defn _ n (Sig _ inps outp) body) = do
       ((e, stmts), (_, sigs)) <- flip runStateT (freshRun0, []) $ compileExp conf (map (LVal . Name) argNames) body
-      isPure <- isPureDefn n
-      let inputs' = if isPure then inputs else [clkPort, rstPort] <> inputs
+      isPure' <- isPureDefn n
+      let inputs' = if isPure' then inputs else [clkPort, rstPort] <> inputs
       pure $ V.Module (mangleMod n) (inputs' <> outputs) sigs $ stmts <> [Assign (Name "res") e]
       where argNames :: [Name]
             argNames = zipWith (\ _ x -> "arg" <> showt x) inps [0::Int ..]
@@ -272,12 +279,12 @@ compileCall conf g sz lvars = asks (Map.lookup g) >>= \ case
             (e, stmts) <- compileExp conf lvars body
             e'         <- wcast sz e
             pure (e', stmts)
-      Just (_, (_, isPure))                               -> do
+      Just (_, (_, isPure'))                              -> do
             mr         <- newWire sz $ g <> "_out"
             inst'      <- fresh' "inst"
             let stmt   = Instantiate g inst' []
                        $ zip (repeat mempty)
-                       $ (if isPure then [] else [clk, rst]) <> lvars <> [LVal mr]
+                       $ (if isPure' then [] else [clk, rst]) <> lvars <> [LVal mr]
             pure (LVal mr, [stmt])
       _ -> failAt noAnn $ "ToVerilog: compileCall: failed to find definition for " <> g <> " while flattening."
       where clk :: V.Exp
@@ -640,3 +647,61 @@ argsSize = sum . map patToSize
 
 mkSignal :: (Name, Size) -> Signal
 mkSignal (n, sz) = Logic [sz] n []
+
+type Uses   = Natural
+type IsPure = Bool
+
+defnMap :: C.Device -> HashMap GId (C.Exp, (Uses, IsPure))
+defnMap p@C.Device { loop, state0, defns } = foldl' defnInfo mempty defns'
+      where defnInfo :: HashMap GId (C.Exp, (Uses, IsPure)) -> C.Defn -> HashMap GId (C.Exp, (Uses, IsPure))
+            defnInfo m (Defn _ g _ e) = Map.insert g (e, (Map.findWithDefault 0 g uses, Set.member g pures)) m
+
+            uses :: HashMap GId Uses
+            uses = defnUses p
+
+            pures :: HashSet GId
+            pures = pureDefns p
+
+            defns' :: [Defn]
+            defns' = loop : state0 : defns
+
+-- | Defns that do not require an implicit clock/reset.
+pureDefns :: C.Device -> HashSet GId
+pureDefns C.Device { loop, state0, defns } = fix' purity mempty
+      where purity :: HashSet GId -> HashSet GId
+            purity m = foldl' purity' m defns'
+
+            purity' :: HashSet GId -> Defn -> HashSet GId
+            purity' ps (Defn _ g _ e) = if isPure ps e then Set.insert g ps else ps
+
+            defns' :: [Defn]
+            defns' = loop : state0 : defns
+
+defnUses :: C.Device -> HashMap GId Uses
+defnUses C.Device { loop, state0, defns } = Map.fromList [(defnName loop, 1), (defnName state0, 1)]
+      <+> foldr (<+>) Map.empty (expUses . defnBody <$> loop : defns) -- drop state0 body.
+      where expUses :: C.Exp -> HashMap GId Uses
+            expUses = \ case
+                  C.Concat _ e1 e2              -> expUses e1 <+> expUses e2
+                  C.Call _ _ (Global g) e _ els -> Map.singleton g 1 <+> expUses e <+> expUses els
+                  C.Call _ _ _          e _ els ->                       expUses e <+> expUses els
+                  _                             -> Map.empty
+
+            (<+>) :: HashMap GId Uses -> HashMap GId Uses -> HashMap GId Uses
+            (<+>) = Map.unionWith (+)
+
+isPure :: HashSet GId -> C.Exp -> Bool
+isPure m = \ case
+      C.Call _ _ (C.Extern (C.ExternSig _ _ c r _ _) _ _) a _ b
+                                    -> T.null c && T.null r && pur a && pur b
+      C.Call _ _ (C.Global g) a _ b -> purG g && pur a && pur b
+      C.Call _ _ _ a _ b            -> pur a && pur b
+      C.Concat _ a b                -> pur a && pur b
+      C.LVar {}                     -> True
+      C.Lit {}                      -> True
+      where pur :: C.Exp -> Bool
+            pur = isPure m
+
+            purG :: GId -> Bool
+            purG = flip Set.member m
+

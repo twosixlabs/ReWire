@@ -7,7 +7,7 @@ import ReWire.Annotation (ann, noAnn)
 import ReWire.BitVector (BV, width)
 import ReWire.Core.Syntax (isNil, sizeOf, LId, GId, Size, ExternSig (..), Device (..), Defn (..), Pat (..), Exp (..), Sig (..), Target (..), Prim (..))
 import ReWire.Error (MonadError, AstError, failAt)
-import ReWire.Pretty (showt)
+import ReWire.Pretty (showt, prettyPrint)
 
 import Data.HashMap.Strict (HashMap)
 import Control.Arrow ((&&&))
@@ -19,22 +19,31 @@ type DefnSigs = HashMap GId (Sig, Exp)
 
 check :: MonadError AstError m => Device -> m Device
 check p = do
-      checkLoop defnSigs $ loop p
-      checkState0 defnSigs $ state0 p
+      checkLoop
+      checkState0
       mapM_ (checkDefn defnSigs) $ defns p
       pure p
       where defnSigs :: DefnSigs
             defnSigs = Map.fromList $ map (defnName &&& (defnSig &&& defnBody)) $ loop p : state0 p : defns p
 
-checkLoop :: MonadError AstError m => DefnSigs -> Defn -> m ()
-checkLoop dsigs d@Defn { defnSig = Sig _ args _ }
-      | null args = failAt (ann d) "core check: invalid dispatch (no arguments)"
-      | otherwise = checkDefn dsigs d
+            checkLoop :: MonadError AstError m => m ()
+            checkLoop = checkDefn defnSigs $ loop p
 
-checkState0 :: MonadError AstError m => DefnSigs -> Defn -> m ()
-checkState0 dsigs d@Defn { defnSig = Sig _ args _ }
-      | not (null args) = failAt (ann d) "core check: invalid state0 (non-constant)"
-      | otherwise       = checkDefn dsigs d
+            checkState0 :: MonadError AstError m => m ()
+            checkState0
+                  | not (null state0Args) = failAt (ann $ state0 p) "core check: invalid state0 (non-constant)"
+                  | state0Sz /= loopSz    = failAt (ann $ state0 p) $ "core check: " <> prettyPrint (defnName $ loop p)
+                                                                          <> " and " <> prettyPrint (defnName $ state0 p) <> " have unequal result sizes"
+                  | otherwise          = checkDefn defnSigs $ state0 p
+
+            loopSz :: Size
+            loopSz | Sig _ _ sz <- defnSig $ loop p = sz
+
+            state0Sz :: Size
+            state0Sz | Sig _ _ sz <- defnSig $ state0 p = sz
+
+            state0Args :: [Size]
+            state0Args | Sig _ args _ <- defnSig $ state0 p = args
 
 checkDefn :: MonadError AstError m => DefnSigs -> Defn -> m ()
 checkDefn dsigs (Defn an n (Sig _ args res) body)

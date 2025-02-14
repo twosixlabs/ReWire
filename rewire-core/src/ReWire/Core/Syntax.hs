@@ -19,28 +19,21 @@ module ReWire.Core.Syntax
   , isNil, nil
   , isNilPat, nilPat
   , cat, gather
-  , defnMap, defnUses, pureDefns
   ) where
 
 import ReWire.Annotation (Annote, Annotated (ann), noAnn)
 import ReWire.BitVector (BV (..), width, showHex', zeros, ones, (==.))
-import ReWire.Fix (fix')
 import ReWire.Orphans ()
-import ReWire.Pretty (text, Pretty (pretty), Doc, vsep, (<+>), nest, hsep, parens, punctuate, comma, squote, dquotes, braced, TextShow (showt), FromGeneric (..), colon)
+import ReWire.Pretty (text, Pretty (pretty), Doc, vsep, (<+>), nest, hsep, parens, punctuate, squote, dquotes, braced, TextShow (showt), FromGeneric (..), colon)
+
 import qualified ReWire.BitVector as BV
 
 import Data.Data (Typeable, Data(..))
-import Data.Foldable (foldl')
-import Data.HashMap.Strict (HashMap)
-import Data.HashSet (HashSet)
 import Data.Hashable (Hashable)
 import Data.List (intersperse, genericLength)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
-import qualified Data.HashMap.Strict as Map
-import qualified Data.HashSet        as Set
-import qualified Data.Text           as T
 
 class SizeAnnotated a where
       sizeOf :: a -> Size
@@ -92,12 +85,12 @@ instance Hashable Target
 
 instance Pretty Target where
       pretty = \ case
-            Global n     -> text n
-            Extern _ n _ -> text "extern" <+> dquotes (text n)
-            Const bv     -> ppBV [Lit noAnn bv]
-            SetRef n     -> text "setRef" <+> dquotes (text n)
-            GetRef n     -> text "getRef" <+> dquotes (text n)
-            Prim p       -> text $ showt p
+            Global n          -> text n
+            Extern sig n inst -> text "extern" <+> pretty sig <+> dquotes (text n) <+> dquotes (text inst)
+            Const bv          -> ppBV [Lit noAnn bv]
+            SetRef n          -> text "setRef" <+> dquotes (text n)
+            GetRef n          -> text "getRef" <+> dquotes (text n)
+            Prim p            -> text $ showt p
 
 ppBVTy :: Integral n => n -> Doc an
 ppBVTy n = text "W" <> pretty (fromIntegral n :: Int)
@@ -123,8 +116,7 @@ instance SizeAnnotated ExternSig where
       sizeOf (ExternSig _ _ _ _ _ rs) = sum (snd <$> rs)
 
 instance Pretty ExternSig where
-      pretty (ExternSig _ _ _ _ args res) = hsep $ punctuate (text " ->") $ map (ppBVTy . snd) args <> [parens $ hsep $ punctuate comma $ map (ppBVTy . snd) res]
-
+      pretty (ExternSig _ ps clk rst ins outs) = parens $ text "Sig" <+> ppWires ps <+> text (showt clk) <+> text (showt rst) <+> ppWires ins <+> ppWires outs
 ---
 
 data Sig = Sig Annote ![Size] !Size
@@ -176,14 +168,15 @@ instance Annotated Exp where
 
 instance Pretty Exp where
       pretty = \ case
-            Lit _ bv             -> pretty (width bv) <> squote <> text (showHex' bv)
-            LVar _ sz n          -> pretty sz <> squote <> text ("$" <> showt n)
-            Concat _ e1 e2       -> ppBV $ gather e1 <> gather e2
+            Lit _ bv | width bv == 0         -> text "0'"
+                     | otherwise             -> pretty (width bv) <> squote <> text (showHex' bv)
+            LVar _ sz n                      -> pretty sz <> squote <> text ("$" <> showt n)
+            Concat _ e1 e2                   -> ppBV $ gather e1 <> gather e2
             Call _ sz f e ps els | isNil els -> nest 2 $ vsep
                   [ pretty sz <> squote <> text "case" <+> pretty e <+> text "of"
                   , braced (pretty <$> ps) <+> text "->" <+> pretty f
                   ]
-            Call _ sz f e ps els -> nest 2 $ vsep
+            Call _ sz f e ps els             -> nest 2 $ vsep
                   [ pretty sz <> squote <> text "case" <+> pretty e <+> text "of"
                   , braced (pretty <$> ps) <+> text "->" <+> pretty f
                   , text "_" <+> text "->" <+> pretty els
@@ -205,21 +198,6 @@ nil = Lit noAnn BV.nil
 
 isNil :: Exp -> Bool
 isNil e = sizeOf e <= 0
-
-isPure :: HashSet GId -> Exp -> Bool
-isPure m = \ case
-      Call _ _ (Extern (ExternSig _ _ c r _ _) _ _) a _ b
-                                -> T.null c && T.null r && pur a && pur b
-      Call _ _ (Global g) a _ b -> purG g && pur a && pur b
-      Call _ _ _ a _ b          -> pur a && pur b
-      Concat _ a b              -> pur a && pur b
-      LVar {}                   -> True
-      Lit {}                    -> True
-      where pur :: Exp -> Bool
-            pur = isPure m
-
-            purG :: GId -> Bool
-            purG = flip Set.member m
 
 ---
 
@@ -273,11 +251,9 @@ instance Pretty Wiring where
             , text "outputs" <+> ppWires (outputWires w)
             , text "states" <+> ppWires (stateWires w)
             ]
-            where ppWire :: (Name, Size) -> Doc a
-                  ppWire (n, s) = text n <> colon <+> pretty s
 
-                  ppWires :: [(Name, Size)] -> Doc a
-                  ppWires = braced . (ppWire <$>)
+ppWires :: [(Name, Size)] -> Doc a
+ppWires = text . showt
 
 ---
 
@@ -327,48 +303,5 @@ instance Pretty Device where
             , pretty loop
             , pretty state0
             ] <> map pretty defns
-
-type Uses   = Natural
-type IsPure = Bool
-
-defnMap :: Device -> HashMap GId (Exp, (Uses, IsPure))
-defnMap p@Device { loop, state0, defns } = foldl' defnInfo mempty defns'
-      where defnInfo :: HashMap GId (Exp, (Uses, IsPure)) -> Defn -> HashMap GId (Exp, (Uses, IsPure))
-            defnInfo m (Defn _ g _ e) = Map.insert g (e, (Map.findWithDefault 0 g uses, Set.member g pures)) m
-
-            uses :: HashMap GId Uses
-            uses = defnUses p
-
-            pures :: HashSet GId
-            pures = pureDefns p
-
-            defns' :: [Defn]
-            defns' = loop : state0 : defns
-
--- | Defns that do not require an implicit clock/reset.
-pureDefns :: Device -> HashSet GId
-pureDefns Device { loop, state0, defns } = fix' purity mempty
-      where purity :: HashSet GId -> HashSet GId
-            purity m = foldl' purity' m defns'
-
-            purity' :: HashSet GId -> Defn -> HashSet GId
-            purity' ps (Defn _ g _ e) = if isPure ps e then Set.insert g ps else ps
-
-            defns' :: [Defn]
-            defns' = loop : state0 : defns
-
-defnUses :: Device -> HashMap GId Uses
-defnUses Device { loop, state0, defns } = Map.fromList [(defnName loop, 1), (defnName state0, 1)]
-      <+> foldr (<+>) Map.empty (expUses . defnBody <$> state0 : loop : defns)
-      where expUses :: Exp -> HashMap GId Uses
-            expUses = \ case
-                  Concat _ e1 e2              -> expUses e1 <+> expUses e2
-                  Call _ _ (Global g) e _ els -> Map.singleton g 1 <+> expUses e <+> expUses els
-                  Call _ _ _          e _ els ->                       expUses e <+> expUses els
-                  _                           -> Map.empty
-
-            (<+>) :: HashMap GId Uses -> HashMap GId Uses -> HashMap GId Uses
-            (<+>) = Map.unionWith (+)
-
 ---
 
