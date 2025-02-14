@@ -7,14 +7,16 @@ module ReWire.FrontEnd
       ) where
 
 import ReWire.Annotation (unAnn, noAnn)
-import ReWire.Config (Config, Language (..), getOutFile, verbose, target, dump, cycles, inputsFile, source)
+import ReWire.Config (Config, Language (..), getOutFile, verbose, target, dump, cycles, inputsFile, source, rtlOpt)
 import ReWire.Core.Interp (interp, Ins, run)
 import ReWire.Core.Parse (parseCore)
 import ReWire.Core.Syntax (Device)
 import ReWire.Core.Transform (mergeSlices, purgeUnused, partialEval, dedupe)
 import ReWire.Error (MonadError, AstError, runSyntaxError, failAt)
+import ReWire.Fix (fixPure)
 import ReWire.ModCache (printHeader, runCache, getDevice, LoadPath)
 import ReWire.Pretty (Pretty, prettyPrint, fastPrint, showt)
+
 import qualified ReWire.Config         as Config
 import qualified ReWire.Core.Check     as Core
 import qualified ReWire.Core.Syntax    as Core
@@ -33,6 +35,7 @@ import Data.Text (pack)
 import Numeric.Natural (Natural)
 import System.Exit (exitFailure)
 import System.IO (stderr)
+
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Text.IO        as T
 import qualified Data.Yaml           as YAML
@@ -56,34 +59,35 @@ compileFile conf filename = do
 
             compile :: (MonadFail m, MonadError AstError m, MonadIO m) => Core.Device -> m ()
             compile a = do
-                  let b = ( mergeSlices
-                        >>> mergeSlices
-                        >>> partialEval
-                        >>> mergeSlices
-                        >>> dedupe
-                        >>> purgeUnused
-                        ) a
+                  let b = fixPure (conf^.rtlOpt) -- TODO: re-work these passes to avoid fix if possible
+                              ( mergeSlices
+                              >>> partialEval
+                              >>> mergeSlices
+                              >>> dedupe
+                              >>> purgeUnused
+                              ) a
+                  when (conf^.verbose)   $ liftIO $ T.putStrLn "Debug: Partially evaluating/reducing core IR. If this is taking too long, consider disabling with --rtl-opt=0."
                   when (conf^.verbose)   $ liftIO $ T.putStrLn "Debug: [Pass 14] Reduced core."
-                  when (conf^.dump $ 13) $ liftIO $ do
+                  when (conf^.dump $ 14) $ liftIO $ do
                         printHeader "[Pass 14] Reduced Core"
                         liftIO $ T.putStrLn $ prettyPrint b
                         when (conf^.verbose) $ do
                               liftIO $ T.putStrLn "\n## Show core:\n"
                               liftIO $ T.putStrLn $ showt $ unAnn b
+                  b' <- Core.check b
                   case conf^.target of
                         FIRRTL    -> liftIO $ T.putStrLn "FIRRTL backend currently out-of-order. Use '--verilog' or '--interpret'."
-                                     -- compileProgram flags b >>= toLoFirrtl >>= writeOutput
-                        VHDL      -> VHDL.compileProgram conf b >>= writeOutput
-                        RWCore    -> writeOutput b
+                        VHDL      -> VHDL.compileProgram conf b' >>= writeOutput
+                        RWCore    -> writeOutput b'
                         Interpret -> do
                               when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: Interpreting core: reading inputs: " <> pack (conf^.inputsFile)
                               ips  <- boundInput (conf^.cycles) . fromRight mempty <$> liftIO (YAML.decodeFileEither $ conf^.inputsFile)
                               when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: Interpreting core: running for " <> showt (conf^.cycles) <> " cycles."
-                              outs <- run conf (interp conf b) ips
+                              outs <- run conf (interp conf b') ips
                               let fout = getOutFile conf filename
                               when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: Interpreting core: done running; writing YAML output to file: " <> pack fout
                               liftIO $ YAML.encodeFile fout outs
-                        Verilog   -> Verilog.compileProgram conf b >>= writeOutput
+                        Verilog   -> Verilog.compileProgram conf b' >>= writeOutput
                         Haskell   -> failAt noAnn "Haskell is not a supported target language."
 
             writeOutput :: (MonadError AstError m, MonadIO m, Pretty a) => a -> m ()

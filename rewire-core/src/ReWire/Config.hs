@@ -9,7 +9,7 @@ module ReWire.Config
       , resetFlags, outFlags
       , inputSigs, stateSigs, outputSigs
       , vhdlPackages, inputsFile, outFile
-      , start, top, loadPath, cycles, depth, dump, source
+      , start, top, loadPath, cycles, depth, dump, source, typecheck, rtlOpt
       ) where
 
 import ReWire.Flags (Flag (..))
@@ -51,6 +51,8 @@ data Config = Config
       , _cycles       :: Natural
       , _depth        :: Natural
       , _dump         :: Natural -> Bool
+      , _typecheck    :: Bool
+      , _rtlOpt       :: Natural
       }
 
 makeLenses ''Config
@@ -75,6 +77,8 @@ defaultConfig = Config
       , _cycles       = 10
       , _depth        = 8
       , _dump         = const False
+      , _typecheck    = False
+      , _rtlOpt       = 8
       }
 
 verbose :: Lens' Config Bool
@@ -90,8 +94,8 @@ getOutFlag :: OutFlag -> Config -> Bool
 getOutFlag f conf = f `Set.member` (conf^.outFlags)
 
 setOutFlag :: OutFlag -> Config -> Bool -> Config
-setOutFlag f conf True  = over outFlags (Set.insert f) conf
-setOutFlag f conf False = over outFlags (Set.delete f) conf
+setOutFlag f conf ins | ins       = over outFlags (Set.insert f) conf
+                      | otherwise = over outFlags (Set.delete f) conf
 
 type ErrorMsg = Text
 
@@ -138,6 +142,8 @@ interpret = foldM interp defaultConfig
                   FlagTop (pack -> n)             -> pure $ top .~ n $ c
                   FlagCycles n                    -> pure $ cycles .~ read n $ c
                   FlagEvalDepth n                 -> pure $ depth .~ read n $ c
+                  FlagDebugTypeCheck              -> pure $ typecheck .~ True $ c
+                  FlagRtlOpt n                    -> pure $ rtlOpt .~ read n $ c
 
             augment :: [Natural] -> (Natural -> Bool) -> Natural -> Bool
             augment ns f n | n `elem` ns = True

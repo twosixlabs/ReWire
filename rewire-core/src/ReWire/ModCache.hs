@@ -12,11 +12,11 @@ module ReWire.ModCache
       ) where
 
 import ReWire.Annotation (Annotation, SrcSpanInfo, unAnn)
-import ReWire.Config (Config, verbose, dump, loadPath)
+import ReWire.Config (Config, verbose, dump, loadPath, typecheck)
 import ReWire.Crust.KindCheck (kindCheck)
-import ReWire.Crust.PrimBasis (addPrims)
+import ReWire.Crust.PrimBasis (addPrims, primDatas)
 import ReWire.Crust.Purify (purify)
-import ReWire.Crust.Syntax (FreeProgram, Defn (..), Module (Module), Exp, Ty, Kind, DataConId, TyConId, builtins, Program (Program), prettyFP)
+import ReWire.Crust.Syntax (FreeProgram, Defn (..), DataDefn (..), Module (Module), Exp, Ty, Kind, DataConId, TyConId, builtins, Program (Program), prettyFP)
 import ReWire.Crust.ToCore (toCore)
 import ReWire.Crust.Transform (removeMain, simplify, liftLambdas, purgeUnused, etaAbsDefs, shiftLambdas, neuterExterns, expandTypeSynonyms, inline, normalizeBind, elimCase)
 import ReWire.Crust.TypeCheck (typeCheck, untype)
@@ -27,7 +27,7 @@ import ReWire.HSE.Parse (tryParseInDir)
 import ReWire.HSE.Rename (Exports, Renamer, fromImps, allExports, toFilePath, fixFixity)
 import ReWire.HSE.ToCrust (extendWithGlobs, toCrust, getImps)
 import ReWire.Pretty (prettyPrint, prettyPrint', showt)
-import ReWire.Unbound (fv, trec, runFreshMT, FreshMT, Name)
+import ReWire.Unbound (fv, trec, runFreshMT, FreshMT, Name, Fresh, s2n)
 
 import Control.Lens ((^.))
 import Control.Arrow ((***))
@@ -91,17 +91,17 @@ getModule conf pwd fp = pDebug conf ("Fetching module: " <> pack fp <> " (pwd: "
 
             -- Phase 1 (haskell-src-exts) transformations.
             (m', exps) <- pure
-                      >=> pDebug' "Fixing fixity."
+                      >=> verb "Fixing fixity."
                       >=> lift . lift . fixFixity rn
-                      >=> pDebug' "Annotating."
+                      >=> verb "Annotating."
                       >=> pure . annotate
-                      >=> pDebug' "[Pass 1] Pre-desugaring."
+                      >=> verb "[Pass 1] Pre-desugaring."
                       >=> whenDump 1 (printInfoHSE "[Pass 1] Haskell: Pre-desugaring" rn imps)
-                      >=> pDebug' "Desugaring."
+                      >=> verb "Desugaring."
                       >=> desugar rn
-                      >=> pDebug' "[Pass 2] Post-desugaring."
+                      >=> verb "[Pass 2] Post-desugaring."
                       >=> whenDump 2 (printInfoHSE "[Pass 2] Haskell: Post-desugaring" rn imps)
-                      >=> pDebug' "Translating to crust."
+                      >=> verb "Translating to crust."
                       >=> toCrust rn
                       $ m
 
@@ -117,8 +117,8 @@ getModule conf pwd fp = pDebug conf ("Fetching module: " <> pack fp <> " (pwd: "
             whenDump :: Applicative m => Natural -> (Bool -> a -> m a) -> a -> m a
             whenDump n m = if (conf^.dump) n then m $ conf^.verbose else pure
 
-            pDebug' :: MonadIO m => Text -> a -> m a
-            pDebug' s a = pDebug conf (pack fp <> ": " <> s) >> pure a
+            verb :: MonadIO m => Text -> a -> m a
+            verb s a = pDebug conf (pack fp <> ": " <> s) >> pure a
 
             elideDot :: FilePath -> FilePath
             elideDot = \ case
@@ -131,54 +131,60 @@ getDevice conf fp = do
       (Module ts syns ds,  _)  <- getModule conf "." fp
 
       p <- pure
-       >=> pDebug' "[Pass 4] Adding primitives and inlining."
+       >=> verb "[Pass 4] Adding primitives and inlining."
        >=> whenDump 4 (printInfo "[Pass 4] Crust: Post-desugaring")
        >=> pure . addPrims
-       >=> pDebug' "Removing the Main.main definition (before attempting to typecheck it)."
+       >=> verb "Removing the Main.main definition (before attempting to typecheck it)."
        >=> pure . removeMain
        >=> inline
-       >=> pDebug' "Expanding type synonyms."
+       >=> verb "Expanding type synonyms."
        >=> expandTypeSynonyms
-       >=> pDebug' "[Pass 5] Post-inlining, before typechecking."
+       >=> verb "[Pass 5] Post-inlining, before typechecking."
        >=> whenDump 5 (printInfo "[Pass 5] Crust: Post-inlining")
-       >=> pDebug' "Typechecking."
+       >=> verb "Typechecking."
        >=> kindCheck >=> typeCheck start
-       >=> pDebug' "[Pass 6] Post-typechecking."
+       >=> verb "[Pass 6] Post-typechecking."
        >=> whenDump 6 (printInfo "[Pass 6] Crust: Post-typechecking")
-       >=> pDebug' "Removing Haskell definitions for externs."
+       >=> verb "Removing Haskell definitions for externs."
        >=> pure . neuterExterns
-       >=> pDebug' "Removing unused definitions (initial attempt)."
-       >=> pure . purgeUnused (start : (fst <$> builtins))
-       >=> pDebug' "[Pass 7] Pre-simplification."
+       >=> verb "Removing unused definitions (initial attempt)."
+       >=> purge >=> extraTC
+       >=> verb "[Pass 7] Pre-simplification."
        >=> whenDump 7 (printInfo "[Pass 7] Crust: Pre-simplify")
-       >=> pDebug' "Eliminating pattern bindings (case expressions)."
-       >=> elimCase
-       >=> pDebug' "Partially evaluating and reducing."
-       >=> simplify conf
-       >=> pDebug' "[Pass 8] Post-simplification."
+       >=> verb "Eliminating pattern bindings (case expressions)."
+       >=> elimCase >=> extraTC
+       >=> verb "Partially evaluating and reducing."
+       >=> simplify conf >=> extraTC
+       >=> verb "[Pass 8] Post-simplification."
        >=> whenDump 8 (printInfo "[Pass 8] Crust: Post-simplify")
-       >=> pDebug' "Normalize bind."
-       >=> normalizeBind
-       >=> pDebug' "[Pass 9] Post-bind-normalization."
+       >=> verb "Normalize bind."
+       >=> normalizeBind >=> extraTC
+       >=> verb "[Pass 9] Post-bind-normalization."
        >=> whenDump 9 (printInfo "[Pass 9] Crust: Post-bind-normalization")
-       >=> pDebug' "Lifting, shifting, eta-abstracting lambdas."
-       >=> liftLambdas >=> pure . purgeUnused (start : (fst <$> builtins))
-       >=> shiftLambdas >=> etaAbsDefs
-       >=> pDebug' "[Pass 10] Before purification."
+       >=> verb "Lifting, shifting, eta-abstracting lambdas."
+       >=> liftLambdas >=> purge >=> extraTC
+       >=> shiftLambdas >=> etaAbsDefs >=> extraTC
+       >=> verb "[Pass 10] Before purification."
        >=> whenDump 10 (printInfo "[Pass 10] Crust: Pre-purification")
-       >=> pDebug' "Purifying."
-       >=> purify start
-       >=> pDebug' "[Pass 11] Post-purification."
+       -- TODO: typechecking before or after purify seems to subtly effect
+       --       ordering of things.
+       -- >=> verb "Mystery round of type-checking/inference."
+       -- >=> kindCheck >=> typeCheck start
+       >=> verb "Purifying."
+       >=> purify start >=> extraTC
+       -- >=> verb "Mystery round of type-checking/inference."
+       -- >=> kindCheck >=> typeCheck start
+       >=> verb "[Pass 11] Post-purification."
        >=> whenDump 11 (printInfo "[Pass 11] Crust: Post-purification")
-       >=> pDebug' "Final lifting, shifting, eta-abstracting lambdas."
+       >=> verb "Final lifting, shifting, eta-abstracting lambdas."
        >=> liftLambdas >=> shiftLambdas >=> etaAbsDefs
-       >=> pDebug' "Final purging of unused definitions."
-       >=> pure . purgeUnused [start]
-       >=> pDebug' "[Pass 12] Pre-core."
+       >=> verb "Final purging of unused definitions."
+       >=> purgeAll
+       >=> verb "[Pass 12] Pre-core."
        >=> whenDump 12 (printInfo "[Pass 12] Crust: Pre-core")
-       >=> pDebug' "Translating to core & HDL."
+       >=> verb "Translating to core & HDL."
        >=> toCore conf start
-       >=> pDebug' "[Pass 13] Core."
+       >=> verb "[Pass 13] Core."
        $ (ts, syns, ds)
 
       when ((conf^.dump) 13) $ liftIO $ do
@@ -193,11 +199,21 @@ getDevice conf fp = do
       where whenDump :: Applicative m => Natural -> (Bool -> a -> m a) -> a -> m a
             whenDump n m = if (conf^.dump) n then m $ conf^.verbose else pure
 
-            pDebug' :: MonadIO m => Text -> a -> m a
-            pDebug' s a = pDebug conf s >> pure a
+            verb :: MonadIO m => Text -> a -> m a
+            verb s a = pDebug conf s >> pure a
 
-            start :: Text
-            start = conf^.C.start
+            start :: Name Exp
+            start = s2n $ conf^.C.start
+
+            extraTC :: (Fresh m, MonadIO m, MonadError AstError m) => FreeProgram -> m FreeProgram
+            extraTC | conf^.typecheck = verb "Type-checking again (--debug-typecheck)." >=> kindCheck >=> typeCheck start
+                    | otherwise       = pure
+
+            purge :: Applicative m => FreeProgram -> m FreeProgram
+            purge = pure . purgeUnused (start : (s2n . fst <$> builtins)) (dataName <$> primDatas)
+
+            purgeAll :: Applicative m => FreeProgram -> m FreeProgram
+            purgeAll = pure . purgeUnused [start] []
 
 pDebug :: MonadIO m => Config -> Text -> m ()
 pDebug conf s = when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: " <> s
