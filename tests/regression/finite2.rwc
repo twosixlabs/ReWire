@@ -1,0 +1,37 @@
+device top_level:
+
+inputs [("__in0",7)]
+outputs [("__out0",5)]
+states []
+
+$Pure.dispatch :: W7 -> W6
+$Pure.dispatch $0 = 6'case 7'$0 of
+    {7'@} -> Main.loop
+
+$Pure.start :: W6
+$Pure.start  = 6'h23
+
+$LL.Main.loop :: W5 -> W6
+$LL.Main.loop $0 = {1'h1, 5'$0}
+
+$LL.Main.loop2 :: W6 -> W6
+$LL.Main.loop2 $0 = 6'case 6'$0 of
+    {1'h0, 5'@} -> $LL.Main.loop
+
+Main.compute :: W7 -> W5
+Main.compute $0 = 5'case 128'case {128'case {128'case 5'case 128'case {128'case 7'case 7'$0 of
+                  {7'@} -> Resize of
+                {7'@} -> Resize
+              , 128'h00000000000000000000000000000014} of
+              {128'@, 128'@} -> Mod of
+            {128'@} -> Resize of
+          {5'@} -> Resize
+        , 128'h00000000000000000000000000000006} of
+        {128'@, 128'@} -> Add
+      , 128'h00000000000000000000000000000014} of
+      {128'@, 128'@} -> Mod of
+    {128'@} -> Resize
+
+Main.loop :: W7 -> W6
+Main.loop $0 = 6'case {1'h0, 5'case 7'$0 of {7'@} -> Main.compute} of
+    {6'@} -> $LL.Main.loop2

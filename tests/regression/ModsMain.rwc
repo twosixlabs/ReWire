@@ -1,0 +1,11 @@
+device top_level:
+
+inputs [("__in0",1)]
+outputs [("__out0",1)]
+states []
+
+$Pure.dispatch :: W1 -> W1
+$Pure.dispatch $0 = 1'h0
+
+$Pure.start :: W1
+$Pure.start  = 1'h0

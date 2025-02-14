@@ -1,0 +1,30 @@
+device top_level:
+
+inputs [("__in0",7)]
+outputs [("__out0",7)]
+states []
+
+$Pure.dispatch :: W1 -> W7 -> W8
+$Pure.dispatch $0 $1 = 8'case {7'$1, 1'$0} of
+    {7'@, 1'h1} -> $LL.Pure.dispatch
+    _ -> 8'case {7'$1, 1'$0} of
+      {7'@, 1'h0} -> $LL.Pure.dispatch
+
+$Pure.start :: W8
+$Pure.start  = 8'hc7
+
+$LL.Main.dev :: W7 -> W8
+$LL.Main.dev $0 = 8'case 7'case 128'case {128'case 7'case {7'case 7'$0 of {7'@} -> Resize, 7'h01} of
+            {7'@, 7'@} -> Add of
+          {7'@} -> Resize
+        , 128'h00000000000000000000000000000064} of
+        {128'@, 128'@} -> Mod of
+      {128'@} -> Resize of
+    {7'@} -> Main.dev
+
+$LL.Pure.dispatch :: W7 -> W8
+$LL.Pure.dispatch $0 = 8'case 7'$0 of
+    {7'@} -> $LL.Main.dev
+
+Main.dev :: W7 -> W8
+Main.dev $0 = {7'$0, 1'h0}
