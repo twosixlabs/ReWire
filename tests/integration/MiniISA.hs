@@ -140,10 +140,10 @@ lsbW8    :: W8 -> Bit
 lsbW8    =  extern "prim_lsbW8" lsbW8
 
 mkReg :: Bit -> Bit -> Register
-mkReg  C  C = R0
-mkReg  C  S  = R1
-mkReg  S   C = R2
-mkReg  S   S  = R3
+mkReg C C = R0
+mkReg C S = R1
+mkReg S C = R2
+mkReg S S = R3
 
 {-# INLINE when #-}
 when :: Monad m => Bit -> m () -> m ()
@@ -652,32 +652,32 @@ loop = do
                   case (ie,intIn inp) of
                         { (S,S) -> interrupt
                         ; _         -> case dataIn inp of
-                                    { W8 C C C C  rEn  wEn   b0   b1 -> mem rEn wEn (mkReg b0 b1)
-                                    ; W8 C C C  S   b0   b1   c0   c1 -> ld (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8 C C  S C   b0   b1   c0   c1 -> st (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8 C C  S  S   b0   b1   c0   c1 -> add (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8 C  S C C   b0   b1   c0   c1 -> addc (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8 C  S C  S   b0   b1   c0   c1 -> sub (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8 C  S  S C   b0   b1   c0   c1 -> subb (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8 C  S  S  S   b0   b1   c0   c1 -> mov (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8  S C C C   b0   b1   c0   c1 -> or' (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8  S C C  S   b0   b1   c0   c1 -> and' (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8  S C  S C   b0   b1   c0   c1 -> xor (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8  S C  S  S   b0   b1   c0   c1 -> cmp (mkReg b0 b1) (mkReg c0 c1)
-                                    ; W8  S  S C C C C   b0   b1 -> brz (mkReg b0 b1)
-                                    ; W8  S  S C C C  S   b0   b1 -> brnz (mkReg b0 b1)
-                                    ; W8  S  S C C  S C   b0   b1 -> brc (mkReg b0 b1)
-                                    ; W8  S  S C C  S  S   b0   b1 -> brnc (mkReg b0 b1)
-                                    ; W8  S  S C  S C C   b0   b1 -> jmp (mkReg b0 b1)
-                                    ; W8  S  S C  S C  S C   b0 -> ien b0
-                                    ; W8  S  S C  S C  S  S C -> iack
-                                    ; W8  S  S C  S C  S  S  S -> iret
-                                    ; W8  S  S C  S  S C   b0   b1 -> not' (mkReg b0 b1)
-                                    ; W8  S  S C  S  S  S   b0   b1 -> clrr (mkReg b0 b1)
-                                    ; W8  S  S  S C C C   b0   b1 -> incr (mkReg b0 b1)
-                                    ; W8  S  S  S C C  S   b0   b1 -> decr (mkReg b0 b1)
-                                    ; W8  S  S  S C  S    d   b0   b1 -> rot d (mkReg b0 b1)
-                                    ; W8  S  S  S  S    l    d   b0   b1 -> shft l d (mkReg b0 b1)
+                                    { W8 C C C C rEn wEn b0 b1 -> mem rEn wEn (mkReg b0 b1)
+                                    ; W8 C C C S b0  b1  c0 c1 -> ld (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 C C S C b0  b1  c0 c1 -> st (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 C C S S b0  b1  c0 c1 -> add (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 C S C C b0  b1  c0 c1 -> addc (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 C S C S b0  b1  c0 c1 -> sub (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 C S S C b0  b1  c0 c1 -> subb (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 C S S S b0  b1  c0 c1 -> mov (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 S C C C b0  b1  c0 c1 -> or' (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 S C C S b0  b1  c0 c1 -> and' (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 S C S C b0  b1  c0 c1 -> xor (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 S C S S b0  b1  c0 c1 -> cmp (mkReg b0 b1) (mkReg c0 c1)
+                                    ; W8 S S C C C   C   b0 b1 -> brz (mkReg b0 b1)
+                                    ; W8 S S C C C   S   b0 b1 -> brnz (mkReg b0 b1)
+                                    ; W8 S S C C S   C   b0 b1 -> brc (mkReg b0 b1)
+                                    ; W8 S S C C S   S   b0 b1 -> brnc (mkReg b0 b1)
+                                    ; W8 S S C S C   C   b0 b1 -> jmp (mkReg b0 b1)
+                                    ; W8 S S C S C   S   C  b0 -> ien b0
+                                    ; W8 S S C S C   S   S  C  -> iack
+                                    ; W8 S S C S C   S   S  S  -> iret
+                                    ; W8 S S C S S   C   b0 b1 -> not' (mkReg b0 b1)
+                                    ; W8 S S C S S   S   b0 b1 -> clrr (mkReg b0 b1)
+                                    ; W8 S S S C C   C   b0 b1 -> incr (mkReg b0 b1)
+                                    ; W8 S S S C C   S   b0 b1 -> decr (mkReg b0 b1)
+                                    ; W8 S S S C S   d   b0 b1 -> rot d (mkReg b0 b1)
+                                    ; W8 S S S S l   d   b0 b1 -> shft l d (mkReg b0 b1)
                                     ; _                                          -> reset
                                     }
                         }
