@@ -48,7 +48,8 @@ mkBV :: Integral v => Size -> v -> BV
 mkBV sz = bitVec (fromIntegral sz)
 
 subRange :: (Index, Index) -> BV -> BV
-subRange (i, j) b = b @@ (j, i)
+subRange (i, j) b | j - i >= 0 = b @@ (j, i)
+                  | otherwise  = bitVec 0 (0 :: Integer)
 
 type Out = BV
 type Ins = HashMap Name Value
