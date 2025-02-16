@@ -25,17 +25,16 @@ extra-source-files:
 data-files:
     tests/integration/InlinedMiniISA.hs
     tests/integration/MiniISA.hs
-    tests/integration/OD19Filter.hs
-    tests/integration/RW_REPL_OD19Filter.hs
     tests/integration/SecMemCon.hs
-    tests/integration/Sha256_1.hs
     tests/integration/Sha256_2.hs
-    tests/integration/OD19/ProgramCounter.hs
     tests/regression/Mods/Infix.hs
     tests/regression/Mods/X.hs
     tests/regression/Mods/Y.hs
+    tests/regression/OD19/ProgramCounter.hs
     tests/regression/Mods/C/X.hs
+    tests/regression/verilog/filterprims.sv
     tests/regression/verilog/mymod.sv
+    tests/regression/verilog/w32ops.sv
     tests/regression/case1.hs
     tests/regression/case2.hs
     tests/regression/dependencyGraph.hs
@@ -57,6 +56,7 @@ data-files:
     tests/regression/iterSt.hs
     tests/regression/matchBind.hs
     tests/regression/ModsMain.hs
+    tests/regression/OD19Filter.hs
     tests/regression/onestate.hs
     tests/regression/PackUnpack.hs
     tests/regression/pats.hs
@@ -66,6 +66,8 @@ data-files:
     tests/regression/pvartype.hs
     tests/regression/react.hs
     tests/regression/records.hs
+    tests/regression/RW_REPL_OD19Filter.hs
+    tests/regression/Sha256_1.hs
     tests/regression/sigNothing.hs
     tests/regression/state.hs
     tests/regression/state0.hs
@@ -110,6 +112,7 @@ data-files:
     tests/regression/iterSt.sv
     tests/regression/matchBind.sv
     tests/regression/ModsMain.sv
+    tests/regression/OD19Filter.sv
     tests/regression/onestate.sv
     tests/regression/PackUnpack.sv
     tests/regression/pats.sv
@@ -119,6 +122,8 @@ data-files:
     tests/regression/pvartype.sv
     tests/regression/react.sv
     tests/regression/records.sv
+    tests/regression/RW_REPL_OD19Filter.sv
+    tests/regression/Sha256_1.sv
     tests/regression/sigNothing.sv
     tests/regression/state.sv
     tests/regression/state0.sv
@@ -163,6 +168,7 @@ data-files:
     tests/regression/iterSt.rwc
     tests/regression/matchBind.rwc
     tests/regression/ModsMain.rwc
+    tests/regression/OD19Filter.rwc
     tests/regression/onestate.rwc
     tests/regression/PackUnpack.rwc
     tests/regression/pats.rwc
@@ -172,6 +178,8 @@ data-files:
     tests/regression/pvartype.rwc
     tests/regression/react.rwc
     tests/regression/records.rwc
+    tests/regression/RW_REPL_OD19Filter.rwc
+    tests/regression/Sha256_1.rwc
     tests/regression/sigNothing.rwc
     tests/regression/state.rwc
     tests/regression/state0.rwc

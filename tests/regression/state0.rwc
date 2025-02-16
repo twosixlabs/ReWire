@@ -6,44 +6,44 @@ states []
 
 $Pure.dispatch :: W6 -> W3 -> W10
 $Pure.dispatch $0 $1 = 10'case {3'$1, 6'$0} of
-    {3'@, 3'h1, 3'@} -> $LL.Pure.dispatch1
+    {3'_, 3'h1, 3'_} -> 10'h018
     _ -> 10'case {3'$1, 6'$0} of
-      {3'_, 3'h2, 3'_} -> 10'h220
+      {3'@, 3'h2, 3'_} -> $LL.Pure.dispatch1
       _ -> 10'case {3'$1, 6'$0} of
-        {3'_, 3'h3, 3'_} -> 10'h010
+        {3'_, 3'h3, 3'_} -> 10'h210
         _ -> 10'case {3'$1, 6'$0} of
-          {3'@, 3'h4, 3'_} -> $LL.Pure.dispatch5
+          {3'@, 3'h4, 3'@} -> $LL.Pure.dispatch4
           _ -> 10'case {3'$1, 6'$0} of
             {3'@, 3'h0, 3'@} -> $LL.Pure.dispatch3
 
 $Pure.start :: W10
-$Pure.start  = 10'h018
+$Pure.start  = 10'h008
 
 $LL.Main.dev3 :: W3 -> W3 -> W10
-$LL.Main.dev3 $0 $1 = {7'h00, 3'$0}
+$LL.Main.dev3 $0 $1 = {7'h04, 3'$0}
 
 $LL.Pure.dispatch6 :: W3 -> W3 -> W10
 $LL.Pure.dispatch6 $0 $1 = 10'case {3'$1, 3'$0} of
+    {3'@, 3'@} -> $LL.Main.dev3
+
+$LL.Pure.dispatch5 :: W3 -> W3 -> W10
+$LL.Pure.dispatch5 $0 $1 = 10'case {3'$1, 3'$0} of
     {3'@, 3'@} -> $LL.Main.dev
 
-$LL.Pure.dispatch5 :: W3 -> W10
-$LL.Pure.dispatch5 $0 = 10'case 3'$0 of
-    {3'@} -> Main.dev1
+$LL.Pure.dispatch4 :: W3 -> W3 -> W10
+$LL.Pure.dispatch4 $0 $1 = 10'case {3'$0, 3'$1} of
+    {3'@, 3'@} -> $LL.Pure.dispatch5
 
 Main.dev1 :: W3 -> W10
-Main.dev1 $0 = {7'h01, 3'$0}
+Main.dev1 $0 = {7'h00, 3'$0}
 
 $LL.Pure.dispatch3 :: W3 -> W3 -> W10
 $LL.Pure.dispatch3 $0 $1 = 10'case {3'$0, 3'$1} of
     {3'@, 3'@} -> $LL.Pure.dispatch6
 
-$LL.Pure.dispatch1 :: W3 -> W3 -> W10
-$LL.Pure.dispatch1 $0 $1 = 10'case {3'$0, 3'$1} of
-    {3'@, 3'@} -> $LL.Pure.dispatch
-
-$LL.Pure.dispatch :: W3 -> W3 -> W10
-$LL.Pure.dispatch $0 $1 = 10'case {3'$1, 3'$0} of
-    {3'@, 3'@} -> $LL.Main.dev3
-
 $LL.Main.dev :: W3 -> W3 -> W10
-$LL.Main.dev $0 $1 = {1'h1, 3'$0, 6'h20}
+$LL.Main.dev $0 $1 = {1'h1, 3'$0, 6'h10}
+
+$LL.Pure.dispatch1 :: W3 -> W10
+$LL.Pure.dispatch1 $0 = 10'case 3'$0 of
+    {3'@} -> Main.dev1

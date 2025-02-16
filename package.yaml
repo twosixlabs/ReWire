@@ -32,8 +32,8 @@ extra-source-files:
 - README.md
 data-files:
 - tests/integration/*.hs
-- tests/integration/OD19/*.hs
 - tests/regression/Mods/*.hs
+- tests/regression/OD19/*.hs
 - tests/regression/Mods/C/*.hs
 - tests/regression/verilog/*.sv
 - tests/regression/*.hs

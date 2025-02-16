@@ -11,10 +11,10 @@ $Pure.dispatch $0 $1 = 8'case {7'$1, 1'$0} of
       {7'@, 1'h0} -> $LL.Pure.dispatch1
 
 $Pure.start :: W8
-$Pure.start  = 8'hc7
+$Pure.start  = 8'hc6
 
 Main.dev1 :: W7 -> W8
-Main.dev1 $0 = {7'$0, 1'h0}
+Main.dev1 $0 = {7'$0, 1'h1}
 
 $LL.Main.dev1 :: W7 -> W8
 $LL.Main.dev1 $0 = 8'case 7'case 128'case {128'case 7'case {7'case 7'$0 of {7'@} -> Resize, 7'h01} of

@@ -16,10 +16,10 @@ module top_level (input logic [0:0] clk,
   assign zll_pure_dispatch1_inR1 = {__in0, {__resumption_tag, __st0}};
   ZLL_Pure_dispatch1  instR1 (zll_pure_dispatch1_inR1[2], zll_pure_dispatch1_inR1[0], zll_pure_dispatch1_outR1);
   assign {__continue, __out0, __resumption_tag_next, __st0_next} = (zll_pure_dispatch1_inR1[1] == 1'h1) ? zll_pure_dispatch1_outR1 : zll_pure_dispatch1_out;
-  initial {__resumption_tag, __st0} <= 2'h0;
+  initial {__resumption_tag, __st0} <= 2'h2;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      {__resumption_tag, __st0} <= 2'h0;
+      {__resumption_tag, __st0} <= 2'h2;
     end else begin
       {__resumption_tag, __st0} <= {__resumption_tag_next, __st0_next};
     end
@@ -31,5 +31,5 @@ module ZLL_Pure_dispatch1 (input logic [0:0] arg0,
   output logic [3:0] res);
   logic [1:0] lit_in;
   assign lit_in = {arg0, arg1};
-  assign res = 4'ha;
+  assign res = 4'h8;
 endmodule

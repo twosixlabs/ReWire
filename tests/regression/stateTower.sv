@@ -57,7 +57,7 @@ module top_level (input logic [0:0] clk,
   ReWire_Prelude_not1  instR1 (rewire_prelude_not1_inR1[0], rewire_prelude_not1_outR1);
   assign zll_main_sig70_in = {main_sig_in[1], main_sig_in[0], rewire_prelude_not1_outR1};
   assign zll_main_sig67_in = {zll_main_sig70_in[2], zll_main_sig70_in[1]};
-  assign zll_main_sig82_in = {3'h0, zll_main_sig67_in[1], zll_main_sig67_in[0]};
+  assign zll_main_sig82_in = {3'h2, zll_main_sig67_in[1], zll_main_sig67_in[0]};
   assign zll_main_sig63_in = zll_main_sig82_in[4:0];
   assign zll_main_sig49_in = {zll_main_sig63_in[1], zll_main_sig63_in[0]};
   assign zll_main_sig36_in = {zll_main_sig49_in[1], zll_main_sig49_in[1], zll_main_sig49_in[0]};
@@ -109,7 +109,7 @@ module ZLL_Main_sig113 (input logic [2:0] arg0,
   logic [2:0] zll_main_sig83_in;
   assign zll_main_sig78_in = arg0;
   assign zll_main_sig83_in = {zll_main_sig78_in[1], zll_main_sig78_in[2], zll_main_sig78_in[0]};
-  assign res = {2'h1, zll_main_sig83_in[1], zll_main_sig83_in[2], zll_main_sig83_in[0]};
+  assign res = {2'h0, zll_main_sig83_in[1], zll_main_sig83_in[2], zll_main_sig83_in[0]};
 endmodule
 
 module ZLL_Main_sig100 (input logic [4:0] arg0,
@@ -132,12 +132,12 @@ module ZLL_Main_sig65 (input logic [1:0] arg0,
   output logic [4:0] res);
   logic [1:0] zll_main_sig87_in;
   assign zll_main_sig87_in = arg0;
-  assign res = {3'h0, zll_main_sig87_in[1], zll_main_sig87_in[0]};
+  assign res = {3'h2, zll_main_sig87_in[1], zll_main_sig87_in[0]};
 endmodule
 
 module ZLL_Main_sig36 (input logic [2:0] arg0,
   output logic [4:0] res);
   logic [2:0] zll_main_sig95_in;
   assign zll_main_sig95_in = arg0;
-  assign res = {2'h1, zll_main_sig95_in[2], zll_main_sig95_in[1], zll_main_sig95_in[0]};
+  assign res = {2'h0, zll_main_sig95_in[2], zll_main_sig95_in[1], zll_main_sig95_in[0]};
 endmodule

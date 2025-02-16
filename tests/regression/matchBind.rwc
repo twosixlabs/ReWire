@@ -6,14 +6,14 @@ states [("__st0",8)]
 
 $Pure.dispatch :: W10 -> W8 -> W19
 $Pure.dispatch $0 $1 = 19'case {8'$1, 10'$0} of
-    {8'@, 2'h1, 8'@} -> $LL.Pure.dispatch2
+    {8'@, 2'h1, 8'@} -> $LL.Pure.dispatch
     _ -> 19'case {8'$1, 10'$0} of
-      {8'@, 2'h2, 8'@} -> $LL.Pure.dispatch1
+      {8'@, 2'h2, 8'@} -> $LL.Pure.dispatch2
       _ -> 19'case {8'$1, 10'$0} of
         {8'@, 2'h0, 8'@} -> $LL.Pure.dispatch2
 
 $Pure.start :: W19
-$Pure.start  = 19'h40200
+$Pure.start  = 19'h40100
 
 $LL.Main.reset18 :: W8 -> W19
 $LL.Main.reset18 $0 = {11'h200, 8'$0}
@@ -82,16 +82,16 @@ $LL.Main.loop8 :: W8 -> W19
 $LL.Main.loop8 $0 = 19'case 8'$0 of
     {8'@} -> $LL.Main.loop5
 
-$LL.Pure.dispatch1 :: W8 -> W8 -> W19
-$LL.Pure.dispatch1 $0 $1 = 19'case {8'$0, 8'$1} of
-    {8'@, 8'@} -> $LL.Main.reset14
-
 $LL.Main.loop5 :: W8 -> W19
-$LL.Main.loop5 $0 = {11'h409, 8'$0}
+$LL.Main.loop5 $0 = {11'h40a, 8'$0}
 
 $LL.Main.loop4 :: W16 -> W19
 $LL.Main.loop4 $0 = 19'case 16'$0 of
     {8'@, 8'@} -> $LL.Main.loop
+
+$LL.Pure.dispatch :: W8 -> W8 -> W19
+$LL.Pure.dispatch $0 $1 = 19'case {8'$0, 8'$1} of
+    {8'@, 8'@} -> $LL.Main.reset14
 
 $LL.Main.loop :: W8 -> W8 -> W19
 $LL.Main.loop $0 $1 = {3'h0, 8'$0, 8'$1}

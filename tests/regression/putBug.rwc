@@ -11,8 +11,8 @@ $Pure.dispatch $0 $1 = 4'case {1'$1, 2'$0} of
       {1'@, 1'h0, 1'@} -> $LL.Pure.dispatch1
 
 $Pure.start :: W4
-$Pure.start  = 4'h8
+$Pure.start  = 4'ha
 
 $LL.Pure.dispatch1 :: W1 -> W1 -> W4
 $LL.Pure.dispatch1 $0 $1 = 4'case {1'$0, 1'$1} of
-    {2'_} -> 4'ha
+    {2'_} -> 4'h8
