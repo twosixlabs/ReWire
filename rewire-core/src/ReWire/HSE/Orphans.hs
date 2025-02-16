@@ -7,12 +7,19 @@ module ReWire.HSE.Orphans () where
 
 import ReWire.Pretty (TextShow (showbPrec), genericShowbPrec)
 
+import Data.Hashable (Hashable)
+import GHC.Generics (Generic (..))
 import Language.Haskell.Exts.Fixity (Fixity (..))
 import Language.Haskell.Exts.SrcLoc (SrcSpan, SrcSpanInfo)
 import Language.Haskell.Exts.Syntax
 
-import GHC.Generics (Generic (..))
-
+instance Hashable (Boxed)
+instance Hashable a => Hashable (SpecialCon a)
+instance Hashable a => Hashable (Name a)
+instance Hashable a => Hashable (ModuleName a)
+instance Hashable a => Hashable (QName a)
+instance Hashable a => Hashable (Assoc a)
+instance Hashable Fixity
 deriving instance Generic Fixity
 
 instance TextShow Fixity where

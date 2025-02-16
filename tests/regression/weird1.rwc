@@ -6,10 +6,10 @@ states [("__st0",1),("__st1",1)]
 
 $Pure.dispatch :: W2 -> W1 -> W3
 $Pure.dispatch $0 $1 = 3'case {1'$1, 2'$0} of
-    {1'@, 2'@} -> Main.repl
+    {1'@, 2'@} -> Main.repl1
 
 $Pure.start :: W3
 $Pure.start  = 3'h0
 
-Main.repl :: W1 -> W2 -> W3
-Main.repl $0 $1 = {1'h0, 2'$1}
+Main.repl1 :: W1 -> W2 -> W3
+Main.repl1 $0 $1 = {1'h0, 2'$1}

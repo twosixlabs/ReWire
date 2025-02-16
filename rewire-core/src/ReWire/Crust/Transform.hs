@@ -31,24 +31,24 @@ import ReWire.Fix (fix, fix', boundedFix)
 import ReWire.SYB (transform, transformM, query)
 import ReWire.Unbound (freshVar, fv, Fresh (fresh), s2n, n2s, substs, subst, unembed, isFreeName, runFreshM, Name (..), unsafeUnbind, bind, unbind, Subst (..), Alpha, Embed (Embed), Bind, trec)
 
-import Control.Lens ((^.))
 import Control.Arrow ((&&&))
+import Control.Lens ((^.))
 import Control.Monad (liftM2, foldM, foldM_, zipWithM, (>=>))
 import Control.Monad.State (MonadState, evalStateT, execState, StateT (..), get, gets, modify)
 import Data.Containers.ListUtils (nubOrd)
 import Data.Data (Data)
 import Data.Either (lefts)
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet, union, difference)
 import Data.Hashable (Hashable (hash))
 import Data.List (find, sort)
 import Data.Maybe (catMaybes, isNothing)
-import Data.Set (Set, union, (\\))
 import Data.Text (Text, isPrefixOf)
 import Data.Tuple (swap)
 
-import qualified Data.Text as Text
+import qualified Data.Text           as Text
 import qualified Data.HashMap.Strict as Map
-import qualified Data.Set as Set
+import qualified Data.HashSet        as Set
 
 -- | Removes the Main.main function definition, which is unused by rwc.
 removeMain :: FreeProgram -> FreeProgram
@@ -172,10 +172,10 @@ normalizeBind (ts, syns, ds) = (ts, syns, ) <$> (uncurry (<>) <$> runStateT (map
       where ppDefn :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Defn -> m Defn
             ppDefn d@Defn { defnName = dn, defnBody = Embed e } = do
                   (xs, e') <- unbind e
-                  e''      <- ppExp (n2s dn) xs e'
+                  e''      <- ppExp (n2s dn) (Set.fromList xs) e'
                   pure $ d { defnBody = Embed (bind xs e'') }
 
-            ppExp :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Text -> [Name Exp] -> Exp -> m Exp
+            ppExp :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Text -> HashSet (Name Exp) -> Exp -> m Exp
             ppExp dn bvs = \ case
                   -- Bind: associate to the right (case with a lambda on the right).
                   -- > (ma >>= \ a -> mb) >>= fb
@@ -230,10 +230,10 @@ normalizeBind (ts, syns, ds) = (ts, syns, ) <$> (uncurry (<>) <$> runStateT (map
                   App an tan t e1 e2 -> App an tan t <$> ppExp' e1 <*> ppExp' e2
                   Lam an tan t  e -> do
                         (x, e') <- unbind e
-                        Lam an tan t . bind x <$> ppExp dn (bvs <> [x]) e'
+                        Lam an tan t . bind x <$> ppExp dn (Set.insert x bvs) e'
                   Case an tan t disc e els -> do
                         (p, e') <- unbind e
-                        Case an tan t <$> ppExp' disc <*> (bind p <$> ppExp dn (bvs <> (snd <$> patVars p)) e') <*> mapM ppExp'  els
+                        Case an tan t <$> ppExp' disc <*> (bind p <$> ppExp dn ((Set.fromList (snd <$> patVars p)) <> bvs) e') <*> mapM ppExp'  els
                   Match an tan t disc p e els -> Match an tan t <$> ppExp' disc <*> pure p <*> ppExp' e <*> mapM ppExp' els
                   LitList an tan t es         -> LitList an tan t <$> mapM ppExp' es
                   LitVec an tan t es          -> LitVec an tan t <$> mapM ppExp' es
@@ -335,18 +335,18 @@ liftLambdas (ts, syns, ds) = (ts, syns,) . uncurry (<>) <$> runStateT (mapM llDe
 llDefn :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Defn -> m Defn
 llDefn d@Defn { defnName = dn, defnBody = Embed e } = do
       (bvs, e') <- unbind e
-      e''       <- llDefnBody (n2s dn) bvs e'
+      e''       <- llDefnBody (n2s dn) (Set.fromList bvs) e'
       pure $ d { defnBody = Embed (bind bvs e'') }
 
-      where llDefnBody :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> [Name Exp] -> Exp -> m Exp
+      where llDefnBody :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> HashSet (Name Exp) -> Exp -> m Exp
             llDefnBody dn bvs = \ case
                   Lam an pt t e -> do
                         (v, e') <- unbind e
-                        e''     <- llDefnBody dn (bvs <> [v]) e'
+                        e''     <- llDefnBody dn (Set.insert v bvs) e'
                         pure $ Lam an pt t $ bind v e''
                   e             -> llExp dn bvs e
 
-llExp :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Text -> [Name Exp] -> Exp -> m Exp
+llExp :: (MonadState [Defn] m, MonadError AstError m, Fresh m) => Text -> HashSet (Name Exp) -> Exp -> m Exp
 llExp dn bvs =  \ case
       Lam an tan t b -> do
             (x, b') <- unbind b
@@ -357,7 +357,7 @@ llExp dn bvs =  \ case
                         , x == x'
                         , x `notElem` fv e1 -> llExp' e1
                   _                         -> do
-                        b'' <- llExp dn (bvs <> [x]) b'
+                        b'' <- llExp dn (Set.insert x bvs) b'
                         lift' $ Lam an tan t $ bind x b''
 
       -- Lifts anything other than a Var in the first Match branch. This case
@@ -388,9 +388,9 @@ llExp dn bvs =  \ case
 
 -- | Lifts an expression to a definition and returns an application (to pass
 --   any free variables). Argument is a list of non-global free variables.
-lift :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> [Name Exp] -> Exp -> m Exp
+lift :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> HashSet (Name Exp) -> Exp -> m Exp
 lift dn bvs e | Just t  <- typeOf e, not $ isGlobal e = do
-      fvs    <- filter ((`elem` bvs) . snd) <$> freevars e
+      fvs    <- filter ((`Set.member` bvs) . snd) <$> freevars e
       let t'  = foldr arr t $ fst <$> fvs
           an  = ann e
       f      <- freshVar $ prefix dn
@@ -415,7 +415,7 @@ lift dn bvs e | Just t  <- typeOf e, not $ isGlobal e = do
 
             isGlobal :: Exp -> Bool
             isGlobal = \ case
-                  Var _ _ _ n -> n `notElem` bvs
+                  Var _ _ _ n -> not (n `Set.member` bvs)
                   _           -> False
 
             prefix :: Text -> Text
@@ -434,20 +434,20 @@ purgeUnused except exceptTs (ts, syns, vs) = (inuseData (fix' extendWithCtorPara
             vs' = inuseDefn except vs
 
             inuseDefn :: [Name Exp] -> [Defn] -> [Defn]
-            inuseDefn except ds = map toDefn $ Set.elems $ execState (inuseDefn' ds') ds'
-                  where inuseDefn' :: MonadState (Set (Name Exp)) m => Set (Name Exp) -> m ()
+            inuseDefn except ds = map toDefn $ Set.toList $ execState (inuseDefn' ds') ds'
+                  where inuseDefn' :: MonadState (HashSet (Name Exp)) m => HashSet (Name Exp) -> m ()
                         inuseDefn' ns | Set.null ns = pure () -- TODO(chathhorn): rewrite using fix?
                                       | otherwise   = do
                               inuse  <- get
                               modify $ union $ fvs ns
                               inuse' <- get
-                              inuseDefn' $ inuse' \\ inuse
+                              inuseDefn' $ inuse' `difference` inuse
 
-                        ds' :: Set (Name Exp)
-                        ds' = Set.fromList $ filter (flip elem except) $ map defnName ds
+                        ds' :: HashSet (Name Exp)
+                        ds' = Set.fromList $ filter (`elem` except) $ map defnName ds
 
-                        fvs :: Set (Name Exp) -> Set (Name Exp)
-                        fvs = Set.fromList . concatMap (fv . unembed . defnBody . toDefn) . Set.elems
+                        fvs :: HashSet (Name Exp) -> HashSet (Name Exp)
+                        fvs = Set.fromList . concatMap (fv . unembed . defnBody . toDefn) . Set.toList
 
                         toDefn :: Name Exp -> Defn
                         toDefn n | Just d <- find ((== n) . defnName) ds = d
@@ -693,3 +693,4 @@ reduceExp = \ case
                         _                                          -> MatchMaybe
                   MatchPatVar {}              -> MatchYes [(s2n "$matchVar", e)]
                   MatchPatWildCard {}         -> MatchYes []
+

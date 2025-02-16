@@ -14,16 +14,16 @@ import ReWire.Unbound (freshVar, Fresh, s2n, n2s, bind, Name, Embed (Embed), unb
 
 import Control.Arrow (first, second, (&&&))
 import Control.Monad ((>=>))
-import Control.Monad.State
+import Control.Monad.State (MonadState, StateT (runStateT), modify, get)
 import Data.Bool (bool)
 import Data.Either (partitionEithers)
+import Data.HashSet (HashSet, singleton, insert)
 import Data.List (find, isSuffixOf)
-import Data.Map.Strict (Map)
+import Data.HashMap.Strict (HashMap)
 import Data.Maybe (fromMaybe, catMaybes)
-import Data.Set (Set, singleton, insert)
 import Data.Text (Text)
 
-import qualified Data.Map.Strict as Map
+import qualified Data.HashMap.Strict as Map
 
 atMay :: (Eq i, Num i) => [a] -> i -> Maybe a
 atMay []       _ = Nothing
@@ -44,7 +44,7 @@ projDefnTy Defn { defnPolyTy = Embed t } = poly2Ty t
 -- calculating types that could be inferred.
 
 -- | Transforms functions in state and resumption monads into plain first-order functions.
-purify :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Name Exp -> FreeProgram -> m FreeProgram
+purify :: (Fresh m, MonadError AstError m, MonadFail m) => Name Exp -> FreeProgram -> m FreeProgram
 purify start (ts, syns, ds) = do
       (smds, notSmds)     <- partitionEithers <$> mapM isStateMonadicDefn ds
       (rmds, ods)         <- partitionEithers <$> mapM isReacMonadicDefn notSmds
@@ -78,15 +78,15 @@ purify start (ts, syns, ds) = do
            , mkStart start i o ms : disp : ods <> pure_smds <> pure_rmds
            )
 
-      where getCanonReacTy :: Fresh m => [Defn] -> m (Maybe (Ty, Ty, [Ty], Set Ty))
+      where getCanonReacTy :: Fresh m => [Defn] -> m (Maybe (Ty, Ty, [Ty], HashSet Ty))
             getCanonReacTy = (getCanonReacTy' . catMaybes <$>) . mapM (projDefnTy >=> pure . dstReacT . codomTy)
 
-            getCanonReacTy' :: [(Ty, Ty, [Ty], Ty)] -> Maybe (Ty, Ty, [Ty], Set Ty)
+            getCanonReacTy' :: [(Ty, Ty, [Ty], Ty)] -> Maybe (Ty, Ty, [Ty], HashSet Ty)
             getCanonReacTy' = \ case
                   []                  -> Nothing
                   (i, o, ms, a) : rs  -> foldr mergeReacTys (Just (i, o, ms, singleton a)) rs
 
-            mergeReacTys :: (Ty, Ty, [Ty], Ty) -> Maybe (Ty, Ty, [Ty], Set Ty) -> Maybe (Ty, Ty, [Ty], Set Ty)
+            mergeReacTys :: (Ty, Ty, [Ty], Ty) -> Maybe (Ty, Ty, [Ty], HashSet Ty) -> Maybe (Ty, Ty, [Ty], HashSet Ty)
             mergeReacTys (i, o, ms, a) = \ case
                   Just (i', o', ms', a')
                         | length ms >= length ms'
@@ -234,7 +234,7 @@ isReacMonadicDefn = \ case
       d@Defn { defnName = n } | isPrim n -> pure $ Right d
       d@Defn { defnPolyTy = Embed poly } -> bool (Right d) (Left d) . isReacT <$> poly2Ty poly
 
-purifyStateDefn :: (Fresh m, MonadError AstError m, MonadIO m) =>
+purifyStateDefn :: (Fresh m, MonadError AstError m) =>
                    PureEnv -> [Ty] -> Defn -> m Defn
 purifyStateDefn rho ms d = do
       ty           <- poly2Ty phi
@@ -253,7 +253,7 @@ purifyStateDefn rho ms d = do
 liftMaybe :: MonadError AstError m => Annote -> Text -> Maybe a -> m a
 liftMaybe an msg = maybe (failAt an msg) pure
 
-purifyResDefn :: (Fresh m, MonadError AstError m, MonadIO m, MonadFail m) => Name Exp -> PureEnv -> [Ty] -> Defn -> StateT PSto m Defn
+purifyResDefn :: (Fresh m, MonadError AstError m, MonadFail m) => Name Exp -> PureEnv -> [Ty] -> Defn -> StateT PSto m Defn
 purifyResDefn start rho ms d = do
       ty            <- projDefnTy d
       (i, o, _, a)  <- liftMaybe (ann d) "Purify: failed at purifyResDefn" $ dstReacT $ codomTy ty
@@ -360,7 +360,7 @@ data Cases = CGet Annote !(Maybe Ty)
 --   stys -- state types
 --   i    -- lifting "depth"
 --   tm   -- term to be purified
-purifyStateBody :: (Fresh m, MonadError AstError m, MonadIO m) =>
+purifyStateBody :: (Fresh m, MonadError AstError m) =>
                      PureEnv -> [Exp] -> [Ty] -> Int -> Exp -> m Exp
 purifyStateBody rho stos stys i = classifyCases >=> \ case
       CGet an _        -> do
@@ -443,8 +443,14 @@ classifyRCases ex = case flattenApp ex of
                   (Builtin _ _ _ Signal, [arg]) -> pure arg
                   _                             -> Nothing
 
+-- how this possible?
+-- ( rwPrimBind
+-- , [ (rwPrimLift :: m2 a1 -> t m2 a1) ((rwPrimPut :: s1 -> StateT s1 m ()) ((Main.setInputs s749541 ($526749544 :: Main.Inputs)) :: Main.CPUState))
+-- , $LL.Main.loop120111 m2c749545 m2c749543 m2c749542
+-- , $x749540 ] )
+
 -- state for res-purification.
-data PSto = PSto !(Map (Name Exp) ResPoint) !(Name Exp) !(Map Ty (Name DataConId))
+data PSto = PSto !(HashMap (Name Exp) ResPoint) !(Name Exp) !(HashMap Ty (Name DataConId))
 type ResPoint = (DataCon, (Pat, Exp))
 
 -- | purifyResBody
@@ -455,7 +461,7 @@ type ResPoint = (DataCon, (Pat, Exp))
 --  stys   -- state types [S1, ..., Sm]
 --  stos   -- input states [s1, ..., sm]
 --  tm     -- term to be purified
-purifyResBody :: (Fresh m, MonadError AstError m, MonadIO m)
+purifyResBody :: (Fresh m, MonadError AstError m)
               => Name Exp -> PureEnv -> Ty -> Ty -> Ty -> [Exp] -> [Ty] -> Exp -> StateT PSto m Exp
 purifyResBody start rho i o a stos ms = classifyRCases >=> \ case
       -- purifyResBody (return e)         = "(Left (e, (s1, (..., sm))))"

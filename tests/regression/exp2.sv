@@ -3,7 +3,7 @@ module top_level (input logic [0:0] clk,
   input logic [99:0] __in0,
   output logic [99:0] __out0);
   logic [2099:0] zll_pure_dispatch_in;
-  logic [2099:0] zll_main_dev1_in;
+  logic [2099:0] zll_main_dev7_in;
   logic [1099:0] main_ss$_in;
   logic [999:0] id_in;
   logic [999:0] id_inR1;
@@ -43,15 +43,15 @@ module top_level (input logic [0:0] clk,
   logic [99:0] main_x2_outR8;
   logic [99:0] main_x2_inR9;
   logic [99:0] main_x2_outR9;
-  logic [999:0] zll_main_dev5_in;
+  logic [999:0] zll_main_dev3_in;
+  logic [2100:0] zll_main_dev2_in;
   logic [2100:0] zll_main_dev4_in;
-  logic [2100:0] zll_main_dev_in;
   logic [999:0] main_dev_in;
   logic [1999:0] zll_main_dev12_in;
-  logic [1999:0] zll_main_dev10_in;
-  logic [2100:0] zll_main_dev9_in;
-  logic [2100:0] zll_main_dev8_in;
-  logic [1999:0] zll_main_dev2_in;
+  logic [1999:0] zll_main_dev5_in;
+  logic [2100:0] zll_main_dev11_in;
+  logic [2100:0] zll_main_dev10_in;
+  logic [1999:0] zll_main_dev9_in;
   logic [999:0] id_inR18;
   logic [0:0] __continue;
   logic [999:0] __resumption_tag;
@@ -59,8 +59,8 @@ module top_level (input logic [0:0] clk,
   logic [999:0] __resumption_tag_next;
   logic [999:0] __st0_next;
   assign zll_pure_dispatch_in = {__in0, {__resumption_tag, __st0}};
-  assign zll_main_dev1_in = {zll_pure_dispatch_in[1999:1000], zll_pure_dispatch_in[2099:2000], zll_pure_dispatch_in[999:0]};
-  assign main_ss$_in = {zll_main_dev1_in[2099:1100], zll_main_dev1_in[1099:1000]};
+  assign zll_main_dev7_in = {zll_pure_dispatch_in[1999:1000], zll_pure_dispatch_in[2099:2000], zll_pure_dispatch_in[999:0]};
+  assign main_ss$_in = {zll_main_dev7_in[2099:1100], zll_main_dev7_in[1099:1000]};
   assign id_in = main_ss$_in[1099:100];
   assign id_inR1 = {id_in[899:0], main_ss$_in[99:0]};
   assign main_x2_in = id_inR1[999:900];
@@ -99,17 +99,17 @@ module top_level (input logic [0:0] clk,
   Main_x2  instR8 (main_x2_inR8[99:0], main_x2_outR8);
   assign main_x2_inR9 = main_ss$_in[99:0];
   Main_x2  instR9 (main_x2_inR9[99:0], main_x2_outR9);
-  assign zll_main_dev5_in = {main_x2_out, main_x2_outR1, main_x2_outR2, main_x2_outR3, main_x2_outR4, main_x2_outR5, main_x2_outR6, main_x2_outR7, main_x2_outR8, main_x2_outR9};
-  assign zll_main_dev4_in = {{101'h00000000000000000000000001, {10'h3e8{1'h0}}}, zll_main_dev5_in[999:0]};
-  assign zll_main_dev_in = zll_main_dev4_in[2100:0];
-  assign main_dev_in = zll_main_dev_in[999:0];
+  assign zll_main_dev3_in = {main_x2_out, main_x2_outR1, main_x2_outR2, main_x2_outR3, main_x2_outR4, main_x2_outR5, main_x2_outR6, main_x2_outR7, main_x2_outR8, main_x2_outR9};
+  assign zll_main_dev2_in = {{101'h00000000000000000000000001, {10'h3e8{1'h0}}}, zll_main_dev3_in[999:0]};
+  assign zll_main_dev4_in = zll_main_dev2_in[2100:0];
+  assign main_dev_in = zll_main_dev4_in[999:0];
   assign zll_main_dev12_in = {main_dev_in[999:0], main_dev_in[999:0]};
-  assign zll_main_dev10_in = zll_main_dev12_in[1999:0];
-  assign zll_main_dev9_in = {{7'h65{1'h0}}, zll_main_dev10_in[1999:1000], zll_main_dev10_in[999:0]};
-  assign zll_main_dev8_in = zll_main_dev9_in[2100:0];
-  assign zll_main_dev2_in = {zll_main_dev8_in[1999:1000], zll_main_dev8_in[999:0]};
-  assign id_inR18 = zll_main_dev2_in[1999:1000];
-  assign {__continue, __out0, __resumption_tag_next, __st0_next} = {1'h1, id_inR18[999:900], zll_main_dev2_in[1999:1000], zll_main_dev2_in[999:0]};
+  assign zll_main_dev5_in = zll_main_dev12_in[1999:0];
+  assign zll_main_dev11_in = {{7'h65{1'h0}}, zll_main_dev5_in[1999:1000], zll_main_dev5_in[999:0]};
+  assign zll_main_dev10_in = zll_main_dev11_in[2100:0];
+  assign zll_main_dev9_in = {zll_main_dev10_in[1999:1000], zll_main_dev10_in[999:0]};
+  assign id_inR18 = zll_main_dev9_in[1999:1000];
+  assign {__continue, __out0, __resumption_tag_next, __st0_next} = {1'h1, id_inR18[999:900], zll_main_dev9_in[1999:1000], zll_main_dev9_in[999:0]};
   initial {__resumption_tag, __st0} <= {11'h7d0{1'h0}};
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin

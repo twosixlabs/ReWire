@@ -6,68 +6,64 @@ states [("__st0",1)]
 
 $Pure.dispatch :: W1 -> W1 -> W5
 $Pure.dispatch $0 $1 = 5'case {1'$1, 1'$0} of
-    {1'@, 1'@} -> ReWire.Monad.iterSt1
+    {1'@, 1'@} -> ReWire.Monad.iterSt
 
 $Pure.start :: W5
 $Pure.start  = 5'h10
 
-$LL.ReWire.Monad.iterSt :: W1 -> W1 -> W5
-$LL.ReWire.Monad.iterSt $0 $1 = {3'h4, 1'$0, 1'$1}
+$LL.ReWire.Monad.iterSt40 :: W1 -> W1 -> W1 -> W5
+$LL.ReWire.Monad.iterSt40 $0 $1 $2 = 5'case {1'$1, 1'$2, 1'$0} of
+    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt4
 
-$LL.ReWire.Monad.iterSt6 :: W2 -> W1 -> W5
-$LL.ReWire.Monad.iterSt6 $0 $1 = 5'case {1'$1, 2'$0} of
-    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt20
+$LL.ReWire.Monad.iterSt35 :: W1 -> W2 -> W3
+$LL.ReWire.Monad.iterSt35 $0 $1 = 3'case {1'$0, 2'$1} of
+    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt33
 
-$LL.ReWire.Monad.iterSt7 :: W1 -> W1 -> W1 -> W5
-$LL.ReWire.Monad.iterSt7 $0 $1 $2 = 5'case {1'$0, 5'case 1'$1 of {1'@} -> $LL.ReWire.Monad.iterSt16} of
-    {1'@, 5'@} -> $LL.ReWire.Monad.iterSt24
+$LL.ReWire.Monad.iterSt34 :: W1 -> W1 -> W5
+$LL.ReWire.Monad.iterSt34 $0 $1 = {3'h4, 1'$0, 1'$1}
 
-$LL.ReWire.Monad.iterSt9 :: W1 -> W1 -> W1 -> W3
-$LL.ReWire.Monad.iterSt9 $0 $1 $2 = {2'case {1'$0, 1'$1} of {1'@, 1'@} -> Main.f, 1'$2}
+$LL.ReWire.Monad.iterSt33 :: W1 -> W1 -> W1 -> W3
+$LL.ReWire.Monad.iterSt33 $0 $1 $2 = {2'case {1'$0, 1'$1} of {1'@, 1'@} -> Main.f1, 1'$2}
 
-$LL.ReWire.Monad.iterSt16 :: W1 -> W5
-$LL.ReWire.Monad.iterSt16 $0 = {4'h4, 1'$0}
+$LL.ReWire.Monad.iterSt31 :: W1 -> W1 -> W5
+$LL.ReWire.Monad.iterSt31 $0 $1 = 5'case {1'$0, 1'$1} of
+    {1'@, 1'@} -> $LL.ReWire.Monad.iterSt34
 
-$LL.ReWire.Monad.iterSt19 :: W1 -> W1 -> W1 -> W5
-$LL.ReWire.Monad.iterSt19 $0 $1 $2 = 5'case {1'$0, 1'$2, 1'$1} of
-    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt7
+$LL.ReWire.Monad.iterSt30 :: W3 -> W5
+$LL.ReWire.Monad.iterSt30 $0 = 5'case 3'$0 of
+    {2'@, 1'@} -> $LL.ReWire.Monad.iterSt17
 
-$LL.ReWire.Monad.iterSt20 :: W1 -> W1 -> W1 -> W5
-$LL.ReWire.Monad.iterSt20 $0 $1 $2 = 5'case {1'$1, 1'$0, 1'$2} of
-    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt19
+$LL.ReWire.Monad.iterSt28 :: W2 -> W1 -> W5
+$LL.ReWire.Monad.iterSt28 $0 $1 = 5'case {2'$0, 1'$1} of
+    {2'@, 1'@} -> $LL.ReWire.Monad.iterSt3
 
-$LL.ReWire.Monad.iterSt22 :: W1 -> W1 -> W5
-$LL.ReWire.Monad.iterSt22 $0 $1 = 5'case {1'$0, 1'$1} of
-    {1'@, 1'@} -> $LL.ReWire.Monad.iterSt
+$LL.ReWire.Monad.iterSt26 :: W1 -> W5
+$LL.ReWire.Monad.iterSt26 $0 = {4'h4, 1'$0}
 
-$LL.ReWire.Monad.iterSt24 :: W1 -> W5 -> W5
-$LL.ReWire.Monad.iterSt24 $0 $1 = 5'case {1'$0, 5'$1} of
-    {1'@, 2'h1, 2'_, 1'@} -> $LL.ReWire.Monad.iterSt22
+$LL.ReWire.Monad.iterSt18 :: W5 -> W5
+$LL.ReWire.Monad.iterSt18 $0 = 5'case 5'$0 of
+    {2'h0, 2'@, 1'@} -> $LL.ReWire.Monad.iterSt28
 
-$LL.ReWire.Monad.iterSt30 :: W2 -> W1 -> W5
-$LL.ReWire.Monad.iterSt30 $0 $1 = {2'h0, 2'$0, 1'$1}
+$LL.ReWire.Monad.iterSt17 :: W2 -> W1 -> W5
+$LL.ReWire.Monad.iterSt17 $0 $1 = {2'h0, 2'$0, 1'$1}
 
-$LL.ReWire.Monad.iterSt35 :: W2 -> W1 -> W5
-$LL.ReWire.Monad.iterSt35 $0 $1 = 5'case {2'$0, 1'$1} of
-    {2'@, 1'@} -> $LL.ReWire.Monad.iterSt6
+$LL.ReWire.Monad.iterSt16 :: W1 -> W5 -> W5
+$LL.ReWire.Monad.iterSt16 $0 $1 = 5'case {1'$0, 5'$1} of
+    {1'@, 2'h1, 2'_, 1'@} -> $LL.ReWire.Monad.iterSt31
 
-$LL.ReWire.Monad.iterSt36 :: W5 -> W5
-$LL.ReWire.Monad.iterSt36 $0 = 5'case 5'$0 of
-    {2'h0, 2'@, 1'@} -> $LL.ReWire.Monad.iterSt35
+Main.f1 :: W1 -> W1 -> W2
+Main.f1 $0 $1 = {1'case 1'case {1'$1, 1'$0} of {1'@, 1'@} -> XOr of {1'@} -> MSBit, 1'$1}
 
-$LL.ReWire.Monad.iterSt39 :: W3 -> W5
-$LL.ReWire.Monad.iterSt39 $0 = 5'case 3'$0 of
-    {2'@, 1'@} -> $LL.ReWire.Monad.iterSt30
+ReWire.Monad.iterSt :: W1 -> W1 -> W5
+ReWire.Monad.iterSt $0 $1 = 5'case 5'case 3'case {1'$0, 1'$1, 1'$1} of
+        {1'@, 2'@} -> $LL.ReWire.Monad.iterSt35 of
+      {3'@} -> $LL.ReWire.Monad.iterSt30 of
+    {5'@} -> $LL.ReWire.Monad.iterSt18
 
-$LL.ReWire.Monad.iterSt42 :: W1 -> W2 -> W3
-$LL.ReWire.Monad.iterSt42 $0 $1 = 3'case {1'$0, 2'$1} of
-    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt9
+$LL.ReWire.Monad.iterSt4 :: W1 -> W1 -> W1 -> W5
+$LL.ReWire.Monad.iterSt4 $0 $1 $2 = 5'case {1'$0, 5'case 1'$1 of {1'@} -> $LL.ReWire.Monad.iterSt26} of
+    {1'@, 5'@} -> $LL.ReWire.Monad.iterSt16
 
-Main.f :: W1 -> W1 -> W2
-Main.f $0 $1 = {1'case 1'case {1'$1, 1'$0} of {1'@, 1'@} -> XOr of {1'@} -> MSBit, 1'$1}
-
-ReWire.Monad.iterSt1 :: W1 -> W1 -> W5
-ReWire.Monad.iterSt1 $0 $1 = 5'case 5'case 3'case {1'$0, 1'$1, 1'$1} of
-        {1'@, 2'@} -> $LL.ReWire.Monad.iterSt42 of
-      {3'@} -> $LL.ReWire.Monad.iterSt39 of
-    {5'@} -> $LL.ReWire.Monad.iterSt36
+$LL.ReWire.Monad.iterSt3 :: W2 -> W1 -> W5
+$LL.ReWire.Monad.iterSt3 $0 $1 = 5'case {1'$1, 2'$0} of
+    {1'@, 1'@, 1'@} -> $LL.ReWire.Monad.iterSt40
