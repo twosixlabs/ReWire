@@ -203,11 +203,56 @@ data-files:
     tests/regression/wordLit.rwc
     tests/regression/wordShift.rwc
     tests/regression/wordSlice.rwc
+    tests/regression/case1.yaml
+    tests/regression/case2.yaml
+    tests/regression/dependencyGraph.yaml
+    tests/regression/dissex.yaml
+    tests/regression/dissex2.yaml
+    tests/regression/exp2.yaml
     tests/regression/fibo1.yaml
     tests/regression/fibo2.yaml
     tests/regression/fibo3.yaml
+    tests/regression/Finite.yaml
+    tests/regression/finite2.yaml
+    tests/regression/fully.yaml
+    tests/regression/funcase.yaml
+    tests/regression/guards.yaml
+    tests/regression/HigherOrderBug.yaml
+    tests/regression/Infix.yaml
+    tests/regression/iter.yaml
+    tests/regression/iterSt.yaml
+    tests/regression/matchBind.yaml
+    tests/regression/ModsMain.yaml
+    tests/regression/onestate.yaml
+    tests/regression/pats.yaml
+    tests/regression/pats2.yaml
+    tests/regression/PreludeTest.yaml
+    tests/regression/putBug.yaml
+    tests/regression/pvartype.yaml
+    tests/regression/react.yaml
+    tests/regression/records.yaml
+    tests/regression/sigNothing.yaml
+    tests/regression/state.yaml
+    tests/regression/state0.yaml
+    tests/regression/stateTower.yaml
+    tests/regression/test2.yaml
+    tests/regression/test3.yaml
+    tests/regression/TinyISA.yaml
+    tests/regression/toag.yaml
+    tests/regression/toags.yaml
+    tests/regression/uniquification.yaml
     tests/regression/UpCounter1.yaml
     tests/regression/UpCounter2.yaml
+    tests/regression/vectorAppend.yaml
+    tests/regression/vectorCons.yaml
+    tests/regression/vectorIndexProxy.yaml
+    tests/regression/vectorPack.yaml
+    tests/regression/weird1.yaml
+    tests/regression/wordArith.yaml
+    tests/regression/wordBitwise.yaml
+    tests/regression/wordLit.yaml
+    tests/regression/wordShift.yaml
+    tests/regression/wordSlice.yaml
     rewire-user/src/ReWire.hs
     rewire-user/src/RWC/Primitives.hs
     rewire-user/src/ReWire/Bits.hs
