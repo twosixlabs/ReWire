@@ -29,6 +29,7 @@ import ReWire.Annotation (ann, noAnn, Annote)
 import ReWire.BitVector (BV, bitVec, (@@), nat, width, (>>.), (<<.), (==.), ashr)
 import ReWire.Error (failAt', MonadError, AstError)
 import ReWire.Pretty (showt)
+
 import qualified ReWire.BitVector as BV
 
 import Control.Arrow ((&&&), second)
@@ -41,6 +42,7 @@ import Data.HashMap.Strict (HashMap)
 import Data.List (foldl')
 import Data.Machine.MealyT (MealyT (..))
 import Data.Maybe (fromMaybe)
+
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Text.IO as T
 
@@ -270,6 +272,7 @@ primBinOps = map (second zToBV)
       [ (And         , (.&.))
       , (Or          , (.|.))
       , (XOr         , xor)
+      , (XNor        , \ a b -> complement (a `xor` b))
       , (LShift      , (<<.))
       , (RShift      , (>>.))
       , (RShiftArith , ashr)
