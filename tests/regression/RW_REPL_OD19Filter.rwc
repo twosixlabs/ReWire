@@ -1,0 +1,566 @@
+device top_level:
+
+inputs [("__in0",1),("__in1",32)]
+outputs [("__out0",1),("__out1",1)]
+states [("__st0",32),("__st1",7)]
+
+$Pure.dispatch :: W39 -> W33 -> W81
+$Pure.dispatch $0 $1 = 81'case {33'$1, 39'$0} of
+    {33'@, 39'@} -> Main.repl1
+
+$Pure.start :: W81
+$Pure.start  = 81'h100000000010000000000
+
+$LL.Main.repl104 :: W39 -> W81
+$LL.Main.repl104 $0 = 81'case 39'$0 of
+    {39'@} -> $LL.Main.repl89
+
+$LL.Main.repl102 :: W39 -> W32 -> W81
+$LL.Main.repl102 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl60
+
+$LL.Main.repl101 :: W39 -> W81
+$LL.Main.repl101 $0 = 81'case 39'$0 of
+    {39'@} -> $LL.Main.repl62
+
+Main.repl1 :: W33 -> W39 -> W81
+Main.repl1 $0 $1 = 81'case {39'$1, 33'$0} of
+    {39'@, 1'h0, 32'@} -> $LL.Main.repl14
+    _ -> 81'case {39'$1, 33'$0} of
+      {39'@, 1'h1, 32'_} -> $LL.Main.repl101
+
+$LL.Main.repl99 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl99 $0 $1 $2 = {41'h10000000000
+  , 1'case {32'$0, 32'$1} of
+    {32'@, 32'@} -> extern (Sig [] "" "" [("",32),("",32)] [("",1)]) "test4" ""
+  , 39'$2}
+
+$LL.Main.repl98 :: W81 -> W81
+$LL.Main.repl98 $0 = 81'case 81'$0 of
+    {3'h1, 39'_, 39'@} -> $LL.Main.repl101
+
+OD19.ProgramCounter.incPC :: W7 -> W7
+OD19.ProgramCounter.incPC $0 = 7'case 7'$0 of
+    {7'h00} -> 7'h01
+    _ -> 7'case 7'$0 of
+      {7'h01} -> 7'h02
+      _ -> 7'case 7'$0 of
+        {7'h02} -> 7'h03
+        _ -> 7'case 7'$0 of
+          {7'h03} -> 7'h04
+          _ -> 7'case 7'$0 of
+            {7'h04} -> 7'h05
+            _ -> 7'case 7'$0 of
+              {7'h05} -> 7'h06
+              _ -> 7'case 7'$0 of
+                {7'h06} -> 7'h07
+                _ -> 7'case 7'$0 of
+                  {7'h07} -> 7'h08
+                  _ -> 7'case 7'$0 of
+                    {7'h08} -> 7'h09
+                    _ -> 7'case 7'$0 of
+                      {7'h09} -> 7'h0a
+                      _ -> 7'case 7'$0 of
+                        {7'h0a} -> 7'h0b
+                        _ -> 7'case 7'$0 of
+                          {7'h0b} -> 7'h0c
+                          _ -> 7'case 7'$0 of
+                            {7'h0c} -> 7'h0d
+                            _ -> 7'case 7'$0 of
+                              {7'h0d} -> 7'h0e
+                              _ -> 7'case 7'$0 of
+                                {7'h0e} -> 7'h0f
+                                _ -> 7'case 7'$0 of
+                                  {7'h0f} -> 7'h10
+                                  _ -> 7'case 7'$0 of
+                                    {7'h10} -> 7'h11
+                                    _ -> 7'case 7'$0 of
+                                      {7'h11} -> 7'h12
+                                      _ -> 7'case 7'$0 of
+                                        {7'h12} -> 7'h13
+                                        _ -> 7'case 7'$0 of
+                                          {7'h13} -> 7'h14
+                                          _ -> 7'case 7'$0 of
+                                            {7'h14} -> 7'h15
+                                            _ -> 7'case 7'$0 of
+                                              {7'h15} -> 7'h16
+                                              _ -> 7'case 7'$0 of
+                                                {7'h16} -> 7'h17
+                                                _ -> 7'case 7'$0 of
+                                                  {7'h17} -> 7'h18
+                                                  _ -> 7'case 7'$0 of
+                                                    {7'h18} -> 7'h19
+                                                    _ -> 7'case 7'$0 of
+                                                      {7'h19} -> 7'h1a
+                                                      _ -> 7'case 7'$0 of
+                                                        {7'h1a} -> 7'h1b
+                                                        _ -> 7'case 7'$0 of
+                                                          {7'h1b} -> 7'h1c
+                                                          _ -> 7'case 7'$0 of
+                                                            {7'h1c} -> 7'h1d
+                                                            _ -> 7'case 7'$0 of
+                                                              {7'h1d} -> 7'h1e
+                                                              _ -> 7'case 7'$0 of
+                                                                {7'h1e} -> 7'h1f
+                                                                _ -> 7'case 7'$0 of
+                                                                  {7'h1f} -> 7'h20
+                                                                  _ -> 7'case 7'$0 of
+                                                                    {7'h20} -> 7'h21
+                                                                    _ -> 7'case 7'$0 of
+                                                                      {7'h21} -> 7'h22
+                                                                      _ -> 7'case 7'$0 of
+                                                                        {7'h22} -> 7'h23
+                                                                        _ -> 7'case 7'$0 of
+                                                                          {7'h23} -> 7'h24
+                                                                          _ -> 7'case 7'$0 of
+                                                                            {7'h24} -> 7'h25
+                                                                            _ -> 7'case 7'$0 of
+                                                                              {7'h25} -> 7'h26
+                                                                              _ -> 7'case 7'$0 of
+                                                                                {7'h26} -> 7'h27
+                                                                                _ -> 7'case 7'$0 of
+                                                                                  {7'h27} -> 7'h28
+                                                                                  _ -> 7'case 7'$0 of
+                                                                                    {7'h28} -> 7'h29
+                                                                                    _ -> 7'case 7'$0 of
+                                                                                      {7'h29} -> 7'h2a
+                                                                                      _ -> 7'case 7'$0 of
+                                                                                        {7'h2a} -> 7'h2b
+                                                                                        _ -> 7'case 7'$0 of
+                                                                                          {7'h2b} -> 7'h2c
+                                                                                          _ -> 7'case 7'$0 of
+                                                                                            {7'h2c} -> 7'h2d
+                                                                                            _ -> 7'case 7'$0 of
+                                                                                              {7'h2d} -> 7'h2e
+                                                                                              _ -> 7'case 7'$0 of
+                                                                                                {7'h2e} -> 7'h2f
+                                                                                                _ -> 7'case 7'$0 of
+                                                                                                  {7'h2f} -> 7'h30
+                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                    {7'h30} -> 7'h31
+                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                      {7'h31} -> 7'h32
+                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                        {7'h32} -> 7'h33
+                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                          {7'h33} -> 7'h34
+                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                            {7'h34} -> 7'h35
+                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                              {7'h35} -> 7'h36
+                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                {7'h36} -> 7'h37
+                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                  {7'h37} -> 7'h38
+                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                    {7'h38} -> 7'h39
+                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                      {7'h39} -> 7'h3a
+                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                        {7'h3a} -> 7'h3b
+                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                          {7'h3b} -> 7'h3c
+                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                            {7'h3c} -> 7'h3d
+                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                              {7'h3d} -> 7'h3e
+                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                {7'h3e} -> 7'h3f
+                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                  {7'h3f} -> 7'h40
+                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                    {7'h40} -> 7'h41
+                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                      {7'h41} -> 7'h42
+                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                        {7'h42} -> 7'h43
+                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                          {7'h43} -> 7'h44
+                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                            {7'h44} -> 7'h45
+                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                              {7'h45} -> 7'h46
+                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                {7'h46} -> 7'h47
+                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                  {7'h47} -> 7'h48
+                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                    {7'h48} -> 7'h49
+                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                      {7'h49} -> 7'h4a
+                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                        {7'h4a} -> 7'h4b
+                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                          {7'h4b} -> 7'h4c
+                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                            {7'h4c} -> 7'h4d
+                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                              {7'h4d} -> 7'h4e
+                                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                                {7'h4e} -> 7'h4f
+                                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                                  {7'h4f} -> 7'h50
+                                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                                    {7'h50} -> 7'h51
+                                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                                      {7'h51} -> 7'h52
+                                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                                        {7'h52} -> 7'h53
+                                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                                          {7'h53} -> 7'h54
+                                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                                            {7'h54} -> 7'h55
+                                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                                              {7'h55} -> 7'h56
+                                                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                                                {7'h56} -> 7'h57
+                                                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                                                  {7'h57} -> 7'h58
+                                                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                                                    {7'h58} -> 7'h59
+                                                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                                                      {7'h59} -> 7'h5a
+                                                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                                                        {7'h5a} -> 7'h5b
+                                                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                                                          {7'h5b} -> 7'h5c
+                                                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                                                            {7'h5c} -> 7'h5d
+                                                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                                                              {7'h5d} -> 7'h5e
+                                                                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                                                                {7'h5e} -> 7'h5f
+                                                                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                                                                  {7'h5f} -> 7'h60
+                                                                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                                                                    {7'h60} -> 7'h61
+                                                                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                                                                      {7'h61} -> 7'h62
+                                                                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                                                                        {7'h62} -> 7'h63
+                                                                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                                                                          {7'h63} -> 7'h64
+                                                                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                                                                            {7'h64} -> 7'h65
+                                                                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                                                                              {7'h65} -> 7'h66
+                                                                                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                {7'h66} -> 7'h67
+                                                                                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                  {7'h67} -> 7'h68
+                                                                                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                    {7'h68} -> 7'h69
+                                                                                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                      {7'h69} -> 7'h6a
+                                                                                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                        {7'h6a} -> 7'h6b
+                                                                                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                          {7'h6b} -> 7'h6c
+                                                                                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                            {7'h6c} -> 7'h6d
+                                                                                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                              {7'h6d} -> 7'h6e
+                                                                                                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                {7'h6e} -> 7'h6f
+                                                                                                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                  {7'h6f} -> 7'h70
+                                                                                                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                    {7'h70} -> 7'h71
+                                                                                                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                      {7'h71} -> 7'h72
+                                                                                                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                        {7'h72} -> 7'h73
+                                                                                                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                          {7'h73} -> 7'h74
+                                                                                                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                            {7'h74} -> 7'h75
+                                                                                                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                              {7'h75} -> 7'h76
+                                                                                                                                                                                                                                              _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                {7'h76} -> 7'h77
+                                                                                                                                                                                                                                                _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                  {7'h77} -> 7'h78
+                                                                                                                                                                                                                                                  _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                    {7'h78} -> 7'h79
+                                                                                                                                                                                                                                                    _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                      {7'h79} -> 7'h7a
+                                                                                                                                                                                                                                                      _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                        {7'h7a} -> 7'h7b
+                                                                                                                                                                                                                                                        _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                          {7'h7b} -> 7'h7c
+                                                                                                                                                                                                                                                          _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                            {7'h7c} -> 7'h7d
+                                                                                                                                                                                                                                                            _ -> 7'case 7'$0 of
+                                                                                                                                                                                                                                                              {7'h7d} -> 7'h7e
+                                                                                                                                                                                                                                                              _ -> 7'h00
+
+$LL.Main.repl97 :: W32 -> W39 -> W81
+$LL.Main.repl97 $0 $1 = 81'case {32'$0, 81'case 71'case 39'$1 of {39'@} -> Main.getReg of {71'@} -> $LL.Main.repl88} of
+    {32'@, 81'@} -> $LL.Main.repl31
+
+$LL.Main.repl96 :: W32 -> W39 -> W39 -> W81
+$LL.Main.repl96 $0 $1 $2 = 81'case {39'$2, 32'$0, 39'$1} of
+    {39'@, 32'@, 32'@, 7'@} -> $LL.Main.repl58
+
+$LL.Main.nextPC7 :: W78 -> W39
+$LL.Main.nextPC7 $0 = 39'case 78'$0 of
+    {39'@, 39'@} -> $LL.Main.nextPC2
+
+$LL.Main.repl95 :: W32 -> W39 -> W81
+$LL.Main.repl95 $0 $1 = 81'case {32'$0, 81'case 71'case 39'$1 of {39'@} -> Main.getReg of {71'@} -> $LL.Main.repl88} of
+    {32'@, 81'@} -> $LL.Main.repl79
+
+$LL.Main.repl94 :: W32 -> W39 -> W81
+$LL.Main.repl94 $0 $1 = 81'case {32'$0, 81'case {39'$1, 39'$1} of {78'@} -> $LL.Main.repl33} of
+    {32'@, 81'@} -> $LL.Main.repl84
+
+$LL.Main.repl92 :: W32 -> W39 -> W32 -> W7 -> W81
+$LL.Main.repl92 $0 $1 $2 $3 = 81'case {32'$0, 32'$2, 7'$3, 39'$1} of
+    {32'@, 32'@, 7'@, 39'@} -> $LL.Main.repl30
+
+$LL.Main.nextPC6 :: W39 -> W32 -> W7 -> W39
+$LL.Main.nextPC6 $0 $1 $2 = 39'case {32'$1, 7'$2, 39'$0} of
+    {32'@, 7'@, 39'@} -> $LL.Main.nextPC5
+
+$LL.Main.repl91 :: W39 -> W81
+$LL.Main.repl91 $0 = {42'h08000000000, 39'$0}
+
+$LL.Main.repl90 :: W39 -> W32 -> W81
+$LL.Main.repl90 $0 $1 = 81'case {32'$1, 39'$0} of
+    {32'@, 39'@} -> $LL.Main.repl94
+
+$LL.Main.repl89 :: W39 -> W81
+$LL.Main.repl89 $0 = 81'case 81'case 39'case 39'$0 of
+        {39'@} -> Main.nextPC of
+      {39'@} -> $LL.Main.repl91 of
+    {81'@} -> $LL.Main.repl98
+
+$LL.Main.putReg9 :: W32 -> W32 -> W7 -> W39 -> W39
+$LL.Main.putReg9 $0 $1 $2 $3 = 39'case {32'$0, 7'$2, 39'$3} of
+    {32'@, 7'@, 39'@} -> $LL.Main.putReg1
+
+$LL.Main.repl88 :: W71 -> W81
+$LL.Main.repl88 $0 = 81'case 71'$0 of
+    {32'@, 39'@} -> $LL.Main.repl86
+
+$LL.Main.repl86 :: W32 -> W39 -> W81
+$LL.Main.repl86 $0 $1 = {10'h000, 32'$0, 39'$1}
+
+Main.getReg :: W39 -> W71
+Main.getReg $0 = 71'case {39'$0, 39'$0} of
+    {78'@} -> $LL.Main.getReg4
+
+$LL.Main.repl84 :: W32 -> W81 -> W81
+$LL.Main.repl84 $0 $1 = 81'case {32'$0, 81'$1} of
+    {32'@, 3'h2, 39'@, 39'@} -> $LL.Main.repl34
+
+$LL.Main.repl83 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl83 $0 $1 $2 = {41'h10000000000
+  , 1'case {32'$0, 32'$1} of
+    {32'@, 32'@} -> extern (Sig [] "" "" [("",32),("",32)] [("",1)]) "test3" ""
+  , 39'$2}
+
+$LL.Main.repl82 :: W32 -> W81 -> W81
+$LL.Main.repl82 $0 $1 = 81'case {32'$0, 81'$1} of
+    {32'@, 3'h0, 7'_, 32'@, 39'@} -> $LL.Main.repl78
+
+$LL.Main.nextPC5 :: W32 -> W7 -> W39 -> W39
+$LL.Main.nextPC5 $0 $1 $2 = {32'$0, 7'case 7'$1 of {7'@} -> OD19.ProgramCounter.incPC}
+
+$LL.Main.repl80 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl80 $0 $1 $2 = {41'h10000000000
+  , 1'case {32'$0, 32'$1} of
+    {32'@, 32'@} -> extern (Sig [] "" "" [("",32),("",32)] [("",1)]) "test1" ""
+  , 39'$2}
+
+$LL.Main.repl79 :: W32 -> W81 -> W81
+$LL.Main.repl79 $0 $1 = 81'case {32'$0, 81'$1} of
+    {32'@, 3'h0, 7'_, 32'@, 39'@} -> $LL.Main.repl71
+
+$LL.Main.repl78 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl78 $0 $1 $2 = 81'case {32'$0, 32'$1, 39'$2} of
+    {32'@, 32'@, 39'@} -> $LL.Main.repl6
+
+$LL.Main.repl74 :: W39 -> W32 -> W81
+$LL.Main.repl74 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl36
+
+$LL.Main.repl71 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl71 $0 $1 $2 = 81'case {32'$0, 32'$1, 39'$2} of
+    {32'@, 32'@, 39'@} -> $LL.Main.repl80
+
+$LL.Main.repl69 :: W39 -> W32 -> W81
+$LL.Main.repl69 $0 $1 = 81'case {32'$1, 39'$0} of
+    {32'@, 39'@} -> $LL.Main.repl95
+
+$LL.Main.getReg5 :: W32 -> W39 -> W7 -> W71
+$LL.Main.getReg5 $0 $1 $2 = 71'case {32'$0, 7'$2, 39'$1} of
+    {32'@, 7'@, 39'@} -> $LL.Main.getReg1
+
+$LL.Main.putReg8 :: W32 -> W39 -> W39 -> W39
+$LL.Main.putReg8 $0 $1 $2 = 39'case {39'$2, 32'$0, 39'$1} of
+    {39'@, 32'@, 32'@, 7'@} -> $LL.Main.putReg7
+
+$LL.Main.repl68 :: W81 -> W81
+$LL.Main.repl68 $0 = 81'case 81'$0 of
+    {3'h1, 39'_, 39'@} -> $LL.Main.repl104
+
+$LL.Main.getReg4 :: W78 -> W71
+$LL.Main.getReg4 $0 = 71'case 78'$0 of
+    {39'@, 39'@} -> $LL.Main.getReg3
+
+$LL.Main.putReg7 :: W39 -> W32 -> W32 -> W7 -> W39
+$LL.Main.putReg7 $0 $1 $2 $3 = 39'case {32'$1, 39'$0, 32'$2, 7'$3} of
+    {32'@, 39'@, 32'@, 7'@} -> $LL.Main.putReg
+
+$LL.Main.repl67 :: W39 -> W32 -> W81
+$LL.Main.repl67 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl65
+
+$LL.Main.putReg6 :: W32 -> W32 -> W39 -> W7 -> W39
+$LL.Main.putReg6 $0 $1 $2 $3 = 39'case {32'$1, 32'$0, 7'$3, 39'$2} of
+    {32'@, 32'@, 7'@, 39'@} -> $LL.Main.putReg9
+
+$LL.Main.repl66 :: W39 -> W32 -> W81
+$LL.Main.repl66 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl28
+
+$LL.Main.repl65 :: W39 -> W32 -> W81
+$LL.Main.repl65 $0 $1 = 81'case {32'$1, 39'$0} of
+    {32'@, 39'@} -> $LL.Main.repl56
+
+$LL.Main.getReg3 :: W39 -> W39 -> W71
+$LL.Main.getReg3 $0 $1 = 71'case {39'$1, 39'$0} of
+    {39'@, 32'@, 7'@} -> $LL.Main.getReg2
+
+$LL.Main.repl62 :: W39 -> W81
+$LL.Main.repl62 $0 = {42'h20000000002, 39'$0}
+
+$LL.Main.repl60 :: W39 -> W32 -> W81
+$LL.Main.repl60 $0 $1 = 81'case {32'$1, 39'$0} of
+    {32'@, 39'@} -> $LL.Main.repl46
+
+$LL.Main.repl59 :: W39 -> W32 -> W81
+$LL.Main.repl59 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl60
+
+$LL.Main.repl58 :: W39 -> W32 -> W32 -> W7 -> W81
+$LL.Main.repl58 $0 $1 $2 $3 = 81'case {32'$1, 39'$0, 32'$2, 7'$3} of
+    {32'@, 39'@, 32'@, 7'@} -> $LL.Main.repl92
+
+$LL.Main.repl56 :: W32 -> W39 -> W81
+$LL.Main.repl56 $0 $1 = 81'case {32'$0, 81'case 71'case 39'$1 of {39'@} -> Main.getReg of {71'@} -> $LL.Main.repl88} of
+    {32'@, 81'@} -> $LL.Main.repl82
+
+Main.putReg :: W32 -> W39 -> W39
+Main.putReg $0 $1 = 39'case {32'$0, 39'$1, 39'$1} of
+    {32'@, 78'@} -> $LL.Main.putReg5
+
+$LL.Main.repl54 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl54 $0 $1 $2 = 81'case {32'$0, 32'$1, 39'$2} of
+    {32'@, 32'@, 39'@} -> $LL.Main.repl83
+
+$LL.Main.repl53 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl53 $0 $1 $2 = 81'case {32'$0, 32'$1, 39'$2} of
+    {32'@, 32'@, 39'@} -> $LL.Main.repl99
+
+$LL.Main.repl50 :: W39 -> W32 -> W81
+$LL.Main.repl50 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl69
+
+$LL.Main.repl48 :: W32 -> W7 -> W39 -> W81
+$LL.Main.repl48 $0 $1 $2 = 81'case {39'$2, 32'$0, 7'$1} of
+    {39'@, 32'@, 7'h00} -> $LL.Main.repl59
+    _ -> 81'case {39'$2, 32'$0, 7'$1} of
+      {39'@, 32'@, 7'h01} -> $LL.Main.repl50
+      _ -> 81'case {39'$2, 32'$0, 7'$1} of
+        {39'@, 32'@, 7'h02} -> $LL.Main.repl102
+        _ -> 81'case {39'$2, 32'$0, 7'$1} of
+          {39'@, 32'@, 7'h03} -> $LL.Main.repl50
+          _ -> 81'case {39'$2, 32'$0, 7'$1} of
+            {39'@, 32'@, 7'h04} -> $LL.Main.repl67
+            _ -> 81'case {39'$2, 32'$0, 7'$1} of
+              {39'@, 32'@, 7'h05} -> $LL.Main.repl66
+              _ -> 81'case {39'$2, 32'$0, 7'$1} of
+                {39'@, 32'@, 7'h06} -> $LL.Main.repl74
+                _ -> 81'case 81'case 39'case 39'$2 of
+                      {39'@} -> Main.nextPC of
+                    {39'@} -> $LL.Main.repl91 of
+                  {81'@} -> $LL.Main.repl98
+
+$LL.Main.repl46 :: W32 -> W39 -> W81
+$LL.Main.repl46 $0 $1 = 81'case 81'case 39'case {32'$0, 39'$1} of
+        {32'@, 39'@} -> Main.putReg of
+      {39'@} -> $LL.Main.repl91 of
+    {81'@} -> $LL.Main.repl68
+
+$LL.Main.repl38 :: W32 -> W81 -> W81
+$LL.Main.repl38 $0 $1 = 81'case {32'$0, 81'$1} of
+    {32'@, 3'h0, 7'_, 32'@, 39'@} -> $LL.Main.repl53
+
+$LL.Main.nextPC2 :: W39 -> W39 -> W39
+$LL.Main.nextPC2 $0 $1 = 39'case {39'$1, 39'$0} of
+    {39'@, 32'@, 7'@} -> $LL.Main.nextPC6
+
+$LL.Main.putReg5 :: W32 -> W78 -> W39
+$LL.Main.putReg5 $0 $1 = 39'case {32'$0, 78'$1} of
+    {32'@, 39'@, 39'@} -> $LL.Main.putReg8
+
+$LL.Main.repl36 :: W39 -> W32 -> W81
+$LL.Main.repl36 $0 $1 = 81'case {32'$1, 39'$0} of
+    {32'@, 39'@} -> $LL.Main.repl15
+
+$LL.Main.repl34 :: W32 -> W39 -> W39 -> W81
+$LL.Main.repl34 $0 $1 $2 = 81'case {32'$0, 39'$1, 39'$2} of
+    {32'@, 39'@, 39'@} -> $LL.Main.repl96
+
+$LL.Main.repl33 :: W78 -> W81
+$LL.Main.repl33 $0 = 81'case 78'$0 of
+    {39'@, 39'@} -> $LL.Main.repl29
+
+Main.nextPC :: W39 -> W39
+Main.nextPC $0 = 39'case {39'$0, 39'$0} of
+    {78'@} -> $LL.Main.nextPC7
+
+$LL.Main.repl31 :: W32 -> W81 -> W81
+$LL.Main.repl31 $0 $1 = 81'case {32'$0, 81'$1} of
+    {32'@, 3'h0, 7'_, 32'@, 39'@} -> $LL.Main.repl54
+
+$LL.Main.repl30 :: W32 -> W32 -> W7 -> W39 -> W81
+$LL.Main.repl30 $0 $1 $2 $3 = 81'case {32'$0, 7'$2, 39'$3} of
+    {32'@, 7'@, 39'@} -> $LL.Main.repl48
+
+$LL.Main.repl29 :: W39 -> W39 -> W81
+$LL.Main.repl29 $0 $1 = {3'h2, 39'$0, 39'$1}
+
+$LL.Main.repl28 :: W39 -> W32 -> W81
+$LL.Main.repl28 $0 $1 = 81'case {32'$1, 39'$0} of
+    {32'@, 39'@} -> $LL.Main.repl97
+
+$LL.Main.getReg2 :: W39 -> W32 -> W7 -> W71
+$LL.Main.getReg2 $0 $1 $2 = 71'case {32'$1, 39'$0, 7'$2} of
+    {32'@, 39'@, 7'@} -> $LL.Main.getReg5
+
+$LL.Main.repl15 :: W32 -> W39 -> W81
+$LL.Main.repl15 $0 $1 = 81'case {32'$0, 81'case 71'case 39'$1 of {39'@} -> Main.getReg of {71'@} -> $LL.Main.repl88} of
+    {32'@, 81'@} -> $LL.Main.repl38
+
+$LL.Main.repl14 :: W39 -> W32 -> W81
+$LL.Main.repl14 $0 $1 = 81'case {39'$0, 32'$1} of
+    {39'@, 32'@} -> $LL.Main.repl90
+
+$LL.Main.getReg1 :: W32 -> W7 -> W39 -> W71
+$LL.Main.getReg1 $0 $1 $2 = {32'$0, 39'$2}
+
+$LL.Main.putReg1 :: W32 -> W7 -> W39 -> W39
+$LL.Main.putReg1 $0 $1 $2 = {32'$0, 7'$1}
+
+$LL.Main.repl6 :: W32 -> W32 -> W39 -> W81
+$LL.Main.repl6 $0 $1 $2 = {41'h10000000000
+  , 1'case {32'$0, 32'$1} of
+    {32'@, 32'@} -> extern (Sig [] "" "" [("",32),("",32)] [("",1)]) "test2" ""
+  , 39'$2}
+
+$LL.Main.putReg :: W32 -> W39 -> W32 -> W7 -> W39
+$LL.Main.putReg $0 $1 $2 $3 = 39'case {32'$2, 32'$0, 39'$1, 7'$3} of
+    {32'@, 32'@, 39'@, 7'@} -> $LL.Main.putReg6

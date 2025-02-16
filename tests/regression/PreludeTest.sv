@@ -27,11 +27,11 @@ module top_level (input logic [0:0] clk,
   assign lit_inR2 = {__in0, __resumption_tag};
   assign lit_inR3 = {__in0, __resumption_tag};
   assign lit_inR4 = {__in0, __resumption_tag};
-  assign {__continue, __out0, __resumption_tag_next} = (lit_inR4[3:1] == 3'h1) ? 5'h04 : ((lit_inR3[3:1] == 3'h2) ? 5'h06 : ((lit_inR2[3:1] == 3'h3) ? 5'h08 : ((lit_inR1[3:1] == 3'h4) ? 5'h00 : {main_loop3_in[0], 3'h0, main_loop3_in[0]})));
-  initial __resumption_tag <= 4'h2;
+  assign {__continue, __out0, __resumption_tag_next} = (lit_inR4[3:1] == 3'h1) ? 5'h04 : ((lit_inR3[3:1] == 3'h2) ? 5'h08 : ((lit_inR2[3:1] == 3'h3) ? 5'h02 : ((lit_inR1[3:1] == 3'h4) ? 5'h00 : {main_loop3_in[0], 3'h0, main_loop3_in[0]})));
+  initial __resumption_tag <= 4'h6;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __resumption_tag <= 4'h2;
+      __resumption_tag <= 4'h6;
     end else begin
       __resumption_tag <= __resumption_tag_next;
     end

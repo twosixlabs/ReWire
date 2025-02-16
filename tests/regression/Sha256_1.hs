@@ -5,7 +5,7 @@ the MetaprogrammingRW and ReWirePrelude files because it works better with
 cabal test.
 -}
 
-import ReWire
+import ReWire hiding (Bit)
 
 data Bit = C | S
 
@@ -92,7 +92,7 @@ compress :: W32 -> W32 -> StateT (Oct W32) (StateT (Hex W32) (StateT (Oct W32) (
 {-# INLINE compress #-}
 compress k w = do s <- get
                   put (step256 k w s)
-                  
+
 step256 :: W32 -> W32 -> Oct W32 -> Oct W32
 step256 k w (Oct a b c d e f g h) = Oct a' b' c' d' e' f' g' h'
             where
@@ -153,7 +153,7 @@ dev (Init hw32) = do
                               put hi_1
                               lift (put hw32))
                      signal Nix
-                     loop 
+                     loop
 dev (Load hw32) = do
                      lift (do
                               hi_1 <- lift (lift get)
@@ -195,10 +195,74 @@ data Ctr = C0  | C1  | C2  | C3  | C4  | C5  | C6  | C7  |
            C32 | C33 | C34 | C35 | C36 | C37 | C38 | C39 |
            C40 | C41 | C42 | C43 | C44 | C45 | C46 | C47 |
            C48 | C49 | C50 | C51 | C52 | C53 | C54 | C55 |
-           C56 | C57 | C58 | C59 | C60 | C61 | C62 | C63 
+           C56 | C57 | C58 | C59 | C60 | C61 | C62 | C63
 
 incCtr :: Ctr -> Ctr
-incCtr = extern "incCtr" incCtr
+incCtr c = case c of
+      C0 -> C1
+      C1 -> C2
+      C2 -> C3
+      C3 -> C4
+      C4 -> C5
+      C5 -> C6
+      C6 -> C7
+      C7 -> C8
+      C8 -> C9
+      C9 -> C10
+      C10 -> C11
+      C11 -> C12
+      C12 -> C13
+      C13 -> C14
+      C14 -> C15
+      C15 -> C16
+      C16 -> C17
+      C17 -> C18
+      C18 -> C19
+      C19 -> C20
+      C20 -> C21
+      C21 -> C22
+      C22 -> C23
+      C23 -> C24
+      C24 -> C25
+      C25 -> C26
+      C26 -> C27
+      C27 -> C28
+      C28 -> C29
+      C29 -> C30
+      C30 -> C31
+      C31 -> C32
+      C32 -> C33
+      C33 -> C34
+      C34 -> C35
+      C35 -> C36
+      C36 -> C37
+      C37 -> C38
+      C38 -> C39
+      C39 -> C40
+      C40 -> C41
+      C41 -> C42
+      C42 -> C43
+      C43 -> C44
+      C44 -> C45
+      C45 -> C46
+      C46 -> C47
+      C47 -> C48
+      C48 -> C49
+      C49 -> C50
+      C50 -> C51
+      C51 -> C52
+      C52 -> C53
+      C53 -> C54
+      C54 -> C55
+      C55 -> C56
+      C56 -> C57
+      C57 -> C58
+      C58 -> C59
+      C59 -> C60
+      C60 -> C61
+      C61 -> C62
+      C62 -> C63
+      C63 -> C0
 
 seed :: Ctr -> W32
 seed C0  = w428a2f98
@@ -274,27 +338,27 @@ rotateR2 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
 
 rotateR6 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
               b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31)
-           =  (W32 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 
+           =  (W32 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9
                    b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25)
 
 rotateR7 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
               b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31)
-           =  (W32 b25 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 b4 b5 b6 b7 b8 
+           =  (W32 b25 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 b4 b5 b6 b7 b8
                    b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24)
 
 rotateR11 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
                b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31)
-           = (W32 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 b4 b5 
+           = (W32 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 b4 b5
                   b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20)
 
 rotateR13 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
                b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31)
-           = (W32 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3 
+           = (W32 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b0 b1 b2 b3
                   b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18)
 
 rotateR17 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
                b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31)
-           = (W32 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31  
+           = (W32 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31
                   b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14)
 
 rotateR18 (W32 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
@@ -334,7 +398,7 @@ w00000000 = W32 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 {-
 initialstateconsts = [ "6a09e667", "bb67ae85", "3c6ef372", "a54ff53a",
                          "510e527f", "9b05688c", "1f83d9ab", "5be0cd19" ]-}
-                         
+
 w6a09e667 :: W32
 w6a09e667 = W32 C S S C S C S C C C C C S C C S S S S C C S S C C S S C C S S S
 
