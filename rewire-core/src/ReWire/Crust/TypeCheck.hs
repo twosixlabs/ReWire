@@ -23,12 +23,12 @@ import Control.Monad.Reader (MonadReader, ReaderT (..), local, asks)
 import Control.Monad.State (evalStateT, gets, modify, MonadState)
 import Data.Data (Data)
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet)
 import Data.Hashable (Hashable (hash))
 import Data.Maybe (mapMaybe)
-import Data.Set (Set)
 
 import qualified Data.HashMap.Strict as Map
-import qualified Data.Set as Set
+import qualified Data.HashSet        as Set
 
 -- import ReWire.Pretty (hsep)
 -- import Debug.Trace (trace)
@@ -90,9 +90,9 @@ typeCheck start (ts, syns, vs) = (ts, syns, ) <$> runReaderT tc mempty
             concretes :: Fresh m => [Defn] -> m Concretes
             concretes = foldM (\ m c -> Map.insert c <$> fresh (fst c) <*> pure m) mempty . uses
 
-            polys :: Set (Name Exp)
+            polys :: HashSet (Name Exp)
             polys = foldr polys' mempty vs
-                  where polys' :: Defn -> Set (Name Exp) -> Set (Name Exp)
+                  where polys' :: Defn -> HashSet (Name Exp) -> HashSet (Name Exp)
                         polys' d | isPoly d  = Set.insert $ defnName d
                                  | otherwise = id
 
@@ -105,7 +105,7 @@ typeCheck start (ts, syns, vs) = (ts, syns, ) <$> runReaderT tc mempty
             isPoly :: Defn -> Bool
             isPoly (Defn _ _ (Embed (Poly (unsafeUnbind -> (_, t)))) _ _) = not $ concrete t
 
-            uses :: Data a => a -> Set (Name Exp, Ty)
+            uses :: Data a => a -> HashSet (Name Exp, Ty)
             uses a = Set.fromList [(n, unAnn t) | Var _ _ (Just t) n <- query a, concrete t, Set.member n polys]
 
             concretize :: Data d => Concretes -> d -> d

@@ -11,34 +11,34 @@ $Pure.dispatch $0 = 9'case 16'$0 of
 $Pure.start :: W9
 $Pure.start  = 9'h100
 
-$LL.Main.compute :: W16 -> W8
-$LL.Main.compute $0 = 8'case 16'$0 of
-    {8'_, 8'@} -> Id
+$LL.Main.loop2 :: W8 -> W9
+$LL.Main.loop2 $0 = {1'h1, 8'$0}
 
-$LL.Main.compute1 :: W16 -> W8
-$LL.Main.compute1 $0 = 8'case 16'$0 of
-    {8'@, 8'_} -> Id
-
-$LL.Main.loop :: W8 -> W9
-$LL.Main.loop $0 = {1'h1, 8'$0}
-
-$LL.Main.loop2 :: W9 -> W9
-$LL.Main.loop2 $0 = 9'case 9'$0 of
-    {1'h0, 8'@} -> $LL.Main.loop
-
-Main.compute :: W16 -> W8
-Main.compute $0 = 8'case {16'$0
+Main.compute1 :: W16 -> W8
+Main.compute1 $0 = 8'case {16'$0
     , 1'case {1'case 16'$0 of {16'@} -> MSBit, 1'case 16'$0 of {7'_, 1'@, 8'_} -> Id} of
       {1'@, 1'@} -> ReWire.Prelude.&&} of
-    {16'@, 1'h1} -> $LL.Main.compute
+    {16'@, 1'h1} -> $LL.Main.compute1
     _ -> 8'case {16'$0
       , 1'case {1'case 16'$0 of {16'@} -> MSBit, 1'case 16'$0 of {7'_, 1'@, 8'_} -> Id} of
         {1'@, 1'@} -> ReWire.Prelude.&&} of
-      {16'@, 1'h0} -> $LL.Main.compute1
+      {16'@, 1'h0} -> $LL.Main.compute3
+
+$LL.Main.loop1 :: W9 -> W9
+$LL.Main.loop1 $0 = 9'case 9'$0 of
+    {1'h0, 8'@} -> $LL.Main.loop2
+
+$LL.Main.compute3 :: W16 -> W8
+$LL.Main.compute3 $0 = 8'case 16'$0 of
+    {8'@, 8'_} -> Id
 
 Main.loop :: W16 -> W9
-Main.loop $0 = 9'case {1'h0, 8'case 16'$0 of {16'@} -> Main.compute} of
-    {9'@} -> $LL.Main.loop2
+Main.loop $0 = 9'case {1'h0, 8'case 16'$0 of {16'@} -> Main.compute1} of
+    {9'@} -> $LL.Main.loop1
+
+$LL.Main.compute1 :: W16 -> W8
+$LL.Main.compute1 $0 = 8'case 16'$0 of
+    {8'_, 8'@} -> Id
 
 ReWire.Prelude.&& :: W1 -> W1 -> W1
 ReWire.Prelude.&& $0 $1 = 1'case {1'$0, 1'$1} of

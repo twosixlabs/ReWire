@@ -12,7 +12,7 @@ module ReWire.ModCache
       ) where
 
 import ReWire.Annotation (Annotation, SrcSpanInfo, unAnn)
-import ReWire.Config (Config, verbose, dump, loadPath, typecheck)
+import ReWire.Config (Config, verbose, dump, loadPath, typecheck, pDebug)
 import ReWire.Crust.KindCheck (kindCheck)
 import ReWire.Crust.PrimBasis (addPrims, primDatas)
 import ReWire.Crust.Purify (purify)
@@ -141,7 +141,7 @@ getDevice conf fp = do
        >=> expandTypeSynonyms
        >=> verb "[Pass 5] Post-inlining, before typechecking."
        >=> whenDump 5 (printInfo "[Pass 5] Crust: Post-inlining")
-       >=> verb "Typechecking."
+       >=> verb "Typechecking, inference."
        >=> kindCheck >=> typeCheck start
        >=> verb "[Pass 6] Post-typechecking."
        >=> whenDump 6 (printInfo "[Pass 6] Crust: Post-typechecking")
@@ -214,9 +214,6 @@ getDevice conf fp = do
 
             purgeAll :: Applicative m => FreeProgram -> m FreeProgram
             purgeAll = pure . purgeUnused [start] []
-
-pDebug :: MonadIO m => Config -> Text -> m ()
-pDebug conf s = when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: " <> s
 
 printHeader :: MonadIO m => Text -> m ()
 printHeader hd = do

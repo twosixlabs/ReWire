@@ -6,167 +6,167 @@ states [("__st0",30)]
 
 $Pure.dispatch :: W30 -> W10 -> W78
 $Pure.dispatch $0 $1 = 78'case {10'$1, 30'$0} of
-    {10'@, 30'@} -> ReWire.Monad.iterSt1
+    {10'@, 30'@} -> ReWire.Monad.iterSt
 
 $Pure.start :: W78
 $Pure.start  = 78'h20000000000000000000
 
-$LL.Main.incrPipeline :: W15 -> W30 -> W45
-$LL.Main.incrPipeline $0 $1 = {15'$0
+$LL.ReWire.Monad.iterSt41 :: W30 -> W78
+$LL.ReWire.Monad.iterSt41 $0 = {48'h400000000000, 30'$0}
+
+Main.incrPipeline :: W45 -> W45
+Main.incrPipeline $0 = 45'case 45'$0 of
+    {15'@, 30'@} -> $LL.Main.incrPipeline1
+
+Main.inputToMyState :: W10 -> W15 -> W15
+Main.inputToMyState $0 $1 = 15'case {10'$0, 15'$1} of
+    {2'h0, 4'_, 4'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState26
+    _ -> 15'case {10'$0, 15'$1} of
+      {2'h1, 8'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState7
+      _ -> 15'case {10'$0, 15'$1} of
+        {2'h2, 7'_, 1'h1, 1'@, 1'h1, 4'@, 9'@} -> $LL.Main.inputToMyState12
+        _ -> 15'case {10'$0, 15'$1} of
+          {2'h2, 7'_, 1'h1, 1'@, 1'h0, 4'_, 9'@} -> $LL.Main.inputToMyState6
+          _ -> 15'case {10'$0, 15'$1} of
+            {2'h2, 7'_, 1'h0, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState23
+
+$LL.ReWire.Monad.iterSt38 :: W16 -> W30 -> W30 -> W78
+$LL.ReWire.Monad.iterSt38 $0 $1 $2 = 78'case {16'$0, 30'$2, 30'$1} of
+    {16'@, 30'@, 30'@} -> $LL.ReWire.Monad.iterSt25
+
+$LL.Main.incrPipeline1 :: W15 -> W30 -> W45
+$LL.Main.incrPipeline1 $0 $1 = {15'$0
   , 15'case 30'$1 of
     {15'@, 15'_} -> Id
   , 15'case 128'case {128'case 30'$1 of {30'@} -> Resize, 128'h00000000000000000000000000000000} of
       {128'@, 128'@} -> RShift of
     {128'@} -> Resize}
 
-$LL.Main.inputToMyState :: W4 -> W1 -> W9 -> W15
-$LL.Main.inputToMyState $0 $1 $2 = {1'$1, 1'h1, 4'$0, 5'h00, 4'$0}
+$LL.Main.loop3 :: W30 -> W15 -> W46
+$LL.Main.loop3 $0 $1 = {16'case 15'$1 of {15'@} -> Main.myStateToOutput, 30'$0}
 
-$LL.Main.inputToMyState1 :: W4 -> W1 -> W5 -> W9 -> W15
-$LL.Main.inputToMyState1 $0 $1 $2 $3 = 15'case {4'$0, 1'$1, 9'$3} of
-    {4'@, 1'@, 9'@} -> $LL.Main.inputToMyState
+$LL.Main.myStateToOutput5 :: W9 -> W16
+$LL.Main.myStateToOutput5 $0 = {7'h00, 9'$0}
 
-$LL.Main.inputToMyState2 :: W4 -> W1 -> W5 -> W9 -> W15
-$LL.Main.inputToMyState2 $0 $1 $2 $3 = 15'case {4'$0, 1'$1, 5'$2, 9'$3} of
-    {4'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState1
+$LL.ReWire.Monad.iterSt37 :: W16 -> W30 -> W78
+$LL.ReWire.Monad.iterSt37 $0 $1 = {32'h80000000, 16'$0, 30'$1}
 
-$LL.Main.inputToMyState4 :: W8 -> W5 -> W1 -> W9 -> W15
-$LL.Main.inputToMyState4 $0 $1 $2 $3 = {1'$2, 5'$1, 1'h1, 8'$0}
+$LL.Main.inputToMyState27 :: W4 -> W1 -> W5 -> W9 -> W15
+$LL.Main.inputToMyState27 $0 $1 $2 $3 = 15'case {4'$0, 1'$1, 9'$3} of
+    {4'@, 1'@, 9'@} -> $LL.Main.inputToMyState19
 
-$LL.Main.inputToMyState5 :: W8 -> W1 -> W5 -> W9 -> W15
-$LL.Main.inputToMyState5 $0 $1 $2 $3 = 15'case {8'$0, 5'$2, 1'$1, 9'$3} of
-    {8'@, 5'@, 1'@, 9'@} -> $LL.Main.inputToMyState4
-
-$LL.Main.inputToMyState6 :: W8 -> W1 -> W5 -> W9 -> W15
-$LL.Main.inputToMyState6 $0 $1 $2 $3 = 15'case {8'$0, 1'$1, 5'$2, 9'$3} of
-    {8'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState5
-
-$LL.Main.inputToMyState8 :: W4 -> W9 -> W15
-$LL.Main.inputToMyState8 $0 $1 = {11'h400, 4'$0}
-
-$LL.Main.inputToMyState10 :: W1 -> W4 -> W9 -> W15
-$LL.Main.inputToMyState10 $0 $1 $2 = 15'case {4'$1, 9'$2} of
-    {4'@, 9'@} -> $LL.Main.inputToMyState8
-
-$LL.Main.inputToMyState11 :: W1 -> W9 -> W15
-$LL.Main.inputToMyState11 $0 $1 = {6'h20, 9'$1}
-
-$LL.Main.inputToMyState12 :: W5 -> W9 -> W15
-$LL.Main.inputToMyState12 $0 $1 = {6'h00, 9'$1}
-
-$LL.Main.inputToMyState13 :: W1 -> W5 -> W9 -> W15
-$LL.Main.inputToMyState13 $0 $1 $2 = 15'case {5'$1, 9'$2} of
-    {5'@, 9'@} -> $LL.Main.inputToMyState12
-
-$LL.Main.loop :: W30 -> W15 -> W46
-$LL.Main.loop $0 $1 = {16'case 15'$1 of {15'@} -> Main.myStateToOutput, 30'$0}
-
-$LL.Main.myStateToOutput :: W5 -> W4 -> W16
-$LL.Main.myStateToOutput $0 $1 = {2'h3, 5'$0, 5'h00, 4'$1}
-
-$LL.Main.myStateToOutput1 :: W5 -> W4 -> W16
-$LL.Main.myStateToOutput1 $0 $1 = 16'case {5'$0, 4'$1} of
-    {5'@, 4'@} -> $LL.Main.myStateToOutput
-
-$LL.Main.myStateToOutput2 :: W5 -> W8 -> W16
-$LL.Main.myStateToOutput2 $0 $1 = {2'h1, 5'$0, 1'h1, 8'$1}
-
-$LL.Main.myStateToOutput3 :: W5 -> W8 -> W16
-$LL.Main.myStateToOutput3 $0 $1 = 16'case {5'$0, 8'$1} of
-    {5'@, 8'@} -> $LL.Main.myStateToOutput2
-
-$LL.Main.myStateToOutput4 :: W9 -> W16
-$LL.Main.myStateToOutput4 $0 = {7'h00, 9'$0}
-
-$LL.Main.myStateToOutput5 :: W5 -> W9 -> W16
-$LL.Main.myStateToOutput5 $0 $1 = 16'case 9'$1 of
-    {9'@} -> $LL.Main.myStateToOutput4
-
-$LL.ReWire.Monad.iterSt :: W16 -> W30 -> W78
-$LL.ReWire.Monad.iterSt $0 $1 = {32'h80000000, 16'$0, 30'$1}
-
-$LL.ReWire.Monad.iterSt6 :: W46 -> W30 -> W78
-$LL.ReWire.Monad.iterSt6 $0 $1 = 78'case {30'$1, 46'$0} of
-    {30'@, 16'@, 30'@} -> $LL.ReWire.Monad.iterSt20
-
-$LL.ReWire.Monad.iterSt7 :: W16 -> W30 -> W30 -> W78
-$LL.ReWire.Monad.iterSt7 $0 $1 $2 = 78'case {16'$0, 78'case 30'$1 of {30'@} -> $LL.ReWire.Monad.iterSt16} of
-    {16'@, 78'@} -> $LL.ReWire.Monad.iterSt24
-
-$LL.ReWire.Monad.iterSt9 :: W10 -> W30 -> W30 -> W76
-$LL.ReWire.Monad.iterSt9 $0 $1 $2 = {46'case {10'$0, 30'$1} of {10'@, 30'@} -> Main.loop, 30'$2}
-
-$LL.ReWire.Monad.iterSt16 :: W30 -> W78
-$LL.ReWire.Monad.iterSt16 $0 = {48'h400000000000, 30'$0}
-
-$LL.ReWire.Monad.iterSt19 :: W16 -> W30 -> W30 -> W78
-$LL.ReWire.Monad.iterSt19 $0 $1 $2 = 78'case {16'$0, 30'$2, 30'$1} of
-    {16'@, 30'@, 30'@} -> $LL.ReWire.Monad.iterSt7
-
-$LL.ReWire.Monad.iterSt20 :: W30 -> W16 -> W30 -> W78
-$LL.ReWire.Monad.iterSt20 $0 $1 $2 = 78'case {16'$1, 30'$0, 30'$2} of
-    {16'@, 30'@, 30'@} -> $LL.ReWire.Monad.iterSt19
-
-$LL.ReWire.Monad.iterSt22 :: W16 -> W30 -> W78
-$LL.ReWire.Monad.iterSt22 $0 $1 = 78'case {16'$0, 30'$1} of
-    {16'@, 30'@} -> $LL.ReWire.Monad.iterSt
-
-$LL.ReWire.Monad.iterSt24 :: W16 -> W78 -> W78
-$LL.ReWire.Monad.iterSt24 $0 $1 = 78'case {16'$0, 78'$1} of
-    {16'@, 2'h1, 46'_, 30'@} -> $LL.ReWire.Monad.iterSt22
-
-$LL.ReWire.Monad.iterSt30 :: W46 -> W30 -> W78
-$LL.ReWire.Monad.iterSt30 $0 $1 = {2'h0, 46'$0, 30'$1}
+$LL.Main.inputToMyState26 :: W4 -> W1 -> W5 -> W9 -> W15
+$LL.Main.inputToMyState26 $0 $1 $2 $3 = 15'case {4'$0, 1'$1, 5'$2, 9'$3} of
+    {4'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState27
 
 $LL.ReWire.Monad.iterSt35 :: W46 -> W30 -> W78
 $LL.ReWire.Monad.iterSt35 $0 $1 = 78'case {46'$0, 30'$1} of
-    {46'@, 30'@} -> $LL.ReWire.Monad.iterSt6
+    {46'@, 30'@} -> $LL.ReWire.Monad.iterSt14
 
-$LL.ReWire.Monad.iterSt36 :: W78 -> W78
-$LL.ReWire.Monad.iterSt36 $0 = 78'case 78'$0 of
-    {2'h0, 46'@, 30'@} -> $LL.ReWire.Monad.iterSt35
+$LL.Main.inputToMyState24 :: W4 -> W9 -> W15
+$LL.Main.inputToMyState24 $0 $1 = {11'h400, 4'$0}
 
-$LL.ReWire.Monad.iterSt39 :: W76 -> W78
-$LL.ReWire.Monad.iterSt39 $0 = 78'case 76'$0 of
-    {46'@, 30'@} -> $LL.ReWire.Monad.iterSt30
+$LL.Main.inputToMyState23 :: W1 -> W5 -> W9 -> W15
+$LL.Main.inputToMyState23 $0 $1 $2 = 15'case {5'$1, 9'$2} of
+    {5'@, 9'@} -> $LL.Main.inputToMyState18
 
-$LL.ReWire.Monad.iterSt42 :: W10 -> W60 -> W76
-$LL.ReWire.Monad.iterSt42 $0 $1 = 76'case {10'$0, 60'$1} of
-    {10'@, 30'@, 30'@} -> $LL.ReWire.Monad.iterSt9
+$LL.ReWire.Monad.iterSt32 :: W46 -> W30 -> W78
+$LL.ReWire.Monad.iterSt32 $0 $1 = {2'h0, 46'$0, 30'$1}
 
-Main.incrPipeline :: W45 -> W45
-Main.incrPipeline $0 = 45'case 45'$0 of
-    {15'@, 30'@} -> $LL.Main.incrPipeline
+$LL.ReWire.Monad.iterSt30 :: W16 -> W78 -> W78
+$LL.ReWire.Monad.iterSt30 $0 $1 = 78'case {16'$0, 78'$1} of
+    {16'@, 2'h1, 46'_, 30'@} -> $LL.ReWire.Monad.iterSt24
 
-Main.inputToMyState :: W10 -> W15 -> W15
-Main.inputToMyState $0 $1 = 15'case {10'$0, 15'$1} of
-    {2'h0, 4'_, 4'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState2
-    _ -> 15'case {10'$0, 15'$1} of
-      {2'h1, 8'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState6
-      _ -> 15'case {10'$0, 15'$1} of
-        {2'h2, 7'_, 1'h1, 1'@, 1'h1, 4'@, 9'@} -> $LL.Main.inputToMyState10
-        _ -> 15'case {10'$0, 15'$1} of
-          {2'h2, 7'_, 1'h1, 1'@, 1'h0, 4'_, 9'@} -> $LL.Main.inputToMyState11
-          _ -> 15'case {10'$0, 15'$1} of
-            {2'h2, 7'_, 1'h0, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState13
+$LL.Main.inputToMyState19 :: W4 -> W1 -> W9 -> W15
+$LL.Main.inputToMyState19 $0 $1 $2 = {1'$1, 1'h1, 4'$0, 5'h00, 4'$0}
 
-Main.loop :: W10 -> W30 -> W46
-Main.loop $0 $1 = 46'case 45'case {15'case {10'$0, 15'case 30'$1 of {15'@, 15'_} -> Id} of
+$LL.ReWire.Monad.iterSt29 :: W30 -> W16 -> W30 -> W78
+$LL.ReWire.Monad.iterSt29 $0 $1 $2 = 78'case {16'$1, 30'$0, 30'$2} of
+    {16'@, 30'@, 30'@} -> $LL.ReWire.Monad.iterSt38
+
+$LL.Main.inputToMyState18 :: W5 -> W9 -> W15
+$LL.Main.inputToMyState18 $0 $1 = {6'h00, 9'$1}
+
+$LL.ReWire.Monad.iterSt26 :: W10 -> W30 -> W30 -> W76
+$LL.ReWire.Monad.iterSt26 $0 $1 $2 = {46'case {10'$0, 30'$1} of {10'@, 30'@} -> Main.loop1, 30'$2}
+
+$LL.ReWire.Monad.iterSt25 :: W16 -> W30 -> W30 -> W78
+$LL.ReWire.Monad.iterSt25 $0 $1 $2 = 78'case {16'$0, 78'case 30'$1 of {30'@} -> $LL.ReWire.Monad.iterSt41} of
+    {16'@, 78'@} -> $LL.ReWire.Monad.iterSt30
+
+$LL.ReWire.Monad.iterSt24 :: W16 -> W30 -> W78
+$LL.ReWire.Monad.iterSt24 $0 $1 = 78'case {16'$0, 30'$1} of
+    {16'@, 30'@} -> $LL.ReWire.Monad.iterSt37
+
+Main.loop1 :: W10 -> W30 -> W46
+Main.loop1 $0 $1 = 46'case 45'case {15'case {10'$0, 15'case 30'$1 of {15'@, 15'_} -> Id} of
         {10'@, 15'@} -> Main.inputToMyState
       , 30'$1} of
       {45'@} -> Main.incrPipeline of
-    {30'@, 15'@} -> $LL.Main.loop
+    {30'@, 15'@} -> $LL.Main.loop3
+
+$LL.Main.myStateToOutput4 :: W5 -> W4 -> W16
+$LL.Main.myStateToOutput4 $0 $1 = 16'case {5'$0, 4'$1} of
+    {5'@, 4'@} -> $LL.Main.myStateToOutput2
+
+$LL.Main.myStateToOutput3 :: W5 -> W8 -> W16
+$LL.Main.myStateToOutput3 $0 $1 = 16'case {5'$0, 8'$1} of
+    {5'@, 8'@} -> $LL.Main.myStateToOutput
+
+$LL.Main.inputToMyState14 :: W5 -> W8 -> W1 -> W9 -> W15
+$LL.Main.inputToMyState14 $0 $1 $2 $3 = {1'$2, 5'$0, 1'h1, 8'$1}
+
+$LL.ReWire.Monad.iterSt20 :: W78 -> W78
+$LL.ReWire.Monad.iterSt20 $0 = 78'case 78'$0 of
+    {2'h0, 46'@, 30'@} -> $LL.ReWire.Monad.iterSt35
+
+ReWire.Monad.iterSt :: W10 -> W30 -> W78
+ReWire.Monad.iterSt $0 $1 = 78'case 78'case 76'case {10'$0, 30'$1, 30'$1} of
+        {10'@, 60'@} -> $LL.ReWire.Monad.iterSt4 of
+      {76'@} -> $LL.ReWire.Monad.iterSt10 of
+    {78'@} -> $LL.ReWire.Monad.iterSt20
+
+$LL.Main.inputToMyState12 :: W1 -> W4 -> W9 -> W15
+$LL.Main.inputToMyState12 $0 $1 $2 = 15'case {4'$1, 9'$2} of
+    {4'@, 9'@} -> $LL.Main.inputToMyState24
+
+$LL.ReWire.Monad.iterSt14 :: W46 -> W30 -> W78
+$LL.ReWire.Monad.iterSt14 $0 $1 = 78'case {30'$1, 46'$0} of
+    {30'@, 16'@, 30'@} -> $LL.ReWire.Monad.iterSt29
+
+$LL.Main.myStateToOutput2 :: W5 -> W4 -> W16
+$LL.Main.myStateToOutput2 $0 $1 = {2'h3, 5'$0, 5'h00, 4'$1}
+
+$LL.Main.inputToMyState7 :: W8 -> W1 -> W5 -> W9 -> W15
+$LL.Main.inputToMyState7 $0 $1 $2 $3 = 15'case {8'$0, 1'$1, 5'$2, 9'$3} of
+    {8'@, 1'@, 5'@, 9'@} -> $LL.Main.inputToMyState5
+
+$LL.Main.inputToMyState6 :: W1 -> W9 -> W15
+$LL.Main.inputToMyState6 $0 $1 = {6'h20, 9'$1}
+
+$LL.Main.inputToMyState5 :: W8 -> W1 -> W5 -> W9 -> W15
+$LL.Main.inputToMyState5 $0 $1 $2 $3 = 15'case {5'$2, 8'$0, 1'$1, 9'$3} of
+    {5'@, 8'@, 1'@, 9'@} -> $LL.Main.inputToMyState14
+
+$LL.ReWire.Monad.iterSt10 :: W76 -> W78
+$LL.ReWire.Monad.iterSt10 $0 = 78'case 76'$0 of
+    {46'@, 30'@} -> $LL.ReWire.Monad.iterSt32
+
+$LL.Main.myStateToOutput1 :: W5 -> W9 -> W16
+$LL.Main.myStateToOutput1 $0 $1 = 16'case 9'$1 of
+    {9'@} -> $LL.Main.myStateToOutput5
+
+$LL.ReWire.Monad.iterSt4 :: W10 -> W60 -> W76
+$LL.ReWire.Monad.iterSt4 $0 $1 = 76'case {10'$0, 60'$1} of
+    {10'@, 30'@, 30'@} -> $LL.ReWire.Monad.iterSt26
 
 Main.myStateToOutput :: W15 -> W16
 Main.myStateToOutput $0 = 16'case 15'$0 of
-    {1'h1, 5'@, 1'h0, 4'_, 4'@} -> $LL.Main.myStateToOutput1
+    {1'h1, 5'@, 1'h0, 4'_, 4'@} -> $LL.Main.myStateToOutput4
     _ -> 16'case 15'$0 of
       {1'h1, 5'@, 1'h1, 8'@} -> $LL.Main.myStateToOutput3
       _ -> 16'case 15'$0 of
-        {1'h0, 5'@, 9'@} -> $LL.Main.myStateToOutput5
+        {1'h0, 5'@, 9'@} -> $LL.Main.myStateToOutput1
 
-ReWire.Monad.iterSt1 :: W10 -> W30 -> W78
-ReWire.Monad.iterSt1 $0 $1 = 78'case 78'case 76'case {10'$0, 30'$1, 30'$1} of
-        {10'@, 60'@} -> $LL.ReWire.Monad.iterSt42 of
-      {76'@} -> $LL.ReWire.Monad.iterSt39 of
-    {78'@} -> $LL.ReWire.Monad.iterSt36
+$LL.Main.myStateToOutput :: W5 -> W8 -> W16
+$LL.Main.myStateToOutput $0 $1 = {2'h1, 5'$0, 1'h1, 8'$1}

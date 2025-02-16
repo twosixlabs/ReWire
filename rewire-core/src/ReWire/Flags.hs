@@ -1,5 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE Safe #-}
 module ReWire.Flags where
+
+import Data.Hashable (Hashable)
+import GHC.Generics (Generic (..))
 
 data Flag = FlagO !String
           | FlagVerbose | FlagHelp
@@ -21,4 +25,6 @@ data Flag = FlagO !String
           | FlagPretty
           | FlagDebugTypeCheck
           | FlagRtlOpt !String
-      deriving (Eq, Show)
+      deriving (Eq, Show, Generic)
+
+instance Hashable Flag

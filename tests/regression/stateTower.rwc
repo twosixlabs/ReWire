@@ -11,141 +11,129 @@ $Pure.dispatch $0 $1 = 5'case {1'$1, 2'$0} of
 $Pure.start :: W5
 $Pure.start  = 5'h17
 
-$LL.Main.sig :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig $0 $1 $2 = {2'h2, 1'$0, 1'$1, 1'$2}
+$LL.Main.sig113 :: W3 -> W5
+$LL.Main.sig113 $0 = 5'case 3'$0 of
+    {1'@, 1'@, 1'@} -> $LL.Main.sig78
 
-$LL.Main.sig1 :: W1 -> W1 -> W5
-$LL.Main.sig1 $0 $1 = 5'case 5'case {1'$0, 1'$0, 1'$1} of
-      {3'@} -> $LL.Main.sig24 of
-    {5'@} -> $LL.Main.sig20
+$LL.Main.sig112 :: W1 -> W1 -> W1 -> W1 -> W5
+$LL.Main.sig112 $0 $1 $2 $3 = 5'case {1'$0, 1'$1, 1'$2, 1'$3} of
+    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig24
 
-$LL.Main.sig2 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig2 $0 $1 $2 $3 = 5'case 5'case {1'$2, 1'case 1'case {1'$0, 1'$1} of {1'@, 1'@} -> XOr of {1'@} -> MSBit} of
-      {2'@} -> $LL.Main.sig31 of
-    {5'@} -> $LL.Main.sig27
+$LL.Main.sig111 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig111 $0 $1 $2 = {2'h2, 1'$0, 1'$1, 1'$2}
 
-$LL.Main.sig3 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig3 $0 $1 $2 $3 = 5'case {1'$1, 1'$0, 5'case {1'$1, 1'$3} of {2'@} -> $LL.Main.sig31} of
-    {1'@, 1'@, 5'@} -> $LL.Main.sig35
+$LL.Main.sig102 :: W1 -> W1 -> W5
+$LL.Main.sig102 $0 $1 = 5'case 5'case {1'$0, 1'$0, 1'$1} of
+      {3'@} -> $LL.Main.sig113 of
+    {5'@} -> $LL.Main.sig100
 
-$LL.Main.sig4 :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig4 $0 $1 $2 = 5'case {1'$0, 5'case {1'$2, 1'$1, 1'$2} of {3'@} -> $LL.Main.sig24} of
-    {1'@, 5'@} -> $LL.Main.sig43
+$LL.Main.sig100 :: W5 -> W5
+$LL.Main.sig100 $0 = 5'case 5'$0 of
+    {2'h1, 1'@, 1'@, 1'@} -> $LL.Main.sig88
+
+$LL.Main.sig99 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig99 $0 $1 $2 = 5'case {1'$0, 1'$1, 1'$2} of
+    {1'@, 1'@, 1'@} -> $LL.Main.sig89
+
+ReWire.Prelude.not1 :: W1 -> W1
+ReWire.Prelude.not1 $0 = 1'case 1'$0 of
+    {1'h1} -> 1'h0
+    _ -> 1'h1
+
+$LL.Main.sig95 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig95 $0 $1 $2 = {2'h1, 1'$0, 1'$1, 1'$2}
+
+$LL.Main.sig94 :: W1 -> W1 -> W5 -> W5
+$LL.Main.sig94 $0 $1 $2 = 5'case {1'$0, 1'$1, 5'$2} of
+    {1'@, 1'@, 2'h0, 1'_, 1'@, 1'@} -> $LL.Main.sig112
+
+$LL.Main.sig89 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig89 $0 $1 $2 = 5'case {1'$0, 5'case {1'$2, 1'$1, 1'$2} of {3'@} -> $LL.Main.sig36} of
+    {1'@, 5'@} -> $LL.Main.sig75
+
+$LL.Main.sig88 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig88 $0 $1 $2 = 5'case {1'$0, 1'$1, 1'$2} of
+    {1'@, 1'@, 1'@} -> $LL.Main.sig111
+
+$LL.Main.sig87 :: W1 -> W1 -> W5
+$LL.Main.sig87 $0 $1 = {3'h0, 1'$0, 1'$1}
+
+$LL.Main.sig84 :: W1 -> W1 -> W1 -> W1 -> W5
+$LL.Main.sig84 $0 $1 $2 $3 = 5'case {1'$0, 1'$1, 1'$2, 1'$3} of
+    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig33
+
+$LL.Main.sig83 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig83 $0 $1 $2 = {2'h1, 1'$1, 1'$0, 1'$2}
+
+$LL.Main.sig82 :: W5 -> W5
+$LL.Main.sig82 $0 = 5'case 5'$0 of
+    {2'h0, 1'_, 1'@, 1'@} -> $LL.Main.sig63
+
+$LL.Main.sig78 :: W1 -> W1 -> W1 -> W5
+$LL.Main.sig78 $0 $1 $2 = 5'case {1'$1, 1'$0, 1'$2} of
+    {1'@, 1'@, 1'@} -> $LL.Main.sig83
+
+$LL.Main.sig75 :: W1 -> W5 -> W5
+$LL.Main.sig75 $0 $1 = 5'case {1'$0, 5'$1} of
+    {1'@, 2'h1, 1'@, 1'@, 1'@} -> $LL.Main.sig84
+
+Main.sig :: W1 -> W1 -> W1 -> W5
+Main.sig $0 $1 $2 = 5'case {1'$1, 1'$2, 1'case 1'$0 of {1'@} -> ReWire.Prelude.not1} of
+    {1'@, 1'@, 1'h1} -> $LL.Main.sig28
+    _ -> 5'case {1'$1, 1'$2, 1'case 1'$0 of {1'@} -> ReWire.Prelude.not1} of
+      {1'@, 1'@, 1'h0} -> $LL.Main.sig70
+
+$LL.Main.sig70 :: W1 -> W1 -> W5
+$LL.Main.sig70 $0 $1 = 5'case {1'$0, 1'$1} of
+    {1'@, 1'@} -> $LL.Main.sig67
+
+$LL.Main.sig67 :: W1 -> W1 -> W5
+$LL.Main.sig67 $0 $1 = 5'case {3'h0, 1'$0, 1'$1} of
+    {5'@} -> $LL.Main.sig82
+
+$LL.Main.sig65 :: W2 -> W5
+$LL.Main.sig65 $0 = 5'case 2'$0 of
+    {1'@, 1'@} -> $LL.Main.sig87
+
+$LL.Main.sig64 :: W1 -> W1 -> W5
+$LL.Main.sig64 $0 $1 = 5'case {1'$0, 1'$1} of
+    {1'@, 1'@} -> $LL.Main.sig102
+
+$LL.Main.sig63 :: W1 -> W1 -> W5
+$LL.Main.sig63 $0 $1 = 5'case {1'$0, 1'$1} of
+    {1'@, 1'@} -> $LL.Main.sig49
+
+$LL.Main.sig56 :: W5 -> W5
+$LL.Main.sig56 $0 = 5'case 5'$0 of
+    {2'h0, 1'_, 1'@, 1'@} -> $LL.Main.sig64
+
+$LL.Main.sig49 :: W1 -> W1 -> W5
+$LL.Main.sig49 $0 $1 = 5'case 5'case {1'$0, 1'$0, 1'$1} of
+      {3'@} -> $LL.Main.sig36 of
+    {5'@} -> $LL.Main.sig100
+
+$LL.Main.sig36 :: W3 -> W5
+$LL.Main.sig36 $0 = 5'case 3'$0 of
+    {1'@, 1'@, 1'@} -> $LL.Main.sig95
+
+$LL.Main.sig33 :: W1 -> W1 -> W1 -> W1 -> W5
+$LL.Main.sig33 $0 $1 $2 $3 = 5'case {1'$0, 1'$1, 5'case {1'$1, 1'$3} of {2'@} -> $LL.Main.sig65} of
+    {1'@, 1'@, 5'@} -> $LL.Main.sig94
+
+$LL.Main.sig28 :: W1 -> W1 -> W5
+$LL.Main.sig28 $0 $1 = 5'case {1'$0, 1'$1} of
+    {1'@, 1'@} -> $LL.Main.sig6
+
+$LL.Main.sig24 :: W1 -> W1 -> W1 -> W1 -> W5
+$LL.Main.sig24 $0 $1 $2 $3 = 5'case 5'case {1'$2, 1'case 1'case {1'$0, 1'$1} of {1'@, 1'@} -> XOr of {1'@} -> MSBit} of
+      {2'@} -> $LL.Main.sig65 of
+    {5'@} -> $LL.Main.sig56
 
 $LL.Main.sig6 :: W1 -> W1 -> W5
 $LL.Main.sig6 $0 $1 = 5'case 5'case {1'$0, 1'$0, 1'$1} of
-      {3'@} -> $LL.Main.sig54 of
-    {5'@} -> $LL.Main.sig20
+      {3'@} -> $LL.Main.sig113 of
+    {5'@} -> $LL.Main.sig
 
-$LL.Main.sig14 :: W1 -> W1 -> W5
-$LL.Main.sig14 $0 $1 = 5'case 5'case {1'$0, 1'$0, 1'$1} of
-      {3'@} -> $LL.Main.sig24 of
-    {5'@} -> $LL.Main.sig94
-
-$LL.Main.sig15 :: W1 -> W1 -> W5
-$LL.Main.sig15 $0 $1 = 5'case {3'h0, 1'$0, 1'$1} of
-    {5'@} -> $LL.Main.sig101
-
-$LL.Main.sig18 :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig18 $0 $1 $2 = 5'case {1'$0, 1'$1, 1'$2} of
-    {1'@, 1'@, 1'@} -> $LL.Main.sig
-
-$LL.Main.sig20 :: W5 -> W5
-$LL.Main.sig20 $0 = 5'case 5'$0 of
-    {2'h1, 1'@, 1'@, 1'@} -> $LL.Main.sig18
-
-$LL.Main.sig21 :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig21 $0 $1 $2 = {2'h1, 1'$0, 1'$1, 1'$2}
-
-$LL.Main.sig24 :: W3 -> W5
-$LL.Main.sig24 $0 = 5'case 3'$0 of
-    {1'@, 1'@, 1'@} -> $LL.Main.sig21
-
-$LL.Main.sig25 :: W1 -> W1 -> W5
-$LL.Main.sig25 $0 $1 = 5'case {1'$0, 1'$1} of
-    {1'@, 1'@} -> $LL.Main.sig1
-
-$LL.Main.sig27 :: W5 -> W5
-$LL.Main.sig27 $0 = 5'case 5'$0 of
-    {2'h0, 1'_, 1'@, 1'@} -> $LL.Main.sig25
-
-$LL.Main.sig28 :: W1 -> W1 -> W5
-$LL.Main.sig28 $0 $1 = {3'h0, 1'$0, 1'$1}
-
-$LL.Main.sig31 :: W2 -> W5
-$LL.Main.sig31 $0 = 5'case 2'$0 of
-    {1'@, 1'@} -> $LL.Main.sig28
-
-$LL.Main.sig32 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig32 $0 $1 $2 $3 = 5'case {1'$1, 1'$0, 1'$2, 1'$3} of
-    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig2
-
-$LL.Main.sig33 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig33 $0 $1 $2 $3 = 5'case {1'$0, 1'$1, 1'$2, 1'$3} of
-    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig32
-
-$LL.Main.sig35 :: W1 -> W1 -> W5 -> W5
-$LL.Main.sig35 $0 $1 $2 = 5'case {1'$0, 1'$1, 5'$2} of
-    {1'@, 1'@, 2'h0, 1'_, 1'@, 1'@} -> $LL.Main.sig33
-
-$LL.Main.sig40 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig40 $0 $1 $2 $3 = 5'case {1'$1, 1'$0, 1'$2, 1'$3} of
-    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig3
-
-$LL.Main.sig41 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig41 $0 $1 $2 $3 = 5'case {1'$1, 1'$0, 1'$2, 1'$3} of
-    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig40
-
-$LL.Main.sig42 :: W1 -> W1 -> W1 -> W1 -> W5
-$LL.Main.sig42 $0 $1 $2 $3 = 5'case {1'$0, 1'$1, 1'$2, 1'$3} of
-    {1'@, 1'@, 1'@, 1'@} -> $LL.Main.sig41
-
-$LL.Main.sig43 :: W1 -> W5 -> W5
-$LL.Main.sig43 $0 $1 = 5'case {1'$0, 5'$1} of
-    {1'@, 2'h1, 1'@, 1'@, 1'@} -> $LL.Main.sig42
-
-$LL.Main.sig51 :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig51 $0 $1 $2 = {2'h1, 1'$1, 1'$0, 1'$2}
-
-$LL.Main.sig52 :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig52 $0 $1 $2 = 5'case {1'$1, 1'$0, 1'$2} of
-    {1'@, 1'@, 1'@} -> $LL.Main.sig51
-
-$LL.Main.sig54 :: W3 -> W5
-$LL.Main.sig54 $0 = 5'case 3'$0 of
-    {1'@, 1'@, 1'@} -> $LL.Main.sig52
-
-$LL.Main.sig92 :: W1 -> W1 -> W1 -> W5
-$LL.Main.sig92 $0 $1 $2 = 5'case {1'$0, 1'$1, 1'$2} of
-    {1'@, 1'@, 1'@} -> $LL.Main.sig4
-
-$LL.Main.sig94 :: W5 -> W5
-$LL.Main.sig94 $0 = 5'case 5'$0 of
-    {2'h1, 1'@, 1'@, 1'@} -> $LL.Main.sig92
-
-$LL.Main.sig99 :: W1 -> W1 -> W5
-$LL.Main.sig99 $0 $1 = 5'case {1'$0, 1'$1} of
-    {1'@, 1'@} -> $LL.Main.sig6
-
-$LL.Main.sig101 :: W5 -> W5
-$LL.Main.sig101 $0 = 5'case 5'$0 of
-    {2'h0, 1'_, 1'@, 1'@} -> $LL.Main.sig99
-
-$LL.Main.sig112 :: W1 -> W1 -> W5
-$LL.Main.sig112 $0 $1 = 5'case {1'$0, 1'$1} of
-    {1'@, 1'@} -> $LL.Main.sig14
-
-$LL.Main.sig113 :: W1 -> W1 -> W5
-$LL.Main.sig113 $0 $1 = 5'case {1'$0, 1'$1} of
-    {1'@, 1'@} -> $LL.Main.sig15
-
-Main.sig :: W1 -> W1 -> W1 -> W5
-Main.sig $0 $1 $2 = 5'case {1'$1, 1'$2, 1'case 1'$0 of {1'@} -> ReWire.Prelude.not} of
-    {1'@, 1'@, 1'h1} -> $LL.Main.sig112
-    _ -> 5'case {1'$1, 1'$2, 1'case 1'$0 of {1'@} -> ReWire.Prelude.not} of
-      {1'@, 1'@, 1'h0} -> $LL.Main.sig113
-
-ReWire.Prelude.not :: W1 -> W1
-ReWire.Prelude.not $0 = 1'case 1'$0 of
-    {1'h1} -> 1'h0
-    _ -> 1'h1
+$LL.Main.sig :: W5 -> W5
+$LL.Main.sig $0 = 5'case 5'$0 of
+    {2'h1, 1'@, 1'@, 1'@} -> $LL.Main.sig99

@@ -8,31 +8,33 @@ import ReWire.Config (Config, inputSigs, outputSigs, stateSigs, top)
 import ReWire.Annotation (Annote, noAnn, Annotated (ann))
 import ReWire.Error (failAt, AstError, MonadError)
 import ReWire.Pretty (showt, prettyPrint)
-import ReWire.Unbound (Name, Fresh, runFreshM, Embed (..) , unbind, n2s, name2Integer, makeName)
+import ReWire.Unbound (Name, Fresh, runFreshM, Embed (..) , unbind, n2s)
 import ReWire.BitVector (bitVec, zeros, BV, nbits)
 
 import Control.Arrow ((&&&), first, second)
 import Control.Lens ((^.))
 import Control.Monad (unless)
 import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks, lift)
-import Control.Monad.State (StateT (..), MonadState, gets, modify, execState)
+import Control.Monad.State (StateT (..), MonadState, gets, modify)
 import Data.Either (partitionEithers)
 import Data.Functor ((<&>))
 import Data.HashMap.Strict (HashMap)
-import Data.List (find, findIndex, genericLength, elemIndex)
+import Data.HashSet (HashSet)
+import Data.List (find, findIndex, genericLength)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Numeric.Natural (Natural)
 
 import qualified Data.HashMap.Strict as Map
+import qualified Data.HashSet        as Set
+import qualified ReWire.BitVector    as BV
 import qualified ReWire.Core.Syntax  as C
 import qualified ReWire.Crust.Syntax as M
 import qualified ReWire.Crust.Types  as M
 import qualified ReWire.Crust.Util   as M
-import qualified ReWire.BitVector    as BV
 
 type SizeMap       = HashMap M.Ty C.Size
-type GlobalNameMap = HashMap (M.Name M.Exp) C.Name
+type GlobalNameMap = HashMap (Name M.Exp) C.Name
 type S             = (SizeMap, GlobalNameMap)
 type ConMap        = (HashMap (Name M.TyConId) [Name M.DataConId], HashMap (Name M.DataConId) M.Ty)
 type TCM m         = ReaderT ConMap (ReaderT (HashMap (Name M.Exp) C.LId) m)
@@ -559,19 +561,21 @@ szMap = gets fst
 updateSzMap :: MonadState S m => (SizeMap -> SizeMap) -> m ()
 updateSzMap = modify . first
 
-transName :: MonadState S m => M.Name M.Exp -> m C.Name
+transName :: MonadState S m => Name M.Exp -> m C.Name
 transName n = gets (Map.lookup n . snd) >>= \ case
       Just c -> pure c
       _      -> pure $ showt n
 
 buildNameMap :: MonadState S m => [M.Defn] -> m ()
-buildNameMap vs = modify $ second $ const $ foldr toNameMap mempty $ Map.toList $ execState (mapM_ (build' . M.defnName) vs) mempty
-      where build' :: MonadState (HashMap Text [Integer]) m => M.Name M.Exp -> m ()
-            build' v = gets (Map.lookup $ n2s v) >>= \ case
-                  Just ns | Just _ <- elemIndex (name2Integer v) ns -> pure ()
-                          | otherwise                               -> modify (Map.insert (n2s v) (ns <> [name2Integer v]))
-                  Nothing                                           -> modify (Map.insert (n2s v) [name2Integer v])
+buildNameMap vs = modify
+                $ second
+                $ const
+                $ fst
+                $ foldr (build' . M.defnName) mempty vs
 
-            toNameMap :: (Text, [Integer]) -> GlobalNameMap -> GlobalNameMap
-            toNameMap (v, ns) = flip (foldr (\ (n, i) -> Map.insert (makeName v n) (v <> if i == 0 then "" else showt i))) (zip ns [0 .. length ns])
-
+      where build' :: Name M.Exp -> (GlobalNameMap, (HashMap Text Integer, HashSet C.Name)) -> (GlobalNameMap, (HashMap Text Integer, HashSet C.Name))
+            build' v (gns, (cs, cns))
+                  | Just c <- Map.lookup (n2s v) cs
+                  , (n2s v <> showt c) `Set.member` cns = build' v (gns, (Map.insert (n2s v) (c + 1) cs, cns))
+                  | Just c <- Map.lookup (n2s v) cs     = (Map.insert v (n2s v <> showt c) gns, (Map.insert (n2s v) (c + 1) cs, Set.insert (n2s v <> showt c) cns))
+                  | otherwise                           = (Map.insert v (n2s v) gns, (Map.insert (n2s v) 1 cs, Set.insert (n2s v) cns))

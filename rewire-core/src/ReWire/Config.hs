@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE Trustworthy #-}
@@ -10,35 +11,42 @@ module ReWire.Config
       , inputSigs, stateSigs, outputSigs
       , vhdlPackages, inputsFile, outFile
       , start, top, loadPath, cycles, depth, dump, source, typecheck, rtlOpt
+      , pDebug
       ) where
 
 import ReWire.Flags (Flag (..))
 import ReWire.Pretty (showt)
 
 import Control.Lens (makeLenses, over, (.~), (^.), Lens', lens)
-import Control.Monad (foldM)
+import Control.Monad (when, foldM)
+import Control.Monad.IO.Class (liftIO, MonadIO)
+import Data.HashSet (HashSet)
+import Data.Hashable (Hashable)
 import Data.Maybe (fromMaybe)
-import Data.Set (Set)
 import Data.Text (Text, pack, unpack, splitOn)
+import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
 import System.FilePath ((-<.>))
 
-import qualified Data.Set as Set
+import qualified Data.HashSet as Set
+import qualified Data.Text.IO as T
 
 data Language = Interpret | FIRRTL | VHDL | Verilog | RWCore | Haskell
       deriving (Eq, Ord, Show)
 data ResetFlag = Inverted | Synchronous
-      deriving (Eq, Ord, Show)
+      deriving (Eq, Ord, Show, Generic)
+instance Hashable ResetFlag
 data OutFlag   = Flatten | Pretty | Verbose
-      deriving (Eq, Ord, Show)
+      deriving (Eq, Ord, Show, Generic)
+instance Hashable OutFlag
 
 data Config = Config
       { _source       :: Language
       , _target       :: Language
       , _clock        :: Text -- No clock if null.
       , _reset        :: Text -- No reset if null.
-      , _resetFlags   :: Set ResetFlag
-      , _outFlags     :: Set OutFlag
+      , _resetFlags   :: HashSet ResetFlag
+      , _outFlags     :: HashSet OutFlag
       , _inputSigs    :: [Text]
       , _stateSigs    :: [Text]
       , _outputSigs   :: [Text]
@@ -154,3 +162,6 @@ interpret = foldM interp defaultConfig
             splitOn' sep = \ case
                   "" -> []
                   s  -> splitOn sep s
+
+pDebug :: MonadIO m => Config -> Text -> m ()
+pDebug conf s = when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: " <> s

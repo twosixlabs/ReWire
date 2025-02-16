@@ -12,13 +12,13 @@ import ReWire.SYB (Tr (TId, TM, T), transformTr, transform, transformM, query)
 import Control.Monad (replicateM, (>=>), void, when, msum, unless)
 import Control.Monad.State (evalStateT, MonadState (..), modify)
 import Data.Foldable (foldl', foldrM)
+import Data.HashMap.Strict (HashMap)
 import Data.Maybe (isNothing, mapMaybe)
 import Data.Text (pack)
-
-import Language.Haskell.Exts.Syntax
 import Language.Haskell.Exts.Pretty (prettyPrint)
+import Language.Haskell.Exts.Syntax
 
-import qualified Data.Map.Strict as Map
+import qualified Data.HashMap.Strict as Map
 
 data Desugar m = Desugar
       { dsModule   :: Tr m (Module Annote)
@@ -136,7 +136,7 @@ desugarRecords :: (MonadState Fresh m, MonadError AstError m) => Renamer -> Desu
 desugarRecords rn = mempty
       { dsModule = TM $ \ case
             Module l h p imps decls -> do
-                  let fs = concatMap fieldInfo $ Map.assocs $ filterRecords $ getLocalCtorSigs rn
+                  let fs = concatMap fieldInfo $ Map.toList $ filterRecords $ getLocalCtorSigs rn
                   ds <- concatMap tupList <$> mapM fieldDecl fs
                   pure $ Module l h p imps (decls <> ds)
             e                       -> pure e
@@ -211,7 +211,7 @@ desugarRecords rn = mempty
             fieldInfo' :: Name () -> Int -> (Int, (Name (), Type ())) -> FieldInfo
             fieldInfo' ctor arr (i, (f, t)) = (noAnn <$ ctor, (noAnn <$ f, noAnn <$ t, i, arr))
 
-            filterRecords :: CtorSigs -> Map.Map (Name ()) [(Name (), Type ())]
+            filterRecords :: CtorSigs -> HashMap (Name ()) [(Name (), Type ())]
             filterRecords = Map.mapMaybe $ \ a -> if isRecordSig a then Just $ toRecordSig a else Nothing
 
             isRecordSig :: [(Maybe a, t)] -> Bool

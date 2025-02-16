@@ -6,12 +6,12 @@ states []
 
 $Pure.dispatch :: W1 -> W1
 $Pure.dispatch $0 = 1'case 1'$0 of
-    {1'@} -> ReWire.Prelude.not
+    {1'@} -> ReWire.Prelude.not1
 
 $Pure.start :: W1
 $Pure.start  = 1'h1
 
-ReWire.Prelude.not :: W1 -> W1
-ReWire.Prelude.not $0 = 1'case 1'$0 of
+ReWire.Prelude.not1 :: W1 -> W1
+ReWire.Prelude.not1 $0 = 1'case 1'$0 of
     {1'h1} -> 1'h0
     _ -> 1'h1

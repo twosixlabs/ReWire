@@ -11,35 +11,35 @@ $Pure.dispatch $0 $1 = 17'case {1'$1, 8'$0} of
 $Pure.start :: W17
 $Pure.start  = 17'h10000
 
-$LL.Main.go :: W1 -> W8 -> W17
-$LL.Main.go $0 $1 = 17'case {8'$1, 1'$0} of
-    {8'@, 1'h1} -> $LL.Main.go2
-    _ -> 17'case {8'$1, 1'$0} of
-      {8'@, 1'h0} -> $LL.Main.go2
-
-$LL.Main.go1 :: W8 -> W8 -> W17
-$LL.Main.go1 $0 $1 = {1'h1, 8'$0, 8'$1}
-
-$LL.Main.go2 :: W8 -> W17
-$LL.Main.go2 $0 = 17'case 8'$0 of
+$LL.Main.go7 :: W8 -> W17
+$LL.Main.go7 $0 = 17'case 8'$0 of
     {8'@} -> Main.go
+
+$LL.Main.go5 :: W8 -> W8 -> W17
+$LL.Main.go5 $0 $1 = {1'h0, 8'$0, 8'$1}
 
 $LL.Main.go4 :: W8 -> W8 -> W17
 $LL.Main.go4 $0 $1 = 17'case {8'$0, 8'$1} of
     {8'@, 8'@} -> $LL.Main.go1
 
-$LL.Main.go5 :: W17 -> W17
-$LL.Main.go5 $0 = 17'case 17'$0 of
+$LL.Main.go3 :: W17 -> W17
+$LL.Main.go3 $0 = 17'case 17'$0 of
     {1'h0, 8'@, 8'@} -> $LL.Main.go4
 
-$LL.Main.go6 :: W8 -> W8 -> W17
-$LL.Main.go6 $0 $1 = {1'h0, 8'$0, 8'$1}
+$LL.Main.go2 :: W16 -> W17
+$LL.Main.go2 $0 = 17'case 16'$0 of
+    {8'@, 8'@} -> $LL.Main.go5
 
-$LL.Main.go8 :: W16 -> W17
-$LL.Main.go8 $0 = 17'case 16'$0 of
-    {8'@, 8'@} -> $LL.Main.go6
+$LL.Main.go1 :: W8 -> W8 -> W17
+$LL.Main.go1 $0 $1 = {1'h1, 8'$0, 8'$1}
+
+$LL.Main.go :: W1 -> W8 -> W17
+$LL.Main.go $0 $1 = 17'case {8'$1, 1'$0} of
+    {8'@, 1'h1} -> $LL.Main.go7
+    _ -> 17'case {8'$1, 1'$0} of
+      {8'@, 1'h0} -> $LL.Main.go7
 
 Main.go :: W8 -> W17
 Main.go $0 = 17'case 17'case {8'$0, 8'$0} of
-      {16'@} -> $LL.Main.go8 of
-    {17'@} -> $LL.Main.go5
+      {16'@} -> $LL.Main.go2 of
+    {17'@} -> $LL.Main.go3
