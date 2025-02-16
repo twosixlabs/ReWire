@@ -577,5 +577,8 @@ buildNameMap vs = modify
             build' v (gns, (cs, cns))
                   | Just c <- Map.lookup (n2s v) cs
                   , (n2s v <> showt c) `Set.member` cns = build' v (gns, (Map.insert (n2s v) (c + 1) cs, cns))
-                  | Just c <- Map.lookup (n2s v) cs     = (Map.insert v (n2s v <> showt c) gns, (Map.insert (n2s v) (c + 1) cs, Set.insert (n2s v <> showt c) cns))
-                  | otherwise                           = (Map.insert v (n2s v) gns, (Map.insert (n2s v) 1 cs, Set.insert (n2s v) cns))
+                  | Just c <- Map.lookup (n2s v) cs     = let cnam = n2s v <> showt c
+                        in (Map.insert v cnam gns, (Map.insert (n2s v) (c + 1) cs, Set.insert cnam cns))
+                  | n2s v `Set.member` cns              = build' v (gns, (Map.insert (n2s v) 1 cs, cns))
+                  | otherwise                           = let cnam = n2s v
+                        in (Map.insert v cnam gns, (Map.insert (n2s v) 1 cs, Set.insert cnam cns))
