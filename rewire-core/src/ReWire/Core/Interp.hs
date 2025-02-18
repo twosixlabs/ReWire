@@ -39,7 +39,6 @@ import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Bits (Bits (..))
 import Data.HashMap.Strict (HashMap)
-import Data.List (foldl')
 import Data.Machine.MealyT (MealyT (..))
 import Data.Maybe (fromMaybe)
 

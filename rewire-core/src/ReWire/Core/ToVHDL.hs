@@ -17,7 +17,7 @@ import Control.Monad (zipWithM)
 import Control.Monad.Reader (ReaderT (..), ask)
 import Control.Monad.State (StateT (..), get, put, lift)
 import Data.Bits (testBit)
-import Data.List (genericLength, find, foldl')
+import Data.List (genericLength, find)
 import Data.Text (Text)
 
 type CM m = StateT ([Signal], [Component], Index) (ReaderT [Defn] m)

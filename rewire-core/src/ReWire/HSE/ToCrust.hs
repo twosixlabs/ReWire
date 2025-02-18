@@ -16,7 +16,6 @@ import ReWire.SYB (query)
 import Control.Arrow ((&&&), second)
 import Control.Monad (foldM, replicateM, void)
 import Data.Char (isUpper)
-import Data.Foldable (foldl')
 import Data.List (find)
 import Data.HashMap.Strict (HashMap)
 import Data.Maybe (mapMaybe, fromMaybe)
@@ -59,6 +58,7 @@ mkUId = \ case
       Symbol _ n -> s2n (pack n)
 
 -- | Translate a Haskell module into the ReWire abstract syntax.
+{- HLINT ignore "Redundant multi-way if" -}
 toCrust :: (Fresh m, MonadError AstError m) => Renamer -> Module Annote -> m (M.Module, Exports)
 toCrust rn = \ case
       Module _ (Just (ModuleHead _ (ModuleName _ mname) _ exps)) _ _ (reverse -> ds) -> do

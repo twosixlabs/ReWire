@@ -14,7 +14,6 @@ import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairT
 import ReWire.Pretty (pretty)
 import ReWire.Unbound (freshVar, Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
 
-import Data.List (foldl')
 import Data.Text (Text)
 import Numeric.Natural (Natural)
 

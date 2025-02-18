@@ -40,6 +40,7 @@ type ConMap        = (HashMap (Name M.TyConId) [Name M.DataConId], HashMap (Name
 type TCM m         = ReaderT ConMap (ReaderT (HashMap (Name M.Exp) C.LId) m)
 type StartDefn     = (C.Name, C.Wiring, C.GId, C.GId)
 
+{- HLINT ignore "Redundant flip" -}
 toCore :: (Fresh m, MonadError AstError m, MonadFail m) => Config -> Name M.Exp -> M.FreeProgram -> m C.Device
 toCore conf start (ts, _, vs) = fst <$> flip runStateT mempty (do
       mapM_ (\ x -> ((`runReaderT` conMap) . sizeOf (n2s (M.dataName x)) noAnn . M.TyCon noAnn . M.dataName) x) ts
@@ -410,6 +411,7 @@ transBuiltin an' t' an theExp = case theExp of
             checkFinTypeMax s t = maybe (failAt an' $ "transExp: " <> s <> ": invalid Finite type: "  <> showt (M.prettyTy <$> t)) pure
                         $ t >>= M.finSz
 
+{- HLINT ignore "Redundant multi-way if" -}
 transExp :: (MonadError AstError m, Fresh m, MonadState S m) => M.Exp -> TCM m C.Exp
 transExp e = case e of
       M.App an _ _ _ _                    -> case M.flattenApp e of

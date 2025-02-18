@@ -11,7 +11,7 @@ import ReWire.SYB (Tr (TId, TM, T), transformTr, transform, transformM, query)
 
 import Control.Monad (replicateM, (>=>), void, when, msum, unless)
 import Control.Monad.State (evalStateT, MonadState (..), modify)
-import Data.Foldable (foldl', foldrM)
+import Data.Foldable (foldrM)
 import Data.HashMap.Strict (HashMap)
 import Data.Maybe (isNothing, mapMaybe)
 import Data.Text (pack)

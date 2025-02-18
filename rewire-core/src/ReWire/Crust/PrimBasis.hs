@@ -6,7 +6,6 @@ import ReWire.Annotation (Annote (MsgAnnote))
 import ReWire.Crust.Syntax (Kind (..), Ty (..), DataCon (..), DataDefn (..), FreeProgram)
 import ReWire.Crust.Types (refTy, strTy, (|->), arr, kmonad, pairTy)
 
-import Data.List (foldl')
 import Data.Text (Text)
 import qualified Data.Text as T
 import ReWire.Unbound (s2n)
