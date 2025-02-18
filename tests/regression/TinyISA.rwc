@@ -61,14 +61,14 @@ $LL.Main.loop260 $0 = 143'case 85'$0 of
     {15'@, 70'@} -> $LL.Main.loop244
 
 $LL.Main.loop259 :: W70 -> W143
-$LL.Main.loop259 $0 = {73'h0800000000000000000, 70'$0}
+$LL.Main.loop259 $0 = {73'h800000000000000000, 70'$0}
 
 $LL.Main.putAddrOut6 :: W6 -> W85 -> W70
 $LL.Main.putAddrOut6 $0 $1 = 70'case {6'$0, 85'$1} of
     {6'@, 15'@, 70'@} -> $LL.Main.putAddrOut
 
 $LL.Main.loop258 :: W9 -> W70 -> W143
-$LL.Main.loop258 $0 $1 = {64'h0000000000000000, 9'$0, 70'$1}
+$LL.Main.loop258 $0 $1 = {64'h0, 9'$0, 70'$1}
 
 $LL.Main.putIns9 :: W17 -> W140 -> W70
 $LL.Main.putIns9 $0 $1 = 70'case {17'$0, 140'$1} of
@@ -128,7 +128,7 @@ $LL.Main.putOut11 $0 $1 $2 = 70'case {15'$0, 70'$1} of
     {15'@, 8'@, 8'@, 8'@, 8'@, 6'@, 17'@, 15'@} -> $LL.Main.putOut5
 
 $LL.Main.loop244 :: W15 -> W70 -> W143
-$LL.Main.loop244 $0 $1 = {58'h080000000000000, 15'$0, 70'$1}
+$LL.Main.loop244 $0 $1 = {58'h80000000000000, 15'$0, 70'$1}
 
 Main.putPC1 :: W6 -> W70 -> W70
 Main.putPC1 $0 $1 = 70'case {6'$0, 70'$1, 70'$1} of
@@ -507,7 +507,7 @@ $LL.Main.getReg13 $0 = 78'case {70'$0, 70'$0} of
     {140'@} -> $LL.Main.getReg19
 
 $LL.Main.incrPC :: W6 -> W70 -> W70
-$LL.Main.incrPC $0 $1 = 70'case {6'case {6'$0, 6'h01} of {6'@, 6'@} -> Add, 70'$1} of
+$LL.Main.incrPC $0 $1 = 70'case {6'case {6'$0, 6'h1} of {6'@, 6'@} -> Add, 70'$1} of
     {6'@, 70'@} -> Main.putPC1
 
 $LL.Main.reset30 :: W17 -> W70 -> W143
@@ -649,9 +649,9 @@ $LL.Main.putReg22 $0 $1 = 70'case {8'$0, 70'$1, 70'$1} of
     {8'@, 140'@} -> $LL.Main.putReg42
 
 $LL.Main.loop134 :: W6 -> W8 -> W70 -> W70
-$LL.Main.loop134 $0 $1 $2 = 70'case {70'$2, 1'case {8'$1, 8'h00} of {8'@, 8'@} -> Eq} of
+$LL.Main.loop134 $0 $1 $2 = 70'case {70'$2, 1'case {8'$1, 8'h0} of {8'@, 8'@} -> Eq} of
     {70'@, 1'h1} -> $LL.Main.loop224
-    _ -> 70'case {70'$2, 6'$0, 1'case {8'$1, 8'h00} of {8'@, 8'@} -> Eq} of
+    _ -> 70'case {70'$2, 6'$0, 1'case {8'$1, 8'h0} of {8'@, 8'@} -> Eq} of
       {70'@, 6'@, 1'h0} -> $LL.Main.loop83
 
 $LL.Main.putPC9 :: W8 -> W6 -> W8 -> W8 -> W8 -> W6 -> W17 -> W15 -> W70

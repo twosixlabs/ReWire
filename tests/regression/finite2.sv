@@ -21,11 +21,11 @@ module top_level (input logic [0:0] clk,
   assign main_compute1_in = main_loop1_in[6:0];
   assign resize_in = main_compute1_in[6:0];
   assign resize_inR1 = resize_in[6:0];
-  assign binop_in = {128'(resize_inR1[6:0]), 128'h00000000000000000000000000000014};
+  assign binop_in = {128'(resize_inR1[6:0]), 128'h14};
   assign resize_inR2 = binop_in[255:128] % binop_in[127:0];
   assign resize_inR3 = resize_inR2[4:0];
-  assign binop_inR1 = {128'(resize_inR3[4:0]), 128'h00000000000000000000000000000006};
-  assign binop_inR2 = {binop_inR1[255:128] + binop_inR1[127:0], 128'h00000000000000000000000000000014};
+  assign binop_inR1 = {128'(resize_inR3[4:0]), 128'h6};
+  assign binop_inR2 = {binop_inR1[255:128] + binop_inR1[127:0], 128'h14};
   assign resize_inR4 = binop_inR2[255:128] % binop_inR2[127:0];
   assign zll_main_loop2_in = {1'h0, resize_inR4[4:0]};
   assign zll_main_loop1_in = zll_main_loop2_in[5:0];

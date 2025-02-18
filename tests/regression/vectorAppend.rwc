@@ -30,6 +30,6 @@ $LL.Main.compute1 :: W64 -> W64 -> W64
 $LL.Main.compute1 $0 $1 = {32'case 32'case 64'$0 of
       {32'@, 32'_} -> Id of
     {8'@, 8'@, 8'@, 8'@} -> Reverse
-  , 8'h00
+  , 8'h0
   , 24'case 64'$1 of
     {40'_, 24'@} -> Id}

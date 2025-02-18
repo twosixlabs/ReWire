@@ -69,11 +69,11 @@ $LL.Main.go17 $0 = 18'case 8'$0 of
     {8'@} -> Main.go
 
 Main.rolW8 :: W8 -> W8
-Main.rolW8 $0 = 8'case {8'case {8'$0, 8'h01} of {8'@, 8'@} -> LShift, 8'case 8'$0 of {8'@} -> Main.msbitW8} of
+Main.rolW8 $0 = 8'case {8'case {8'$0, 8'h1} of {8'@, 8'@} -> LShift, 8'case 8'$0 of {8'@} -> Main.msbitW8} of
     {8'@, 8'@} -> Or
 
 Main.incW8 :: W8 -> W8
-Main.incW8 $0 = 8'case {8'$0, 8'h01} of
+Main.incW8 $0 = 8'case {8'$0, 8'h1} of
     {8'@, 8'@} -> Add
 
 $LL.Main.go12 :: W16 -> W18

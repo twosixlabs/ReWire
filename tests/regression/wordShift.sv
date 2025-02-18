@@ -18,12 +18,12 @@ module top_level (input logic [0:0] clk,
   logic [7:0] __resumption_tag_next;
   assign main_loop1_in = __resumption_tag;
   assign main_myrotr1_in = main_loop1_in[7:0];
-  assign binop_in = {main_myrotr1_in[7:0], 8'h05};
-  assign binop_inR1 = {main_myrotr1_in[7:0], 8'h03};
+  assign binop_in = {main_myrotr1_in[7:0], 8'h5};
+  assign binop_inR1 = {main_myrotr1_in[7:0], 8'h3};
   assign binop_inR2 = {binop_in[15:8] << binop_in[7:0], binop_inR1[15:8] >> binop_inR1[7:0]};
   assign main_myarithrotr_in = binop_inR2[15:8] | binop_inR2[7:0];
-  assign binop_inR3 = {main_myarithrotr_in[7:0], 8'h03};
-  assign binop_inR4 = {main_myarithrotr_in[7:0], 8'h05};
+  assign binop_inR3 = {main_myarithrotr_in[7:0], 8'h3};
+  assign binop_inR4 = {main_myarithrotr_in[7:0], 8'h5};
   assign binop_inR5 = {binop_inR3[15:8] << binop_inR3[7:0], binop_inR4[15:8] >>> binop_inR4[7:0]};
   assign zll_main_loop1_in = {1'h0, binop_inR5[15:8] | binop_inR5[7:0]};
   assign zll_main_loop3_in = zll_main_loop1_in[8:0];

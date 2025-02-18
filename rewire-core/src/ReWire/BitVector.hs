@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Trustworthy #-}
 module ReWire.BitVector
       ( BV.BV (..), BV.width, BV.ones, BV.zeros, BV.nil
@@ -8,14 +9,20 @@ module ReWire.BitVector
 
 import Data.Text (Text, pack)
 import Numeric.Natural (Natural)
-import qualified Data.BitVector as BV
 
+import qualified Data.BitVector as BV
+import qualified Numeric        as Num
+
+-- | Show the bitvec value in hex, with "0x" prefix, but no leading zeros.
 showHex :: BV.BV -> Text
-showHex = pack . BV.showHex
+showHex = toHex "0x"
 
 -- | Like `showHex`, but prefix with `h` instead of `0x`.
 showHex' :: BV.BV -> Text
-showHex' = pack . ("h" <>) . drop 2 . BV.showHex
+showHex' = toHex "h"
+
+toHex :: Text -> BV.BV -> Text
+toHex pre = (pre <>) . pack . flip Num.showHex "" . BV.nat
 
 -- | Number of bits needed to encode `n` different values.
 nbits :: Natural -> Natural

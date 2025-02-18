@@ -10,11 +10,11 @@ module top_level (input logic [0:0] clk,
   logic [7:0] __st0_next;
   assign zll_main_start$_in = {__in0, __st0};
   assign main_start$_in = zll_main_start$_in[7:0];
-  assign {__continue, __out0, __out1, __st0_next} = {9'h000, main_start$_in[7:0]};
-  initial __st0 <= 8'h00;
+  assign {__continue, __out0, __out1, __st0_next} = {9'h0, main_start$_in[7:0]};
+  initial __st0 <= 8'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __st0 <= 8'h00;
+      __st0 <= 8'h0;
     end else begin
       __st0 <= __st0_next;
     end

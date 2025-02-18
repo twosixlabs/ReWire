@@ -46,7 +46,7 @@ module top_level (input logic [0:0] clk,
   assign zll_main_go32_in = zll_main_go5_in[17:0];
   assign zll_main_go25_in = {zll_main_go32_in[15:8], zll_main_go32_in[7:0]};
   assign main_incw8_in = zll_main_go25_in[15:8];
-  assign binop_in = {main_incw8_in[7:0], 8'h01};
+  assign binop_in = {main_incw8_in[7:0], 8'h1};
   assign zll_main_go9_in = binop_in[15:8] + binop_in[7:0];
   ZLL_Main_go9  instR1 (zll_main_go9_in[7:0], zll_main_go9_out);
   assign zll_main_go24_in = zll_main_go9_out;
@@ -59,7 +59,7 @@ module top_level (input logic [0:0] clk,
   assign zll_main_go28_in = zll_main_go4_in[17:0];
   assign zll_main_go29_in = {zll_main_go28_in[15:8], zll_main_go28_in[7:0]};
   assign main_rolw8_in = zll_main_go29_in[15:8];
-  assign binop_inR1 = {main_rolw8_in[7:0], 8'h01};
+  assign binop_inR1 = {main_rolw8_in[7:0], 8'h1};
   assign main_msbitw8_in = main_rolw8_in[7:0];
   assign msbit_in = main_msbitw8_in[7:0];
   assign resize_in = msbit_in[7];
@@ -69,10 +69,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_go24_inR1 = zll_main_go9_outR1;
   ZLL_Main_go24  instR5 (zll_main_go24_inR1[17:0], zll_main_go24_outR1);
   assign {__continue, __padding, __out0, __st0_next} = (zll_main_go23_in[0] == 1'h1) ? zll_main_go24_outR1 : zll_main_go24_out;
-  initial __st0 <= 8'h00;
+  initial __st0 <= 8'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __st0 <= 8'h00;
+      __st0 <= 8'h0;
     end else begin
       __st0 <= __st0_next;
     end

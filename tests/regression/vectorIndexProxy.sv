@@ -81,10 +81,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_loop5_in = {1'h0, {zll_main_compute1_out, zll_main_compute1_outR1, zll_main_compute1_outR2, zll_main_compute1_outR3, zll_main_compute1_outR4, zll_main_compute1_outR5, zll_main_compute1_outR6, zll_main_compute1_outR7}};
   assign zll_main_loop4_in = zll_main_loop5_in[64:0];
   assign {__continue, __out0, __resumption_tag_next} = {1'h1, zll_main_loop4_in[63:0]};
-  initial __resumption_tag <= {992'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001, {7'h40{1'h0}}};
+  initial __resumption_tag <= {992'h1, {7'h40{1'h0}}};
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __resumption_tag <= {992'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001, {7'h40{1'h0}}};
+      __resumption_tag <= {992'h1, {7'h40{1'h0}}};
     end else begin
       __resumption_tag <= __resumption_tag_next;
     end

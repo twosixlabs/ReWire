@@ -235,6 +235,7 @@ data-files:
     tests/regression/state.yaml
     tests/regression/state0.yaml
     tests/regression/stateTower.yaml
+    tests/regression/synonym.yaml
     tests/regression/test2.yaml
     tests/regression/test3.yaml
     tests/regression/TinyISA.yaml

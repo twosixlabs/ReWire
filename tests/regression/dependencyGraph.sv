@@ -66,7 +66,7 @@ module top_level (input logic [0:0] clk,
   assign zll_main_inputtomystate26_in = {main_inputtomystate_in[24:15], main_inputtomystate_in[14:0]};
   assign zll_main_inputtomystate27_in = {zll_main_inputtomystate26_in[18:15], zll_main_inputtomystate26_in[14], zll_main_inputtomystate26_in[13:9], zll_main_inputtomystate26_in[8:0]};
   assign zll_main_inputtomystate19_in = {zll_main_inputtomystate27_in[18:15], zll_main_inputtomystate27_in[14], zll_main_inputtomystate27_in[8:0]};
-  assign main_incrpipeline_in = {(zll_main_inputtomystate26_in[24:23] == 2'h0) ? {zll_main_inputtomystate19_in[9], 1'h1, zll_main_inputtomystate19_in[13:10], 5'h00, zll_main_inputtomystate19_in[13:10]} : ((zll_main_inputtomystate7_in[24:23] == 2'h1) ? {zll_main_inputtomystate14_in[9], zll_main_inputtomystate14_in[22:18], 1'h1, zll_main_inputtomystate14_in[17:10]} : (((zll_main_inputtomystate12_in[24:23] == 2'h2) && ((zll_main_inputtomystate12_in[15] == 1'h1) && (zll_main_inputtomystate12_in[13] == 1'h1))) ? {11'h400, zll_main_inputtomystate24_in[12:9]} : (((zll_main_inputtomystate6_in[24:23] == 2'h2) && ((zll_main_inputtomystate6_in[15] == 1'h1) && (zll_main_inputtomystate6_in[13] == 1'h0))) ? {6'h20, zll_main_inputtomystate6_in[8:0]} : {6'h00, zll_main_inputtomystate18_in[8:0]}))), main_loop1_in[29:0]};
+  assign main_incrpipeline_in = {(zll_main_inputtomystate26_in[24:23] == 2'h0) ? {zll_main_inputtomystate19_in[9], 1'h1, zll_main_inputtomystate19_in[13:10], 5'h0, zll_main_inputtomystate19_in[13:10]} : ((zll_main_inputtomystate7_in[24:23] == 2'h1) ? {zll_main_inputtomystate14_in[9], zll_main_inputtomystate14_in[22:18], 1'h1, zll_main_inputtomystate14_in[17:10]} : (((zll_main_inputtomystate12_in[24:23] == 2'h2) && ((zll_main_inputtomystate12_in[15] == 1'h1) && (zll_main_inputtomystate12_in[13] == 1'h1))) ? {11'h400, zll_main_inputtomystate24_in[12:9]} : (((zll_main_inputtomystate6_in[24:23] == 2'h2) && ((zll_main_inputtomystate6_in[15] == 1'h1) && (zll_main_inputtomystate6_in[13] == 1'h0))) ? {6'h20, zll_main_inputtomystate6_in[8:0]} : {6'h0, zll_main_inputtomystate18_in[8:0]}))), main_loop1_in[29:0]};
   assign zll_main_incrpipeline1_in = main_incrpipeline_in[44:0];
   assign id_inR1 = zll_main_incrpipeline1_in[29:0];
   assign resize_in = zll_main_incrpipeline1_in[29:0];
@@ -80,7 +80,7 @@ module top_level (input logic [0:0] clk,
   assign zll_main_mystatetooutput_in = {zll_main_mystatetooutput3_in[13:9], zll_main_mystatetooutput3_in[7:0]};
   assign zll_main_mystatetooutput4_in = main_mystatetooutput_in[14:0];
   assign zll_main_mystatetooutput2_in = {zll_main_mystatetooutput4_in[13:9], zll_main_mystatetooutput4_in[3:0]};
-  assign zll_rewire_monad_iterst10_in = {{((zll_main_mystatetooutput4_in[14] == 1'h1) && (zll_main_mystatetooutput4_in[8] == 1'h0)) ? {2'h3, zll_main_mystatetooutput2_in[8:4], 5'h00, zll_main_mystatetooutput2_in[3:0]} : (((zll_main_mystatetooutput3_in[14] == 1'h1) && (zll_main_mystatetooutput3_in[8] == 1'h1)) ? {2'h1, zll_main_mystatetooutput_in[12:8], 1'h1, zll_main_mystatetooutput_in[7:0]} : {7'h00, zll_main_mystatetooutput5_in[8:0]}), zll_main_loop3_in[44:15]}, zll_rewire_monad_iterst26_in[29:0]};
+  assign zll_rewire_monad_iterst10_in = {{((zll_main_mystatetooutput4_in[14] == 1'h1) && (zll_main_mystatetooutput4_in[8] == 1'h0)) ? {2'h3, zll_main_mystatetooutput2_in[8:4], 5'h0, zll_main_mystatetooutput2_in[3:0]} : (((zll_main_mystatetooutput3_in[14] == 1'h1) && (zll_main_mystatetooutput3_in[8] == 1'h1)) ? {2'h1, zll_main_mystatetooutput_in[12:8], 1'h1, zll_main_mystatetooutput_in[7:0]} : {7'h0, zll_main_mystatetooutput5_in[8:0]}), zll_main_loop3_in[44:15]}, zll_rewire_monad_iterst26_in[29:0]};
   assign zll_rewire_monad_iterst32_in = zll_rewire_monad_iterst10_in[75:0];
   assign zll_rewire_monad_iterst20_in = {2'h0, zll_rewire_monad_iterst32_in[75:30], zll_rewire_monad_iterst32_in[29:0]};
   assign zll_rewire_monad_iterst35_in = zll_rewire_monad_iterst20_in[77:0];
@@ -93,10 +93,10 @@ module top_level (input logic [0:0] clk,
   assign zll_rewire_monad_iterst24_in = {zll_rewire_monad_iterst30_in[93:78], zll_rewire_monad_iterst30_in[77:0]};
   assign zll_rewire_monad_iterst37_in = {zll_rewire_monad_iterst24_in[93:78], zll_rewire_monad_iterst24_in[29:0]};
   assign {__continue, __padding, __out0, __st0_next} = {{1'h1, {5'h1f{1'h0}}}, zll_rewire_monad_iterst37_in[45:30], zll_rewire_monad_iterst37_in[29:0]};
-  initial __st0 <= 30'h00000000;
+  initial __st0 <= 30'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __st0 <= 30'h00000000;
+      __st0 <= 30'h0;
     end else begin
       __st0 <= __st0_next;
     end

@@ -96,7 +96,7 @@ $LL.Main.go19 $0 $1 $2 = 7'case {1'$0, 1'$1, 1'$2} of
     {1'@, 1'@, 1'@} -> $LL.Main.go29
 
 $LL.Main.go18 :: W1 -> W1 -> W7
-$LL.Main.go18 $0 $1 = {5'h02, 1'$0, 1'$1}
+$LL.Main.go18 $0 $1 = {5'h2, 1'$0, 1'$1}
 
 $LL.Main.go16 :: W3 -> W7
 $LL.Main.go16 $0 = 7'case 3'$0 of

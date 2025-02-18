@@ -41,37 +41,37 @@ $LL.Main.repl98 $0 = 81'case 81'$0 of
 
 OD19.ProgramCounter.incPC :: W7 -> W7
 OD19.ProgramCounter.incPC $0 = 7'case 7'$0 of
-    {7'h00} -> 7'h01
+    {7'h0} -> 7'h1
     _ -> 7'case 7'$0 of
-      {7'h01} -> 7'h02
+      {7'h1} -> 7'h2
       _ -> 7'case 7'$0 of
-        {7'h02} -> 7'h03
+        {7'h2} -> 7'h3
         _ -> 7'case 7'$0 of
-          {7'h03} -> 7'h04
+          {7'h3} -> 7'h4
           _ -> 7'case 7'$0 of
-            {7'h04} -> 7'h05
+            {7'h4} -> 7'h5
             _ -> 7'case 7'$0 of
-              {7'h05} -> 7'h06
+              {7'h5} -> 7'h6
               _ -> 7'case 7'$0 of
-                {7'h06} -> 7'h07
+                {7'h6} -> 7'h7
                 _ -> 7'case 7'$0 of
-                  {7'h07} -> 7'h08
+                  {7'h7} -> 7'h8
                   _ -> 7'case 7'$0 of
-                    {7'h08} -> 7'h09
+                    {7'h8} -> 7'h9
                     _ -> 7'case 7'$0 of
-                      {7'h09} -> 7'h0a
+                      {7'h9} -> 7'ha
                       _ -> 7'case 7'$0 of
-                        {7'h0a} -> 7'h0b
+                        {7'ha} -> 7'hb
                         _ -> 7'case 7'$0 of
-                          {7'h0b} -> 7'h0c
+                          {7'hb} -> 7'hc
                           _ -> 7'case 7'$0 of
-                            {7'h0c} -> 7'h0d
+                            {7'hc} -> 7'hd
                             _ -> 7'case 7'$0 of
-                              {7'h0d} -> 7'h0e
+                              {7'hd} -> 7'he
                               _ -> 7'case 7'$0 of
-                                {7'h0e} -> 7'h0f
+                                {7'he} -> 7'hf
                                 _ -> 7'case 7'$0 of
-                                  {7'h0f} -> 7'h10
+                                  {7'hf} -> 7'h10
                                   _ -> 7'case 7'$0 of
                                     {7'h10} -> 7'h11
                                     _ -> 7'case 7'$0 of
@@ -292,7 +292,7 @@ OD19.ProgramCounter.incPC $0 = 7'case 7'$0 of
                                                                                                                                                                                                                                                             {7'h7c} -> 7'h7d
                                                                                                                                                                                                                                                             _ -> 7'case 7'$0 of
                                                                                                                                                                                                                                                               {7'h7d} -> 7'h7e
-                                                                                                                                                                                                                                                              _ -> 7'h00
+                                                                                                                                                                                                                                                              _ -> 7'h0
 
 $LL.Main.repl97 :: W32 -> W39 -> W81
 $LL.Main.repl97 $0 $1 = 81'case {32'$0, 81'case 71'case 39'$1 of {39'@} -> Main.getReg of {71'@} -> $LL.Main.repl88} of
@@ -323,7 +323,7 @@ $LL.Main.nextPC6 $0 $1 $2 = 39'case {32'$1, 7'$2, 39'$0} of
     {32'@, 7'@, 39'@} -> $LL.Main.nextPC5
 
 $LL.Main.repl91 :: W39 -> W81
-$LL.Main.repl91 $0 = {42'h08000000000, 39'$0}
+$LL.Main.repl91 $0 = {42'h8000000000, 39'$0}
 
 $LL.Main.repl90 :: W39 -> W32 -> W81
 $LL.Main.repl90 $0 $1 = 81'case {32'$1, 39'$0} of
@@ -344,7 +344,7 @@ $LL.Main.repl88 $0 = 81'case 71'$0 of
     {32'@, 39'@} -> $LL.Main.repl86
 
 $LL.Main.repl86 :: W32 -> W39 -> W81
-$LL.Main.repl86 $0 $1 = {10'h000, 32'$0, 39'$1}
+$LL.Main.repl86 $0 $1 = {10'h0, 32'$0, 39'$1}
 
 Main.getReg :: W39 -> W71
 Main.getReg $0 = 71'case {39'$0, 39'$0} of
@@ -470,19 +470,19 @@ $LL.Main.repl50 $0 $1 = 81'case {39'$0, 32'$1} of
 
 $LL.Main.repl48 :: W32 -> W7 -> W39 -> W81
 $LL.Main.repl48 $0 $1 $2 = 81'case {39'$2, 32'$0, 7'$1} of
-    {39'@, 32'@, 7'h00} -> $LL.Main.repl59
+    {39'@, 32'@, 7'h0} -> $LL.Main.repl59
     _ -> 81'case {39'$2, 32'$0, 7'$1} of
-      {39'@, 32'@, 7'h01} -> $LL.Main.repl50
+      {39'@, 32'@, 7'h1} -> $LL.Main.repl50
       _ -> 81'case {39'$2, 32'$0, 7'$1} of
-        {39'@, 32'@, 7'h02} -> $LL.Main.repl102
+        {39'@, 32'@, 7'h2} -> $LL.Main.repl102
         _ -> 81'case {39'$2, 32'$0, 7'$1} of
-          {39'@, 32'@, 7'h03} -> $LL.Main.repl50
+          {39'@, 32'@, 7'h3} -> $LL.Main.repl50
           _ -> 81'case {39'$2, 32'$0, 7'$1} of
-            {39'@, 32'@, 7'h04} -> $LL.Main.repl67
+            {39'@, 32'@, 7'h4} -> $LL.Main.repl67
             _ -> 81'case {39'$2, 32'$0, 7'$1} of
-              {39'@, 32'@, 7'h05} -> $LL.Main.repl66
+              {39'@, 32'@, 7'h5} -> $LL.Main.repl66
               _ -> 81'case {39'$2, 32'$0, 7'$1} of
-                {39'@, 32'@, 7'h06} -> $LL.Main.repl74
+                {39'@, 32'@, 7'h6} -> $LL.Main.repl74
                 _ -> 81'case 81'case 39'case 39'$2 of
                       {39'@} -> Main.nextPC of
                     {39'@} -> $LL.Main.repl91 of

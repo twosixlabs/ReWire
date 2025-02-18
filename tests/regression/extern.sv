@@ -26,10 +26,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_loop2_in = {1'h0, extres};
   assign zll_main_loop3_in = zll_main_loop2_in[8:0];
   assign {__continue, __out0, __resumption_tag_next} = {1'h1, zll_main_loop3_in[7:0]};
-  initial __resumption_tag <= 16'h0000;
+  initial __resumption_tag <= 16'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __resumption_tag <= 16'h0000;
+      __resumption_tag <= 16'h0;
     end else begin
       __resumption_tag <= __resumption_tag_next;
     end

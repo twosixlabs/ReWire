@@ -10,7 +10,7 @@ $Pure.dispatch $0 = 9'case 16'$0 of
 
 $Pure.start :: W9
 $Pure.start  = 9'case {1'h0
-    , 8'case 16'case 128'h00000000000000000000000000000000 of
+    , 8'case 16'case 128'h0 of
         {128'@} -> Resize of
       {16'@} -> extern (Sig [] "clk" "rst" [("x",16)] [("out",8)]) "mymod" ""} of
     {9'@} -> $LL.Main.loop2

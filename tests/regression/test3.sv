@@ -16,10 +16,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_go7_inR1 = {zll_main_go_in[7:0], zll_main_go_in[8]};
   ZLL_Main_go7  instR1 (zll_main_go7_inR1[8:1], zll_main_go7_outR1);
   assign {__continue, __out0, __st0_next} = (zll_main_go7_inR1[0] == 1'h1) ? zll_main_go7_outR1 : zll_main_go7_out;
-  initial __st0 <= 8'h00;
+  initial __st0 <= 8'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __st0 <= 8'h00;
+      __st0 <= 8'h0;
     end else begin
       __st0 <= __st0_next;
     end
