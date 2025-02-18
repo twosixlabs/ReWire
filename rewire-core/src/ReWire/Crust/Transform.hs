@@ -233,7 +233,7 @@ normalizeBind (ts, syns, ds) = (ts, syns, ) <$> (uncurry (<>) <$> runStateT (map
                         Lam an tan t . bind x <$> ppExp dn (Set.insert x bvs) e'
                   Case an tan t disc e els -> do
                         (p, e') <- unbind e
-                        Case an tan t <$> ppExp' disc <*> (bind p <$> ppExp dn ((Set.fromList (snd <$> patVars p)) <> bvs) e') <*> mapM ppExp'  els
+                        Case an tan t <$> ppExp' disc <*> (bind p <$> ppExp dn (Set.fromList (snd <$> patVars p) <> bvs) e') <*> mapM ppExp'  els
                   Match an tan t disc p e els -> Match an tan t <$> ppExp' disc <*> pure p <*> ppExp' e <*> mapM ppExp' els
                   LitList an tan t es         -> LitList an tan t <$> mapM ppExp' es
                   LitVec an tan t es          -> LitVec an tan t <$> mapM ppExp' es
@@ -517,6 +517,7 @@ freeTyVarsToNil (ts, syns, vs) = (ts, syns, map upd vs)
 -- > g = g_rhs
 -- > g' :: A -> X
 -- > g' = \ a' -> g_rhs a' b
+{- HLINT ignore "Redundant multi-way if" -}
 specialize :: (MonadError AstError m, Fresh m, MonadState SpecMap m) => FreeProgram -> m FreeProgram
 specialize (ts, syns, vs) = do
       vs'     <- mapM specDefn vs

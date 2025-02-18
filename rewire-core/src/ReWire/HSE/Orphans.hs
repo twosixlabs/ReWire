@@ -13,7 +13,7 @@ import Language.Haskell.Exts.Fixity (Fixity (..))
 import Language.Haskell.Exts.SrcLoc (SrcSpan, SrcSpanInfo)
 import Language.Haskell.Exts.Syntax
 
-instance Hashable (Boxed)
+instance Hashable Boxed
 instance Hashable a => Hashable (SpecialCon a)
 instance Hashable a => Hashable (Name a)
 instance Hashable a => Hashable (ModuleName a)

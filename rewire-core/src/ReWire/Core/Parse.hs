@@ -10,7 +10,6 @@ import ReWire.Error (failAt, MonadError, AstError)
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Functor (void)
-import Data.List (foldl')
 import Data.Text (Text, pack, unpack)
 import Data.Void (Void)
 import Text.Megaparsec ( Parsec, many, try, (<|>), (<?>), manyTill, parse, between, empty, errorBundlePretty, sepBy )

@@ -5,7 +5,6 @@ module ReWire.FIRRTL.Parse (parseFIRRTL) where
 import ReWire.FIRRTL.Syntax
 
 import Data.Functor (void, (<&>), ($>))
-import Data.List (foldl')
 import Data.Text (Text, singleton, pack)
 import Data.Void (Void)
 import Text.Megaparsec ( Parsec, many, some, optional, try, (<|>), sepBy, manyTill, parse, between, empty )
