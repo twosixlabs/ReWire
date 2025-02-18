@@ -29,10 +29,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_incr10_in = {zll_main_incr1_in[25:18], zll_main_incr1_in[17:0]};
   assign zll_main_incr5_in = {zll_main_incr10_in[25:18], zll_main_incr10_in[7:0]};
   assign {__continue, __padding, __out0, __st0_next} = {2'h2, zll_main_incr5_in[15:8], zll_main_incr5_in[7:0]};
-  initial __st0 <= 8'h00;
+  initial __st0 <= 8'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __st0 <= 8'h00;
+      __st0 <= 8'h0;
     end else begin
       __st0 <= __st0_next;
     end

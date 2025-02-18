@@ -19,13 +19,13 @@ Main.loop1 $0 = 9'case {1'h0, 8'case 8'case 8'$0 of {8'@} -> Main.myRotr1 of {8'
     {9'@} -> $LL.Main.loop1
 
 Main.myRotr1 :: W8 -> W8
-Main.myRotr1 $0 = 8'case {8'case {8'$0, 8'h05} of {8'@, 8'@} -> LShift, 8'case {8'$0, 8'h03} of {8'@, 8'@} -> RShift} of
+Main.myRotr1 $0 = 8'case {8'case {8'$0, 8'h5} of {8'@, 8'@} -> LShift, 8'case {8'$0, 8'h3} of {8'@, 8'@} -> RShift} of
     {8'@, 8'@} -> Or
 
 Main.myArithRotr :: W8 -> W8
-Main.myArithRotr $0 = 8'case {8'case {8'$0, 8'h03} of
+Main.myArithRotr $0 = 8'case {8'case {8'$0, 8'h3} of
       {8'@, 8'@} -> LShift
-    , 8'case {8'$0, 8'h05} of
+    , 8'case {8'$0, 8'h5} of
       {8'@, 8'@} -> RShiftArith} of
     {8'@, 8'@} -> Or
 

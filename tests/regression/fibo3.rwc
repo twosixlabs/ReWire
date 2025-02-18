@@ -91,7 +91,7 @@ Main.first $0 = 24'case {16'$0, 16'$0} of
     {32'@} -> $LL.Main.first1
 
 $LL.Main.second :: W16 -> W16 -> W24
-$LL.Main.second $0 $1 = {8'case 128'case {128'case 16'$0 of {16'@} -> Resize, 128'h00000000000000000000000000000000} of
+$LL.Main.second $0 $1 = {8'case 128'case {128'case 16'$0 of {16'@} -> Resize, 128'h0} of
       {128'@, 128'@} -> RShift of
     {128'@} -> Resize
   , 16'$1}

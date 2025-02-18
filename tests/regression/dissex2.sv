@@ -67,10 +67,10 @@ module top_level (input logic [0:0] clk,
   assign main_sig_inR1 = {zll_main_begin14_in[15:8], zll_main_begin14_in[7:0]};
   Main_sig  instR4 (main_sig_inR1[15:8], main_sig_inR1[7:0], main_sig_outR1);
   assign {__continue, __padding, __out0, __st0_next, __st1_next} = (zll_main_sig4_in[0] == 1'h1) ? main_sig_outR1 : main_sig_out;
-  initial {__st0, __st1} <= 16'h0001;
+  initial {__st0, __st1} <= 16'h1;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      {__st0, __st1} <= 16'h0001;
+      {__st0, __st1} <= 16'h1;
     end else begin
       {__st0, __st1} <= {__st0_next, __st1_next};
     end

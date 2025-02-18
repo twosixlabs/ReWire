@@ -18,21 +18,21 @@ module top_level (input logic [0:0] clk,
   logic [7:0] __resumption_tag_next;
   logic [7:0] __st0_next;
   assign zll_main_go11_in = {__resumption_tag, __st0};
-  assign binop_in = {zll_main_go11_in[15:8], 8'h01};
+  assign binop_in = {zll_main_go11_in[15:8], 8'h1};
   assign zll_main_go6_in = binop_in[15:8] + binop_in[7:0];
-  assign zll_main_go10_in = {17'h00100, zll_main_go6_in[7:0]};
+  assign zll_main_go10_in = {17'h100, zll_main_go6_in[7:0]};
   assign zll_main_go4_in = zll_main_go10_in[24:0];
   assign main_go_in = zll_main_go4_in[7:0];
   assign zll_main_go_in = {main_go_in[7:0], main_go_in[7:0]};
   assign zll_main_go9_in = zll_main_go_in[15:0];
-  assign zll_main_go3_in = {9'h000, zll_main_go9_in[15:8], zll_main_go9_in[7:0]};
+  assign zll_main_go3_in = {9'h0, zll_main_go9_in[15:8], zll_main_go9_in[7:0]};
   assign zll_main_go7_in = zll_main_go3_in[24:0];
   assign zll_main_go8_in = {zll_main_go7_in[15:8], zll_main_go7_in[7:0]};
   assign {__continue, __out0, __resumption_tag_next, __st0_next} = {1'h1, zll_main_go8_in[15:8], zll_main_go8_in[15:8], zll_main_go8_in[7:0]};
-  initial {__resumption_tag, __st0} <= 16'h0000;
+  initial {__resumption_tag, __st0} <= 16'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      {__resumption_tag, __st0} <= 16'h0000;
+      {__resumption_tag, __st0} <= 16'h0;
     end else begin
       {__resumption_tag, __st0} <= {__resumption_tag_next, __st0_next};
     end

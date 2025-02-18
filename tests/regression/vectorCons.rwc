@@ -29,7 +29,7 @@ $LL.Main.loop1 $0 = {1'h1, 128'$0}
 $LL.Main.compute1 :: W64 -> W64 -> W128
 $LL.Main.compute1 $0 $1 = {56'case 64'$0 of
     {8'_, 56'@} -> Id
-  , 8'case 128'case {128'case 64'$1 of {64'@} -> Resize, 128'h00000000000000000000000000000000} of
+  , 8'case 128'case {128'case 64'$1 of {64'@} -> Resize, 128'h0} of
       {128'@, 128'@} -> RShift of
     {128'@} -> Resize
   , 8'case 64'$0 of

@@ -12,7 +12,7 @@ module top_level (input logic [0:0] clk,
   logic [7:0] __resumption_tag_next;
   assign main_loop1_in = __resumption_tag;
   assign resize_in = main_loop1_in[7:0];
-  assign binop_in = {16'(resize_in[7:0]), 16'h0001};
+  assign binop_in = {16'(resize_in[7:0]), 16'h1};
   assign zll_main_loop1_in = {1'h0, binop_in[31:16] ^ binop_in[15:0]};
   assign zll_main_loop3_in = zll_main_loop1_in[16:0];
   assign {__continue, __out0, __resumption_tag_next} = {1'h1, zll_main_loop3_in[15:0]};

@@ -19,5 +19,5 @@ $LL.Main.loop1 $0 = 17'case 17'$0 of
     {1'h0, 16'@} -> $LL.Main.loop3
 
 Main.loop1 :: W8 -> W17
-Main.loop1 $0 = 17'case {1'h0, 16'case {16'case 8'$0 of {8'@} -> Resize, 16'h0001} of {16'@, 16'@} -> XOr} of
+Main.loop1 $0 = 17'case {1'h0, 16'case {16'case 8'$0 of {8'@} -> Resize, 16'h1} of {16'@, 16'@} -> XOr} of
     {17'@} -> $LL.Main.loop1

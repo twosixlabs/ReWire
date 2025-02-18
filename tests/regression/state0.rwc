@@ -6,7 +6,7 @@ states []
 
 $Pure.dispatch :: W6 -> W3 -> W10
 $Pure.dispatch $0 $1 = 10'case {3'$1, 6'$0} of
-    {3'_, 3'h1, 3'_} -> 10'h018
+    {3'_, 3'h1, 3'_} -> 10'h18
     _ -> 10'case {3'$1, 6'$0} of
       {3'@, 3'h2, 3'_} -> $LL.Pure.dispatch1
       _ -> 10'case {3'$1, 6'$0} of
@@ -17,10 +17,10 @@ $Pure.dispatch $0 $1 = 10'case {3'$1, 6'$0} of
             {3'@, 3'h0, 3'@} -> $LL.Pure.dispatch3
 
 $Pure.start :: W10
-$Pure.start  = 10'h008
+$Pure.start  = 10'h8
 
 $LL.Main.dev3 :: W3 -> W3 -> W10
-$LL.Main.dev3 $0 $1 = {7'h04, 3'$0}
+$LL.Main.dev3 $0 $1 = {7'h4, 3'$0}
 
 $LL.Pure.dispatch6 :: W3 -> W3 -> W10
 $LL.Pure.dispatch6 $0 $1 = 10'case {3'$1, 3'$0} of
@@ -35,7 +35,7 @@ $LL.Pure.dispatch4 $0 $1 = 10'case {3'$0, 3'$1} of
     {3'@, 3'@} -> $LL.Pure.dispatch5
 
 Main.dev1 :: W3 -> W10
-Main.dev1 $0 = {7'h00, 3'$0}
+Main.dev1 $0 = {7'h0, 3'$0}
 
 $LL.Pure.dispatch3 :: W3 -> W3 -> W10
 $LL.Pure.dispatch3 $0 $1 = 10'case {3'$0, 3'$1} of

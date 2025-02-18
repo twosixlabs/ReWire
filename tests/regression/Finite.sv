@@ -35,9 +35,9 @@ module ZLL_Pure_dispatch1 (input logic [6:0] arg0,
   logic [6:0] main_dev1_in;
   assign zll_main_dev1_in = arg0;
   assign resize_in = zll_main_dev1_in[6:0];
-  assign binop_in = {resize_in[6:0], 7'h01};
+  assign binop_in = {resize_in[6:0], 7'h1};
   assign resize_inR1 = binop_in[13:7] + binop_in[6:0];
-  assign binop_inR1 = {128'(resize_inR1[6:0]), 128'h00000000000000000000000000000064};
+  assign binop_inR1 = {128'(resize_inR1[6:0]), 128'h64};
   assign resize_inR2 = binop_inR1[255:128] % binop_inR1[127:0];
   assign main_dev1_in = resize_inR2[6:0];
   assign res = {main_dev1_in[6:0], 1'h1};

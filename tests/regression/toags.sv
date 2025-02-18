@@ -72,10 +72,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_go31_in = {zll_main_go33_in[3], zll_main_go33_in[2], zll_main_go33_in[1]};
   assign zll_main_go30_in = {zll_main_go31_in[0], zll_main_go31_in[1], zll_main_go31_in[2]};
   assign {__continue, __out0, __resumption_tag_next, __st0_next, __st1_next} = (zll_pure_dispatch4_in[4:3] == 2'h1) ? ((zll_main_go33_in[0] == 1'h1) ? {4'hb, zll_main_go30_in[2], zll_main_go30_in[1], zll_main_go30_in[0]} : {1'h1, rewirezupreludezuzaza_outR1, 2'h2, zll_main_go34_in[2], zll_main_go34_in[1], zll_main_go34_in[0]}) : ((zll_pure_dispatch10_inR1[4:3] == 2'h2) ? zll_pure_dispatch10_outR1 : ((zll_pure_dispatch1_in[4:3] == 2'h3) ? {1'h1, rewirezupreludezuzaza_out, 2'h0, zll_main_go7_in[2], zll_main_go7_in[1], zll_main_go7_in[0]} : zll_pure_dispatch10_out));
-  initial {__resumption_tag, __st0, __st1} <= 5'h09;
+  initial {__resumption_tag, __st0, __st1} <= 5'h9;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      {__resumption_tag, __st0, __st1} <= 5'h09;
+      {__resumption_tag, __st0, __st1} <= 5'h9;
     end else begin
       {__resumption_tag, __st0, __st1} <= {__resumption_tag_next, __st0_next, __st1_next};
     end
@@ -98,7 +98,7 @@ module ZLL_Pure_dispatch10 (input logic [0:0] arg0,
   assign zll_main_go21_in = {zll_pure_dispatch8_in[2], zll_pure_dispatch8_in[3], zll_pure_dispatch8_in[1], zll_pure_dispatch8_in[0]};
   assign zll_main_go35_in = {zll_main_go21_in[1], zll_main_go21_in[3]};
   assign zll_main_go18_in = zll_main_go35_in[1:0];
-  assign zll_main_go12_in = {5'h02, zll_main_go18_in[1], zll_main_go18_in[0]};
+  assign zll_main_go12_in = {5'h2, zll_main_go18_in[1], zll_main_go18_in[0]};
   assign zll_main_go37_in = zll_main_go12_in[6:0];
   assign main_go_in = {zll_main_go37_in[1], zll_main_go37_in[0]};
   assign res = {5'h12, main_go_in[1], main_go_in[0]};

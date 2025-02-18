@@ -753,8 +753,8 @@ module ZLL_Main_loop138 (input logic [142:0] arg0,
   ZLL_Main_getReg13  instR1 (zll_main_getreg13_in[69:0], zll_main_getreg13_out);
   assign zll_main_loop155_in = {zll_main_loop225_in[75:70], zll_main_getreg13_out};
   assign zll_main_loop134_in = {zll_main_loop155_in[83:78], zll_main_loop155_in[77:0]};
-  assign binop_in = {zll_main_loop134_in[77:70], 8'h00};
-  assign binop_inR1 = {zll_main_loop134_in[77:70], 8'h00};
+  assign binop_in = {zll_main_loop134_in[77:70], 8'h0};
+  assign binop_inR1 = {zll_main_loop134_in[77:70], 8'h0};
   assign zll_main_loop83_in = {zll_main_loop134_in[69:0], zll_main_loop134_in[83:78], binop_inR1[15:8] == binop_inR1[7:0]};
   assign zll_main_loop8_in = {zll_main_loop83_in[76:7], zll_main_loop83_in[6:1]};
   assign main_putpc1_in = {zll_main_loop8_in[5:0], zll_main_loop8_in[75:6]};
@@ -989,7 +989,7 @@ module Main_incrPC (input logic [69:0] arg0,
   Main_getPC  inst (main_getpc_in[69:0], main_getpc_out);
   assign zll_main_incrpc1_in = main_getpc_out;
   assign zll_main_incrpc_in = zll_main_incrpc1_in[75:0];
-  assign binop_in = {zll_main_incrpc_in[75:70], 6'h01};
+  assign binop_in = {zll_main_incrpc_in[75:70], 6'h1};
   assign main_putpc1_in = {binop_in[11:6] + binop_in[5:0], zll_main_incrpc_in[69:0]};
   Main_putPC1  instR1 (main_putpc1_in[75:70], main_putpc1_in[69:0], main_putpc1_out);
   assign res = main_putpc1_out;

@@ -6,35 +6,35 @@ states [("__st0",32)]
 
 $Pure.dispatch :: W39 -> W33 -> W66
 $Pure.dispatch $0 $1 = 66'case {33'$1, 39'$0} of
-    {33'@, 7'h01, 32'@} -> $LL.Pure.dispatch101
+    {33'@, 7'h1, 32'@} -> $LL.Pure.dispatch101
     _ -> 66'case {33'$1, 39'$0} of
-      {33'@, 7'h02, 32'@} -> $LL.Pure.dispatch47
+      {33'@, 7'h2, 32'@} -> $LL.Pure.dispatch47
       _ -> 66'case {33'$1, 39'$0} of
-        {33'@, 7'h03, 32'@} -> $LL.Pure.dispatch76
+        {33'@, 7'h3, 32'@} -> $LL.Pure.dispatch76
         _ -> 66'case {33'$1, 39'$0} of
-          {33'@, 7'h04, 32'@} -> $LL.Pure.dispatch37
+          {33'@, 7'h4, 32'@} -> $LL.Pure.dispatch37
           _ -> 66'case {33'$1, 39'$0} of
-            {33'@, 7'h05, 32'@} -> $LL.Pure.dispatch17
+            {33'@, 7'h5, 32'@} -> $LL.Pure.dispatch17
             _ -> 66'case {33'$1, 39'$0} of
-              {33'@, 7'h06, 32'@} -> $LL.Pure.dispatch6
+              {33'@, 7'h6, 32'@} -> $LL.Pure.dispatch6
               _ -> 66'case {33'$1, 39'$0} of
-                {33'@, 7'h07, 32'@} -> $LL.Pure.dispatch59
+                {33'@, 7'h7, 32'@} -> $LL.Pure.dispatch59
                 _ -> 66'case {33'$1, 39'$0} of
-                  {33'@, 7'h08, 32'@} -> $LL.Pure.dispatch24
+                  {33'@, 7'h8, 32'@} -> $LL.Pure.dispatch24
                   _ -> 66'case {33'$1, 39'$0} of
-                    {33'@, 7'h09, 32'@} -> $LL.Pure.dispatch11
+                    {33'@, 7'h9, 32'@} -> $LL.Pure.dispatch11
                     _ -> 66'case {33'$1, 39'$0} of
-                      {33'@, 7'h0a, 32'@} -> $LL.Pure.dispatch126
+                      {33'@, 7'ha, 32'@} -> $LL.Pure.dispatch126
                       _ -> 66'case {33'$1, 39'$0} of
-                        {33'@, 7'h0b, 32'@} -> $LL.Pure.dispatch5
+                        {33'@, 7'hb, 32'@} -> $LL.Pure.dispatch5
                         _ -> 66'case {33'$1, 39'$0} of
-                          {33'@, 7'h0c, 32'@} -> $LL.Pure.dispatch69
+                          {33'@, 7'hc, 32'@} -> $LL.Pure.dispatch69
                           _ -> 66'case {33'$1, 39'$0} of
-                            {33'@, 7'h0d, 32'@} -> $LL.Pure.dispatch40
+                            {33'@, 7'hd, 32'@} -> $LL.Pure.dispatch40
                             _ -> 66'case {33'$1, 39'$0} of
-                              {33'@, 7'h0e, 32'@} -> $LL.Pure.dispatch2
+                              {33'@, 7'he, 32'@} -> $LL.Pure.dispatch2
                               _ -> 66'case {33'$1, 39'$0} of
-                                {33'@, 7'h0f, 32'@} -> $LL.Pure.dispatch52
+                                {33'@, 7'hf, 32'@} -> $LL.Pure.dispatch52
                                 _ -> 66'case {33'$1, 39'$0} of
                                   {33'@, 7'h10, 32'@} -> $LL.Pure.dispatch110
                                   _ -> 66'case {33'$1, 39'$0} of
@@ -517,7 +517,7 @@ $Pure.dispatch $0 $1 = 66'case {33'$1, 39'$0} of
                                                                                                                                                                                                                                                               _ -> 66'case {33'$1
                                                                                                                                                                                                                                                                 , 39'$0} of
                                                                                                                                                                                                                                                                 {33'@
-                                                                                                                                                                                                                                                                , 7'h00
+                                                                                                                                                                                                                                                                , 7'h0
                                                                                                                                                                                                                                                                 , 32'@} -> $LL.Pure.dispatch28
 
 $Pure.start :: W66

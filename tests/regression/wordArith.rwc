@@ -12,14 +12,14 @@ $Pure.start :: W9
 $Pure.start  = 9'h100
 
 Main.compute1 :: W8 -> W8
-Main.compute1 $0 = 8'case {8'case {8'case {8'case {8'case {8'$0, 8'h01} of {8'@, 8'@} -> Add, 8'h02} of
+Main.compute1 $0 = 8'case {8'case {8'case {8'case {8'case {8'$0, 8'h1} of {8'@, 8'@} -> Add, 8'h2} of
           {8'@, 8'@} -> Pow
-        , 8'case {8'$0, 8'h02} of
+        , 8'case {8'$0, 8'h2} of
           {8'@, 8'@} -> Sub} of
         {8'@, 8'@} -> Mul
-      , 8'h03} of
+      , 8'h3} of
       {8'@, 8'@} -> Div
-    , 8'case {8'$0, 8'h01} of
+    , 8'case {8'$0, 8'h1} of
       {8'@, 8'@} -> Add} of
     {8'@, 8'@} -> Mod
 

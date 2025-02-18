@@ -38,10 +38,10 @@ module top_level (input logic [0:0] clk,
   assign zll_main_loop1_in = {1'h0, (zll_main_compute1_in[0] == 1'h1) ? id_inR3[7:0] : id_inR2[15:8]};
   assign zll_main_loop2_in = zll_main_loop1_in[8:0];
   assign {__continue, __out0, __resumption_tag_next} = {1'h1, zll_main_loop2_in[7:0]};
-  initial __resumption_tag <= 16'h0100;
+  initial __resumption_tag <= 16'h100;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      __resumption_tag <= 16'h0100;
+      __resumption_tag <= 16'h100;
     end else begin
       __resumption_tag <= __resumption_tag_next;
     end

@@ -100,7 +100,7 @@ module top_level (input logic [0:0] clk,
   assign main_x2_inR9 = main_ss$_in[99:0];
   Main_x2  instR9 (main_x2_inR9[99:0], main_x2_outR9);
   assign zll_main_dev3_in = {main_x2_out, main_x2_outR1, main_x2_outR2, main_x2_outR3, main_x2_outR4, main_x2_outR5, main_x2_outR6, main_x2_outR7, main_x2_outR8, main_x2_outR9};
-  assign zll_main_dev2_in = {{101'h00000000000000000000000001, {10'h3e8{1'h0}}}, zll_main_dev3_in[999:0]};
+  assign zll_main_dev2_in = {{101'h1, {10'h3e8{1'h0}}}, zll_main_dev3_in[999:0]};
   assign zll_main_dev4_in = zll_main_dev2_in[2100:0];
   assign main_dev_in = zll_main_dev4_in[999:0];
   assign zll_main_dev12_in = {main_dev_in[999:0], main_dev_in[999:0]};
@@ -123,6 +123,6 @@ endmodule
 module Main_x2 (input logic [99:0] arg0,
   output logic [99:0] res);
   logic [199:0] binop_in;
-  assign binop_in = {arg0, 100'h0000000000000000000000002};
+  assign binop_in = {arg0, 100'h2};
   assign res = binop_in[199:100] * binop_in[99:0];
 endmodule
