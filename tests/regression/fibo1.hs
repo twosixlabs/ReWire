@@ -22,7 +22,13 @@ incr = do
       lift (lift (put (r0 + r1)))
       sig
 
+fib :: ReacT Bit (W 8) Identity ()
+fib = extrude (extrude begin $ lit 0) $ lit 1
+
+fib' :: ReacT Bit (W 8) Identity ()
+fib' = fib
+
 start :: ReacT Bit (W 8) Identity ()
-start = extrude (extrude begin $ lit 0) $ lit 1
+start = fib'
 
 main = undefined

@@ -2,16 +2,17 @@
 {-# LANGUAGE Safe #-}
 module ReWire.Crust.Util
       ( Fresh, Name, Embed (..), TRec, Bind, FieldId
-      , paramTys, isPrim, inlinable, mustInline, nil
+      , paramTys, isPrim, inlinable, mustInline, nil, isExtrude, extrudeDefn
       , mkTuple, mkTuplePat, mkTupleMPat
       , mkPair, mkPairPat, mkPairMPat, flattenLam, mkLam
       , mkApp, mkError, builtin, proxy, patVars, toVar, toPatVar, transPat, transMPat
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote))
-import ReWire.Crust.Syntax (Exp (..), Ty (..), MatchPat (..), Pat (..), Defn (..), DefnAttr (..), Builtin (..), Poly (..), FieldId, builtins)
+import ReWire.Crust.Syntax (Exp (..), Ty (..), MatchPat (..), Pat (..), Defn (..), DefnAttr (..), Builtin (..), Poly (..), FieldId, builtins, flattenApp)
 import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairTy, fundamental, mkArrowTy, paramTys)
 import ReWire.Pretty (pretty)
+import ReWire.SYB (query)
 import ReWire.Unbound (freshVar, Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
 
 import Data.Text (Text)
@@ -29,11 +30,22 @@ inlinable d = case defnAttr d of
       Just NoInline -> False
       Nothing       -> not $ isPrim $ defnName d
 
+extrudeDefn :: Defn -> Bool
+extrudeDefn (Defn { defnBody = Embed (unsafeUnbind -> (_, b)) }) = hasExtrude b
+      where hasExtrude :: Exp -> Bool
+            hasExtrude (query -> xs) = Extrude `elem` xs
+
 mustInline :: Defn -> Bool
 mustInline = \ case
-      Defn { defnAttr = Just Inline }                    -> True
+      Defn { defnAttr = Just Inline } -> True
       Defn { defnPolyTy = Embed (Poly (unsafeUnbind -> (_, t)))
-           , defnName   = n }                            -> not (isPrim n || fundamental t)
+           , defnName   = n
+           }                          -> not (isPrim n || fundamental t)
+
+isExtrude :: Exp -> Bool
+isExtrude e = case flattenApp e of
+      (Builtin _ _ _ Extrude, [_, _]) -> True
+      _                               -> False
 
 nil :: Exp
 nil = Con (MsgAnnote "nil") Nothing (Just nilTy) (s2n "()")

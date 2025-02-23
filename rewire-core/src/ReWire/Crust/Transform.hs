@@ -25,7 +25,7 @@ import ReWire.Config (Config, depth)
 import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), TypeSynonym (..), flattenApp)
 import ReWire.Crust.TypeCheck (typeCheckDefn, unify, unify', TySub)
 import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy)
-import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, mkTupleMPat, mkTuple, mkPairMPat, mkPair, mustInline, patVars, toVar, transPat, transMPat)
+import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, mkTupleMPat, mkTuple, mkPairMPat, mkPair, mustInline, patVars, toVar, transPat, transMPat, isExtrude, extrudeDefn)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fix, fix', boundedFix)
 import ReWire.SYB (transform, transformM, query)
@@ -58,12 +58,24 @@ removeMain (ts, syns, ds) = (ts, syns, filter (not . isMain) ds)
 
 -- | Inlines defs marked for inlining. Must run before lambda lifting.
 inline :: MonadError AstError m => FreeProgram -> m FreeProgram
-inline (ts, syns, ds) = (ts, syns, ) . flip substs ds <$> subs
+inline (ts, syns, ds) = do
+      ds' <- substs <$> subs <*> pure ds
+      ds'' <- inlineExtrudes ds'
+      pure (ts, syns, ds'')
       where inlineDefs :: [Defn]
             inlineDefs = filter mustInline ds
 
             subs :: MonadError AstError m => m [(Name Exp, Exp)]
-            subs = map defnSubst <$> fix "INLINE definition expansion" 100 (pure . substs (map defnSubst inlineDefs)) inlineDefs
+            subs = map defnSubst <$> ifix (pure . substs (map defnSubst inlineDefs)) inlineDefs
+
+            inlineExtrudes :: MonadError AstError m => [Defn] -> m [Defn]
+            inlineExtrudes = ifix (pure . inlineExtrudes')
+
+            inlineExtrudes' :: [Defn] -> [Defn]
+            inlineExtrudes' ds' = substs (map defnSubst $ filter extrudeDefn ds') ds'
+
+            ifix :: (Hashable a, MonadError AstError m) => (a -> m a) -> a -> m a
+            ifix = fix "INLINE definition expansion" 100
 
 defnSubst :: Defn -> (Name Exp, Exp)
 defnSubst (Defn _ n (Embed pt) _ (Embed e)) = runFreshM $ unbind e >>= \ case
@@ -270,12 +282,6 @@ normalizeBind (ts, syns, ds) = (ts, syns, ) <$> (uncurry (<>) <$> runStateT (map
 
             isReacDefn :: Defn -> Bool
             isReacDefn Defn { defnPolyTy = Embed (Poly (unsafeUnbind -> (_, t))) } = isReacT t
-
-            isExtrude :: Exp -> Bool
-            isExtrude e = case flattenApp e of
-                  (Builtin _ _ _ Extrude, [_, _]) -> True
-                  _                               -> False
-
 
 -- | So if e :: a -> b, then
 -- > g = e
