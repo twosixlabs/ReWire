@@ -9,7 +9,7 @@ $Pure.dispatch $0 = 32'case 8'$0 of
     {8'@} -> $LL.Main.dev226
 
 $Pure.start :: W32
-$Pure.start  = 32'hd9668ff0
+$Pure.start  = 32'he6668ff0
 
 $LL.Main.dev285 :: W3 -> W3 -> W3
 $LL.Main.dev285 $0 $1 = 3'case {3'$1, 3'$0} of
@@ -56,11 +56,11 @@ $LL.Main.dev267 :: W8 -> W3 -> W3 -> W3 -> W1 -> W1
 $LL.Main.dev267 $0 $1 $2 $3 $4 = 1'case {8'$0, 3'$1, 3'$2, 3'$3, 1'$4} of
     {8'@, 3'@, 3'@, 3'@, 1'h0} -> $LL.Main.dev219
 
-$LL.Main.dev263 :: W3 -> W3 -> W3 -> W8 -> W1
-$LL.Main.dev263 $0 $1 $2 $3 = 1'case 128'case {128'case 8'$3 of
+$LL.Main.dev263 :: W3 -> W3 -> W8 -> W3 -> W1
+$LL.Main.dev263 $0 $1 $2 $3 = 1'case 128'case {128'case 8'$2 of
         {8'@} -> Resize
       , 128'case {128'case {128'case {128'h8
-            , 128'case 3'case {3'case {3'$0, 3'$2} of {3'@, 3'@} -> $LL.Main.dev280, 3'$1} of
+            , 128'case 3'case {3'case {3'$0, 3'$3} of {3'@, 3'@} -> $LL.Main.dev280, 3'$1} of
                 {3'@, 3'@} -> $LL.Main.dev262 of
               {3'@} -> Resize} of
             {128'@, 128'@} -> Sub
@@ -210,9 +210,9 @@ $LL.Main.dev205 $0 $1 $2 $3 = 3'case {3'$1, 1'$3} of
     _ -> 3'case {3'$0, 3'$1, 1'h0} of
       {3'@, 3'@, 1'@} -> $LL.Main.dev103
 
-$LL.Main.dev203 :: W3 -> W3 -> W3 -> W8 -> W1 -> W1
-$LL.Main.dev203 $0 $1 $2 $3 $4 = 1'case {3'$0, 3'$1, 3'$2, 8'$3, 1'$4} of
-    {3'@, 3'@, 3'@, 8'@, 1'h0} -> $LL.Main.dev263
+$LL.Main.dev203 :: W3 -> W3 -> W8 -> W3 -> W1 -> W1
+$LL.Main.dev203 $0 $1 $2 $3 $4 = 1'case {3'$0, 3'$1, 8'$2, 3'$3, 1'$4} of
+    {3'@, 3'@, 8'@, 3'@, 1'h0} -> $LL.Main.dev263
 
 $LL.Main.dev202 :: W8 -> W3 -> W8 -> W3 -> W8
 $LL.Main.dev202 $0 $1 $2 $3 = {1'case {8'$0, 3'$1, 3'$3, 8'$2, 3'h0} of
@@ -481,10 +481,10 @@ $LL.Main.dev37 $0 $1 $2 = 8'case {8'$0, 8'$1, 3'$2, 3'h2} of
     {8'@, 8'@, 3'@, 3'@} -> $LL.Main.dev42
 
 $LL.Main.dev30 :: W3 -> W3 -> W8 -> W3 -> W8 -> W1 -> W1
-$LL.Main.dev30 $0 $1 $2 $3 $4 $5 = 1'case {3'$0, 3'$1, 8'$2, 1'$5} of
+$LL.Main.dev30 $0 $1 $2 $3 $4 $5 = 1'case {3'$0, 3'$1, 8'$4, 1'$5} of
     {3'@, 3'@, 8'@, 1'h1} -> $LL.Main.dev
-    _ -> 1'case {3'$0, 3'$1, 3'$3, 8'$4, 1'case 3'$0 of {3'@} -> $LL.Main.dev229} of
-      {3'@, 3'@, 3'@, 8'@, 1'@} -> $LL.Main.dev203
+    _ -> 1'case {3'$0, 3'$1, 8'$2, 3'$3, 1'case 3'$0 of {3'@} -> $LL.Main.dev229} of
+      {3'@, 3'@, 8'@, 3'@, 1'@} -> $LL.Main.dev203
 
 $LL.Main.dev27 :: W8 -> W3 -> W8 -> W3 -> W3 -> W8
 $LL.Main.dev27 $0 $1 $2 $3 $4 = {1'case {8'$0, 3'$1, 8'$2, 3'$3, 3'$4, 3'h0} of

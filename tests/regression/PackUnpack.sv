@@ -625,10 +625,10 @@ module ZLL_Main_dev18 (input logic [2:0] arg0,
   assign zll_main_dev30_in = {arg4, arg0, arg1, arg2, arg3, zll_main_dev229_out};
   assign zll_main_dev229_inR1 = zll_main_dev30_in[25:23];
   ZLL_Main_dev229  instR1 (zll_main_dev229_inR1[2:0], zll_main_dev229_outR1);
-  assign zll_main_dev203_in = {zll_main_dev30_in[25:23], zll_main_dev30_in[22:20], zll_main_dev30_in[11:9], zll_main_dev30_in[8:1], zll_main_dev229_outR1};
-  assign zll_main_dev263_in = {zll_main_dev203_in[17:15], zll_main_dev203_in[14:12], zll_main_dev203_in[11:9], zll_main_dev203_in[8:1], zll_main_dev203_in[0]};
-  assign resize_in = zll_main_dev263_in[8:1];
-  assign zll_main_dev280_in = {zll_main_dev263_in[17:15], zll_main_dev263_in[11:9]};
+  assign zll_main_dev203_in = {zll_main_dev30_in[25:23], zll_main_dev30_in[22:20], zll_main_dev30_in[19:12], zll_main_dev30_in[11:9], zll_main_dev229_outR1};
+  assign zll_main_dev263_in = {zll_main_dev203_in[17:15], zll_main_dev203_in[14:12], zll_main_dev203_in[11:4], zll_main_dev203_in[3:1], zll_main_dev203_in[0]};
+  assign resize_in = zll_main_dev263_in[11:4];
+  assign zll_main_dev280_in = {zll_main_dev263_in[17:15], zll_main_dev263_in[3:1]};
   ZLL_Main_dev280  instR2 (zll_main_dev280_in[5:3], zll_main_dev280_in[2:0], zll_main_dev280_out);
   assign zll_main_dev262_in = {zll_main_dev280_out, zll_main_dev263_in[14:12]};
   ZLL_Main_dev262  instR3 (zll_main_dev262_in[5:3], zll_main_dev262_in[2:0], zll_main_dev262_out);
@@ -638,7 +638,7 @@ module ZLL_Main_dev18 (input logic [2:0] arg0,
   assign binop_inR2 = {binop_inR1[255:128] - binop_inR1[127:0], 128'h1};
   assign binop_inR3 = {128'(resize_in[7:0]), binop_inR2[255:128] * binop_inR2[127:0]};
   assign resize_inR2 = binop_inR3[255:128] >> binop_inR3[127:0];
-  assign zll_main_dev_in = {zll_main_dev30_in[25:23], zll_main_dev30_in[22:20], zll_main_dev30_in[19:12], zll_main_dev30_in[0]};
+  assign zll_main_dev_in = {zll_main_dev30_in[25:23], zll_main_dev30_in[22:20], zll_main_dev30_in[8:1], zll_main_dev30_in[0]};
   assign resize_inR3 = zll_main_dev_in[8:1];
   assign zll_main_dev262_inR1 = {zll_main_dev_in[14:12], zll_main_dev_in[11:9]};
   ZLL_Main_dev262  instR4 (zll_main_dev262_inR1[5:3], zll_main_dev262_inR1[2:0], zll_main_dev262_outR1);

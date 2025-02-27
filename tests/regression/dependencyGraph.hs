@@ -5,7 +5,6 @@ import ReWire.Bits ( lit)
 import ReWire.Monad (Dev, iterSt)
 import ReWire.Vectors (cons, init, last, head, replicate)
 
-
 type MyBool = Bool
 
 data MyState = MyState MyBool (Maybe (W 4)) (Either (W 4) (W 8))
@@ -16,16 +15,11 @@ data Input = InputA (W 4) | InputB (W 8) | InputC MyBool
 
 data Output = Output MyBool MyState
 
-
-
-
 start :: Dev Input Output
 start = extrude (iterSt loop initInput) emptyPipeline
 
-
 incrPipeline :: (MyState, PipelineState) -> (PipelineState, MyState)
 incrPipeline (s,ps) = (cons s (init ps :: Vec 1 MyState), last ps)
-
 
 inputToMyState :: Input -> MyState -> MyState
 inputToMyState (InputA w4) (MyState b _ _) = MyState b (Just w4) (Left w4)
@@ -42,7 +36,6 @@ myStateToOutput (MyState False _ w4w8) = Output False (MyState False Nothing w4w
 loop :: Input -> PipelineState -> (Output,PipelineState)
 loop i s = let (s',out) = incrPipeline (inputToMyState i (head s),s)
            in (myStateToOutput out,s')
-
 
 emptyMyState :: MyState
 emptyMyState = MyState False Nothing (Left (lit 0))

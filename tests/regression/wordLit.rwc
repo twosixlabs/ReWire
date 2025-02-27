@@ -6,18 +6,18 @@ states []
 
 $Pure.dispatch :: W8 -> W17
 $Pure.dispatch $0 = 17'case 8'$0 of
-    {8'@} -> Main.loop1
+    {8'@} -> $LL.Main.loop3
 
 $Pure.start :: W17
 $Pure.start  = 17'h100fe
 
-$LL.Main.loop3 :: W16 -> W17
-$LL.Main.loop3 $0 = {1'h1, 16'$0}
+$LL.Main.loop3 :: W8 -> W17
+$LL.Main.loop3 $0 = 17'case {1'h0, 16'case {16'case 8'$0 of {8'@} -> Resize, 16'h1} of {16'@, 16'@} -> XOr} of
+    {17'@} -> $LL.Main.loop1
 
 $LL.Main.loop1 :: W17 -> W17
 $LL.Main.loop1 $0 = 17'case 17'$0 of
-    {1'h0, 16'@} -> $LL.Main.loop3
+    {1'h0, 16'@} -> $LL.Main.loop
 
-Main.loop1 :: W8 -> W17
-Main.loop1 $0 = 17'case {1'h0, 16'case {16'case 8'$0 of {8'@} -> Resize, 16'h1} of {16'@, 16'@} -> XOr} of
-    {17'@} -> $LL.Main.loop1
+$LL.Main.loop :: W16 -> W17
+$LL.Main.loop $0 = {1'h1, 16'$0}

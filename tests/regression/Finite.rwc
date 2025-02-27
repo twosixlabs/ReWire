@@ -4,27 +4,17 @@ inputs [("__in0",7)]
 outputs [("__out0",7)]
 states []
 
-$Pure.dispatch :: W1 -> W7 -> W8
-$Pure.dispatch $0 $1 = 8'case {7'$1, 1'$0} of
-    {7'@, 1'h1} -> $LL.Pure.dispatch1
-    _ -> 8'case {7'$1, 1'$0} of
-      {7'@, 1'h0} -> $LL.Pure.dispatch1
-
-$Pure.start :: W8
-$Pure.start  = 8'hc6
-
-Main.dev1 :: W7 -> W8
-Main.dev1 $0 = {7'$0, 1'h1}
-
-$LL.Main.dev1 :: W7 -> W8
-$LL.Main.dev1 $0 = 8'case 7'case 128'case {128'case 7'case {7'case 7'$0 of {7'@} -> Resize, 7'h1} of
-            {7'@, 7'@} -> Add of
-          {7'@} -> Resize
-        , 128'h64} of
-        {128'@, 128'@} -> Mod of
-      {128'@} -> Resize of
-    {7'@} -> Main.dev1
-
-$LL.Pure.dispatch1 :: W7 -> W8
-$LL.Pure.dispatch1 $0 = 8'case 7'$0 of
+$Pure.dispatch :: W7 -> W7
+$Pure.dispatch $0 = 7'case 7'$0 of
     {7'@} -> $LL.Main.dev1
+
+$Pure.start :: W7
+$Pure.start  = 7'h63
+
+$LL.Main.dev1 :: W7 -> W7
+$LL.Main.dev1 $0 = 7'case 128'case {128'case 7'case {7'case 7'$0 of {7'@} -> Resize, 7'h1} of
+          {7'@, 7'@} -> Add of
+        {7'@} -> Resize
+      , 128'h64} of
+      {128'@, 128'@} -> Mod of
+    {128'@} -> Resize
