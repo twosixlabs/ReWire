@@ -72,7 +72,7 @@ testCompiler flags fn = do
             -- Test: interpret Core.
             <$> maybeGolden "yaml" (do
                   cdTestdir
-                  withArgs (fn : ["--interp", "-o", ofile "yaml"] <> extraFlags) RWC.main)
+                  withArgs ((fn -<.> "rwc") : ["--from-core", "--interp", "-o", ofile "yaml"] <> extraFlags) RWC.main)
 
       let verilogTests =
             -- Test: compile Core to Verilog with RWC.
