@@ -344,7 +344,7 @@ higherOrder (flattenArrow -> (ats, rt)) = any hasArrow $ rt : ats
 synthable :: Ty -> Bool
 synthable t = not (higherOrder t)
            && fundamental t
-           && all (not . reacOrStateT) (paramTys t)
+           && not (any reacOrStateT $ paramTys t)
 
 -- Degree-1 polynomial with rational coefficients.
 data Poly1 = Poly1 Rational (HashMap (Name Ty) Rational)

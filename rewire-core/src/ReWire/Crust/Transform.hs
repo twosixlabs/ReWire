@@ -24,34 +24,32 @@ module ReWire.Crust.Transform
 import ReWire.Annotation (Annote (..), Annotated (..), unAnn)
 import ReWire.Config (Config, depth, start, pDebug)
 import ReWire.Crust.PrimBasis (primDatas)
-import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), DefnAttr (..), TypeSynonym (..), flattenApp, builtins, prettyFP)
-import ReWire.Crust.TypeCheck (untype, typeCheckDefn, unify, unify', TySub)
+import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), DefnAttr (..), TypeSynonym (..), flattenApp, builtins)
+import ReWire.Crust.TypeCheck (typeCheckDefn, unify, unify', TySub)
 import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy, synthable)
 import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, synthableDefn, mkTupleMPat, mkTuple, mkPairMPat, mkPair, patVars, toVar, transPat, transMPat, isExtrude, extrudeDefn)
 import ReWire.Error (AstError, MonadError, failAt)
-import ReWire.Fix (fix, fix', boundedFix, fixUntil)
-import ReWire.Pretty (showt, prettyPrint')
+import ReWire.Fix (fix, fix', fixUntil)
 import ReWire.SYB (transform, transformM, query)
 import ReWire.Unbound (freshVar, fv, Fresh (fresh), s2n, n2s, substs, subst, unembed, isFreeName, runFreshM, Name (..), unsafeUnbind, bind, unbind, Subst (..), Alpha, Embed (Embed), Bind, trec)
 
 import Control.Arrow ((&&&))
 import Control.Lens ((^.))
 import Control.Monad (liftM2, foldM, foldM_, zipWithM, (>=>))
-import Control.Monad.IO.Class (liftIO, MonadIO)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.State (MonadState, evalStateT, execState, StateT (..), get, gets, modify)
 import Data.Containers.ListUtils (nubOrd)
 import Data.Data (Data)
 import Data.Either (lefts)
 import Data.HashMap.Strict (HashMap)
 import Data.HashSet (HashSet, union, difference)
-import Data.Hashable (Hashable (hash))
+import Data.Hashable (Hashable)
 import Data.List (find, sort)
 import Data.Maybe (catMaybes, isNothing)
 import Data.Text (Text, isPrefixOf)
 import Data.Tuple (swap)
 
 import qualified Data.Text           as Text
-import qualified Data.Text.IO        as Text
 import qualified Data.HashMap.Strict as Map
 import qualified Data.HashSet        as Set
 
