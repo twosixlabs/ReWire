@@ -34,7 +34,7 @@ options =
        , Option []    ["no-reset"]        (NoArg  FlagNoReset)                       "No implicitly generated reset signal."
        , Option []    ["no-clock"]        (NoArg  FlagNoClock)                       "No implicitly generated clock signal (implies no-reset: generate a purely combinatorial circuit)."
        , Option []    ["sync-reset"]      (NoArg  FlagSyncReset)                     "Only reset on positive clock edge."
-       , Option ['d'] ["dump"]            (ReqArg FlagDump        "1,2,...")         "Dump the intermediate form of the corresponding pass number (see -v output)."
+       , Option ['d'] ["dump"]            (ReqArg FlagDump        "1,2,...")         "Dump the intermediate form of the corresponding pass number (in brackets; see -v output)."
        , Option []    ["debug-typecheck"] (NoArg  FlagDebugTypeCheck)                "Re-run type-checking after every transformation to possibly catch compiler bugs."
        , Option []    ["flatten"]         (NoArg  FlagFlatten)                       "Flatten RTL output into a single module (currently slow, memory-intensive)."
        , Option ['o'] []                  (ReqArg FlagO           "filename.vhdl")   "Name for output file."

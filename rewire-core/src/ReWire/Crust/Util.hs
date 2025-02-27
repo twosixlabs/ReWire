@@ -2,15 +2,15 @@
 {-# LANGUAGE Safe #-}
 module ReWire.Crust.Util
       ( Fresh, Name, Embed (..), TRec, Bind, FieldId
-      , paramTys, isPrim, inlinable, mustInline, nil, isExtrude, extrudeDefn
-      , mkTuple, mkTuplePat, mkTupleMPat
+      , paramTys, isPrim, inlinable, nil, isExtrude, extrudeDefn
+      , mkTuple, mkTuplePat, mkTupleMPat, synthableDefn
       , mkPair, mkPairPat, mkPairMPat, flattenLam, mkLam
       , mkApp, mkError, builtin, proxy, patVars, toVar, toPatVar, transPat, transMPat
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote))
 import ReWire.Crust.Syntax (Exp (..), Ty (..), MatchPat (..), Pat (..), Defn (..), DefnAttr (..), Builtin (..), Poly (..), FieldId, builtins, flattenApp)
-import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairTy, fundamental, mkArrowTy, paramTys)
+import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairTy, fundamental, mkArrowTy, paramTys, higherOrder, synthable)
 import ReWire.Pretty (pretty)
 import ReWire.SYB (query)
 import ReWire.Unbound (freshVar, Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
@@ -35,12 +35,11 @@ extrudeDefn (Defn { defnBody = Embed (unsafeUnbind -> (_, b)) }) = hasExtrude b
       where hasExtrude :: Exp -> Bool
             hasExtrude (query -> xs) = Extrude `elem` xs
 
-mustInline :: Defn -> Bool
-mustInline = \ case
-      Defn { defnAttr = Just Inline } -> True
+synthableDefn :: Defn -> Bool
+synthableDefn = \ case
       Defn { defnPolyTy = Embed (Poly (unsafeUnbind -> (_, t)))
            , defnName   = n
-           }                          -> not (isPrim n || fundamental t)
+           } -> isPrim n || synthable t
 
 isExtrude :: Exp -> Bool
 isExtrude e = case flattenApp e of

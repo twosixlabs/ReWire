@@ -11,7 +11,7 @@ module ReWire.Crust.Types
       , isReacT, isStateT, ctorNames, resInputTy
       , dstArrow, dstStateT, dstTyApp, dstReacT, proxyTy
       , dstNegTy, negTy, dstPoly1, Poly1, minusP1, zeroP1, pickVar, poly1Ty
-      , renumTyVars, prettyTy
+      , renumTyVars, prettyTy, synthable
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote), Annotated (ann), noAnn)
@@ -152,8 +152,13 @@ paramTys = fst . flattenArrow
 codomTy :: Ty -> Ty
 codomTy = snd . flattenArrow
 
-isArrow :: Ty -> Bool
-isArrow = isJust . dstArrow
+hasArrow :: Ty -> Bool
+hasArrow = \ case
+      t | isArrow t -> True
+      TyApp _ t1 t2 -> hasArrow t1 || hasArrow t2
+      _             -> False
+      where isArrow :: Ty -> Bool
+            isArrow = isJust . dstArrow
 
 dstArrow :: Ty -> Maybe (Ty, Ty)
 dstArrow = \ case
@@ -313,13 +318,33 @@ fundamental = \ case
       TyCon _ (n2s -> "String")  -> False
       TyCon _ (n2s -> "Integer") -> False
       TyCon _ (n2s -> "[_]")     -> False
-      TyNat {}                   -> True
       TyCon {}                   -> True
+      TyNat {}                   -> True
       TyVar {}                   -> True
       TyApp _ a b                -> fundamental a && fundamental b
 
+-- | Types containing ReacT, StateT, or Identity constructors.
+reacOrStateT :: Ty -> Bool
+reacOrStateT = \ case
+      TyCon _ (n2s -> "ReacT")    -> True
+      TyCon _ (n2s -> "StateT")   -> True
+      TyCon _ (n2s -> "Identity") -> True
+      TyNat {}                    -> False
+      TyCon {}                    -> False
+      TyVar {}                    -> False
+      TyApp _ a b                 -> reacOrStateT a || reacOrStateT b
+
 higherOrder :: Ty -> Bool
-higherOrder (flattenArrow -> (ats, rt)) = any isArrow $ rt : ats
+higherOrder (flattenArrow -> (ats, rt)) = any hasArrow $ rt : ats
+
+-- | These are function types that aren't higher order and don't contain
+--   non-synthesizable types: Strings, Integers, lists, and in params: ReacT,
+--   StateT, Identity. Only synthable expressions are lambda-lifted and
+--   the goal of the "simplify" pass is to eliminate non-synthable defns.
+synthable :: Ty -> Bool
+synthable t = not (higherOrder t)
+           && fundamental t
+           && all (not . reacOrStateT) (paramTys t)
 
 -- Degree-1 polynomial with rational coefficients.
 data Poly1 = Poly1 Rational (HashMap (Name Ty) Rational)

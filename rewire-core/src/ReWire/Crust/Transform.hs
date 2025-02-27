@@ -5,13 +5,14 @@
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module ReWire.Crust.Transform
-      ( inline, expandTypeSynonyms, reduce
+      ( inlineAnnotated, inlineExtrudes
+      , expandTypeSynonyms, reduce
       , neuterExterns
       , shiftLambdas
       , unshiftLambdas
       , liftLambdas
       , etaAbsDefs
-      , purgeUnused
+      , purge, purgeAll
       , normalizeBind
       , elimCase
       , simplify
@@ -21,19 +22,22 @@ module ReWire.Crust.Transform
       ) where
 
 import ReWire.Annotation (Annote (..), Annotated (..), unAnn)
-import ReWire.Config (Config, depth)
-import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), TypeSynonym (..), flattenApp)
-import ReWire.Crust.TypeCheck (typeCheckDefn, unify, unify', TySub)
-import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy)
-import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, mkTupleMPat, mkTuple, mkPairMPat, mkPair, mustInline, patVars, toVar, transPat, transMPat, isExtrude, extrudeDefn)
+import ReWire.Config (Config, depth, start, pDebug)
+import ReWire.Crust.PrimBasis (primDatas)
+import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), DefnAttr (..), TypeSynonym (..), flattenApp, builtins, prettyFP)
+import ReWire.Crust.TypeCheck (untype, typeCheckDefn, unify, unify', TySub)
+import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy, synthable)
+import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, synthableDefn, mkTupleMPat, mkTuple, mkPairMPat, mkPair, patVars, toVar, transPat, transMPat, isExtrude, extrudeDefn)
 import ReWire.Error (AstError, MonadError, failAt)
-import ReWire.Fix (fix, fix', boundedFix)
+import ReWire.Fix (fix, fix', boundedFix, fixUntil)
+import ReWire.Pretty (showt, prettyPrint')
 import ReWire.SYB (transform, transformM, query)
 import ReWire.Unbound (freshVar, fv, Fresh (fresh), s2n, n2s, substs, subst, unembed, isFreeName, runFreshM, Name (..), unsafeUnbind, bind, unbind, Subst (..), Alpha, Embed (Embed), Bind, trec)
 
 import Control.Arrow ((&&&))
 import Control.Lens ((^.))
 import Control.Monad (liftM2, foldM, foldM_, zipWithM, (>=>))
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Control.Monad.State (MonadState, evalStateT, execState, StateT (..), get, gets, modify)
 import Data.Containers.ListUtils (nubOrd)
 import Data.Data (Data)
@@ -47,6 +51,7 @@ import Data.Text (Text, isPrefixOf)
 import Data.Tuple (swap)
 
 import qualified Data.Text           as Text
+import qualified Data.Text.IO        as Text
 import qualified Data.HashMap.Strict as Map
 import qualified Data.HashSet        as Set
 
@@ -56,26 +61,33 @@ removeMain (ts, syns, ds) = (ts, syns, filter (not . isMain) ds)
       where isMain :: Defn -> Bool
             isMain = (== "Main.main") . n2s . defnName
 
--- | Inlines defs marked for inlining. Must run before lambda lifting.
-inline :: MonadError AstError m => FreeProgram -> m FreeProgram
-inline (ts, syns, ds) = do
-      ds' <- substs <$> subs <*> pure ds
-      ds'' <- inlineExtrudes ds'
-      pure (ts, syns, ds'')
+-- | Inlines defs marked for inlining.
+inlineAnnotated :: MonadError AstError m => FreeProgram -> m FreeProgram
+inlineAnnotated (ts, syns, ds) = (ts, syns,) <$> (substs <$> subs <*> pure ds)
       where inlineDefs :: [Defn]
-            inlineDefs = filter mustInline ds
+            inlineDefs = filter isInline ds
 
             subs :: MonadError AstError m => m [(Name Exp, Exp)]
             subs = map defnSubst <$> ifix (pure . substs (map defnSubst inlineDefs)) inlineDefs
 
-            inlineExtrudes :: MonadError AstError m => [Defn] -> m [Defn]
+            ifix :: (Hashable a, MonadError AstError m) => (a -> m a) -> a -> m a
+            ifix = fix "INLINE definition expansion" 500
+
+            isInline :: Defn -> Bool
+            isInline d = defnAttr d == Just Inline
+
+-- | Inlines defs that use the "extrude" primitive for purification.
+inlineExtrudes :: MonadError AstError m => FreeProgram -> m FreeProgram
+inlineExtrudes (ts, syns, ds) = (ts, syns,) <$> inlineExtrudes ds
+      where inlineExtrudes :: MonadError AstError m => [Defn] -> m [Defn]
             inlineExtrudes = ifix (pure . inlineExtrudes')
 
             inlineExtrudes' :: [Defn] -> [Defn]
             inlineExtrudes' ds' = substs (map defnSubst $ filter extrudeDefn ds') ds'
 
             ifix :: (Hashable a, MonadError AstError m) => (a -> m a) -> a -> m a
-            ifix = fix "INLINE definition expansion" 100
+            ifix = fix "Inlining definitions that use 'extrude'" 100
+
 
 defnSubst :: Defn -> (Name Exp, Exp)
 defnSubst (Defn _ n (Embed pt) _ (Embed e)) = runFreshM $ unbind e >>= \ case
@@ -334,6 +346,7 @@ elimCase (ts, syns, ds) = (ts, syns,) <$> mapM ecDefn ds
 --   `\ x -> \y -> ... -> e`
 --   to a global definition
 --   `g = \ x -> \ y -> ... -> e`
+--   Doesn't lift anything with a higher-order type.
 liftLambdas :: (Fresh m, MonadError AstError m) => FreeProgram -> m FreeProgram
 liftLambdas (ts, syns, ds) = (ts, syns,) . uncurry (<>) <$> runStateT (mapM llDefn ds) []
 
@@ -395,14 +408,17 @@ llExp dn bvs =  \ case
 -- | Lifts an expression to a definition and returns an application (to pass
 --   any free variables). Argument is a list of non-global free variables.
 lift :: (Fresh m, MonadState [Defn] m, MonadError AstError m) => Text -> HashSet (Name Exp) -> Exp -> m Exp
-lift dn bvs e | Just t  <- typeOf e, not $ isGlobal e = do
+lift dn bvs e | Just t  <- typeOf e
+              , not $ isGlobal e = do
       fvs    <- filter ((`Set.member` bvs) . snd) <$> freevars e
       let t'  = foldr arr t $ fst <$> fvs
           an  = ann e
-      f      <- freshVar $ prefix dn
-      d      <- llDefn $ Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an fvs e
-      modify (d :)
-      pure $ setTyAnn (tyAnn e) $ mkApp an (Var an Nothing (Just t') f) $ toVar an <$> fvs
+
+      if not $ synthable t' then pure e else do
+            f      <- freshVar $ prefix dn
+            d      <- llDefn $ Defn an f (fv t' |-> t') Nothing $ Embed $ bind [] $ mkLam an fvs e
+            modify (d :)
+            pure $ setTyAnn (tyAnn e) $ mkApp an (Var an Nothing (Just t') f) $ toVar an <$> fvs
 
       where -- | Get well-typed free variables.
             freevars :: (MonadError AstError m, Data a) => a -> m [(Ty, Name Exp)]
@@ -432,6 +448,12 @@ lift dn bvs e | Just t  <- typeOf e, not $ isGlobal e = do
             pre :: Text
             pre = "$LL."
 lift _ _ e                                            = pure e
+
+purge :: Applicative m => Name Exp -> FreeProgram -> m FreeProgram
+purge start = pure . purgeUnused (start : (s2n . fst <$> builtins)) (dataName <$> primDatas)
+
+purgeAll :: Applicative m => Name Exp -> FreeProgram -> m FreeProgram
+purgeAll start = pure . purgeUnused [start] []
 
 -- | Remove all definitions and types unused by those in the given lists.
 purgeUnused :: [Name Exp] -> [Name TyConId] -> FreeProgram -> FreeProgram
@@ -487,10 +509,18 @@ purgeUnused except exceptTs (ts, syns, vs) = (inuseData (fix' extendWithCtorPara
 
 -- | Repeatedly calls "reduce" and "specialize" -- attempts to remove
 -- higher-order functions by partially evaluating them.
-simplify :: (Fresh m, MonadError AstError m) => Config -> FreeProgram -> m FreeProgram
-simplify conf = flip evalStateT mempty . boundedFix tst (conf^.depth) (specialize >=> reduce)
-      where tst :: FreeProgram -> FreeProgram -> Bool
-            tst (_, _, vs) (_, _, vs') = hash (unAnn vs) == hash (unAnn vs')
+simplify :: (MonadIO m, Fresh m, MonadError AstError m) => Config -> FreeProgram -> m FreeProgram
+simplify conf = flip evalStateT mempty . fixUntil (\(_, _, vs) -> all synthableDefn vs) "Partial evaluation" (conf^.depth)
+                (
+                verb "> Specializing..."
+                >=> specialize'
+                >=> verb "> Purging..."
+                >=> purge (s2n $ conf^.start)
+                >=> verb "> Reducing..."
+                >=> reduce
+                )
+      where verb :: MonadIO m => Text -> a -> m a
+            verb s a = pDebug conf s >> pure a
 
 type SpecMap = HashMap (Name Exp, AppSig) Defn
 type AppSig = [Maybe Exp]
@@ -524,8 +554,11 @@ freeTyVarsToNil (ts, syns, vs) = (ts, syns, map upd vs)
 -- > g' :: A -> X
 -- > g' = \ a' -> g_rhs a' b
 {- HLINT ignore "Redundant multi-way if" -}
-specialize :: (MonadError AstError m, Fresh m, MonadState SpecMap m) => FreeProgram -> m FreeProgram
-specialize (ts, syns, vs) = do
+specialize :: (MonadError AstError m, Fresh m) => FreeProgram -> m FreeProgram
+specialize = flip evalStateT mempty . specialize'
+
+specialize' :: (MonadError AstError m, Fresh m, MonadState SpecMap m) => FreeProgram -> m FreeProgram
+specialize' (ts, syns, vs) = do
       vs'     <- mapM specDefn vs
       newDefs <- gets $ filter isNewDefn . Map.elems
       pure (ts, syns, vs' <> newDefs)
@@ -641,12 +674,13 @@ reduceExp = \ case
                   _              -> pure $ App an tan t e1' e2'
       Lam an tan t e        -> do
             (x, e') <- unbind e
+            e''     <- reduceExp e'
             -- Eta reduce.
-            case e' of
+            case e'' of
                   App _ _ _ e1 (Var _ _ _ x')
                         | x == x'
                         , x `notElem` fv e1 -> reduceExp e1
-                  _                         -> Lam an tan t . bind x <$> reduceExp e'
+                  _                         -> pure $ Lam an tan t $ bind x e''
       Case an tan t e e1 e2 -> do
             (p, e1') <- unbind e1
             e'       <- reduceExp e

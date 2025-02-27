@@ -12,13 +12,13 @@ module ReWire.ModCache
       ) where
 
 import ReWire.Annotation (Annotation, SrcSpanInfo, unAnn)
-import ReWire.Config (Config, verbose, dump, loadPath, typecheck, pDebug)
+import ReWire.Config (Config, loadPath, typecheck, pDebug)
 import ReWire.Crust.KindCheck (kindCheck)
-import ReWire.Crust.PrimBasis (addPrims, primDatas)
+import ReWire.Crust.PrimBasis (addPrims)
 import ReWire.Crust.Purify (purify)
-import ReWire.Crust.Syntax (FreeProgram, Defn (..), DataDefn (..), Module (Module), Exp, Ty, Kind, DataConId, TyConId, builtins, Program (Program), prettyFP)
+import ReWire.Crust.Syntax (FreeProgram, Defn (..), Module (Module), Exp, Ty, Kind, DataConId, TyConId, Program (Program), prettyFP)
 import ReWire.Crust.ToCore (toCore)
-import ReWire.Crust.Transform (removeMain, simplify, liftLambdas, purgeUnused, etaAbsDefs, shiftLambdas, neuterExterns, expandTypeSynonyms, inline, normalizeBind, elimCase)
+import ReWire.Crust.Transform (removeMain, simplify, liftLambdas, etaAbsDefs, shiftLambdas, neuterExterns, expandTypeSynonyms, inlineAnnotated, normalizeBind, elimCase, purge, purgeAll, inlineExtrudes, reduce)
 import ReWire.Crust.TypeCheck (typeCheck, untype)
 import ReWire.Error (failAt, AstError, MonadError, filePath)
 import ReWire.HSE.Annotate (annotate)
@@ -79,8 +79,6 @@ getModule conf pwd fp = pDebug conf ("Fetching module: " <> pack fp <> " (pwd: "
             let lp     = pwd : conf^.loadPath
 
             mmods      <- mapM (tryParseInDir fp) lp
-            -- FIXME: The directory crawling could be more robust here. (Should
-            -- use exception handling.)
             (pwd', m)  <- maybe
                               (failAt (filePath fp) "File not found in load-path")
                               (pure . (elideDot *** addMainModuleHead))
@@ -89,36 +87,29 @@ getModule conf pwd fp = pDebug conf ("Fetching module: " <> pack fp <> " (pwd: "
             rn         <- mkRenamer conf pwd' m
             imps       <- loadImports pwd' m
 
+            let pass :: MonadIO m => Natural -> Text -> S.Module a -> m (S.Module a)
+                pass = passHSE conf rn imps
+
             -- Phase 1 (haskell-src-exts) transformations.
             (m', exps) <- pure
-                      >=> verb "Fixing fixity."
+                      >=> pass 1 "(Haskell) Fixing fixity."
                       >=> lift . lift . fixFixity rn
-                      >=> verb "Annotating."
+                      >=> pass 2 "(Haskell) Annotating."
                       >=> pure . annotate
-                      >=> verb "[Pass 1] Pre-desugaring."
-                      >=> whenDump 1 (printInfoHSE "[Pass 1] Haskell: Pre-desugaring" rn imps)
-                      >=> verb "Desugaring."
+                      >=> pass 3 "(Haskell) Desugaring."
                       >=> desugar rn
-                      >=> verb "[Pass 2] Post-desugaring."
-                      >=> whenDump 2 (printInfoHSE "[Pass 2] Haskell: Post-desugaring" rn imps)
-                      >=> verb "Translating to crust."
+                      >=> pass 4 "(Haskell) Translating to Crust IR."
                       >=> toCrust rn
                       $ m
 
             let Module ts syns ds = m' <> imps
-            _ <- whenDump 3 (printInfo $ "[Pass 3] Crust: Synthetic per-module: " <> pack fp) (ts, syns, ds)
+            _ <- passCrust conf 5 ("Concatenating Crust IR for module: " <> pack fp) (ts, syns, ds)
 
             modify $ Map.insert fp (m' <> imps, exps)
             pure (m' <> imps, exps)
 
       where loadImports :: (MonadIO m, MonadFail m, MonadError AstError m, MonadState AstError m, Annotation a) => FilePath -> S.Module a -> Cache m Module
             loadImports pwd' = fmap mconcat . mapM (fmap fst . getModule conf pwd' . toFilePath . void . importModule) . getImps
-
-            whenDump :: Applicative m => Natural -> (Bool -> a -> m a) -> a -> m a
-            whenDump n m = if (conf^.dump) n then m $ conf^.verbose else pure
-
-            verb :: MonadIO m => Text -> a -> m a
-            verb s a = pDebug conf (pack fp <> ": " <> s) >> pure a
 
             elideDot :: FilePath -> FilePath
             elideDot = \ case
@@ -131,98 +122,90 @@ getDevice conf fp = do
       (Module ts syns ds,  _)  <- getModule conf "." fp
 
       p <- pure
-       >=> verb "[Pass 4] Adding primitives and inlining."
-       >=> whenDump 4 (printInfo "[Pass 4] Crust: Post-desugaring")
+       >=> pass 6 "Adding primitives"
        >=> pure . addPrims
-       >=> verb "Removing the Main.main definition (before attempting to typecheck it)."
+       >=> pass 7 "Removing the Main.main definition (before attempting to typecheck it)."
        >=> pure . removeMain
-       >=> inline
-       >=> verb "Expanding type synonyms."
+       >=> pass 8 "Inlining INLINE-annotated definitions."
+       >=> inlineAnnotated
+       >=> pass 9 "Expanding type synonyms."
        >=> expandTypeSynonyms
-       >=> verb "[Pass 5] Post-inlining, before typechecking."
-       >=> whenDump 5 (printInfo "[Pass 5] Crust: Post-inlining")
-       >=> verb "Typechecking, inference."
+       >=> pass 10 "Typechecking, inference."
        >=> kindCheck >=> typeCheck start
-       >=> verb "[Pass 6] Post-typechecking."
-       >=> whenDump 6 (printInfo "[Pass 6] Crust: Post-typechecking")
-       >=> verb "Removing Haskell definitions for externs."
+       >=> pass 11 "Removing Haskell definitions for externs."
        >=> pure . neuterExterns
-       >=> verb "Removing unused definitions (initial attempt)."
-       >=> purge >=> extraTC
-       >=> verb "[Pass 7] Pre-simplification."
-       >=> whenDump 7 (printInfo "[Pass 7] Crust: Pre-simplify")
-       >=> verb "Eliminating pattern bindings (case expressions)."
-       >=> elimCase >=> extraTC
-       >=> verb "Partially evaluating and reducing."
+       >=> pass 12 "Removing unused definitions."
+       >=> purge start >=> extraTC
+       >=> pass 13 "Eliminating pattern bindings (case expressions)."
+       >=> elimCase >=> liftLambdas >=> extraTC
+       >=> pass 14 "Partial evaluation."
        >=> simplify conf >=> extraTC
-       >=> verb "[Pass 8] Post-simplification."
-       >=> whenDump 8 (printInfo "[Pass 8] Crust: Post-simplify")
-       >=> verb "Normalize bind."
+       >=> pass 15 "Normalizing bind."
        >=> normalizeBind >=> extraTC
-       >=> verb "[Pass 9] Post-bind-normalization."
-       >=> whenDump 9 (printInfo "[Pass 9] Crust: Post-bind-normalization")
-       >=> verb "Lifting, shifting, eta-abstracting lambdas."
-       >=> liftLambdas >=> purge >=> extraTC
+       >=> pass 16 "Lifting, shifting, eta-abstracting lambdas."
+       >=> liftLambdas >=> purge start >=> extraTC
+       >=> inlineExtrudes >=> reduce >=> extraTC -- TODO: reduce here really just for start defn.
        >=> shiftLambdas >=> etaAbsDefs >=> extraTC
-       >=> verb "[Pass 10] Before purification."
-       >=> whenDump 10 (printInfo "[Pass 10] Crust: Pre-purification")
+       >=> pass 17 "Purifying."
        -- TODO: typechecking before or after purify seems to subtly effect
        --       ordering of things.
        -- >=> verb "Mystery round of type-checking/inference."
        -- >=> kindCheck >=> typeCheck start
-       >=> verb "Purifying."
        >=> purify start >=> extraTC
        -- >=> verb "Mystery round of type-checking/inference."
        -- >=> kindCheck >=> typeCheck start
-       >=> verb "[Pass 11] Post-purification."
-       >=> whenDump 11 (printInfo "[Pass 11] Crust: Post-purification")
-       >=> verb "Final lifting, shifting, eta-abstracting lambdas."
+       >=> pass 18 "Final lifting, shifting, eta-abstracting lambdas."
        >=> liftLambdas >=> shiftLambdas >=> etaAbsDefs
-       >=> verb "Final purging of unused definitions."
-       >=> purgeAll
-       >=> verb "[Pass 12] Pre-core."
-       >=> whenDump 12 (printInfo "[Pass 12] Crust: Pre-core")
-       >=> verb "Translating to core & HDL."
+       >=> pass 19 "Final purging of unused definitions."
+       >=> purgeAll start
+       >=> pass 20 "Translating to core & HDL."
        >=> toCore conf start
-       >=> verb "[Pass 13] Core."
+       >=> verb "[21] Core."
        $ (ts, syns, ds)
 
-      when ((conf^.dump) 13) $ liftIO $ do
-            printHeader "[Pass 13] Core"
+      when ((conf^.C.dump) 21) $ liftIO $ do
+            printHeader "[21] Core"
             T.putStrLn $ prettyPrint p
-            when (conf^.verbose) $ do
+            when (conf^.C.verbose) $ do
                   T.putStrLn "\n## Show core:\n"
                   T.putStrLn $ showt $ unAnn p
 
       pure p
 
-      where whenDump :: Applicative m => Natural -> (Bool -> a -> m a) -> a -> m a
-            whenDump n m = if (conf^.dump) n then m $ conf^.verbose else pure
-
-            verb :: MonadIO m => Text -> a -> m a
-            verb s a = pDebug conf s >> pure a
-
-            start :: Name Exp
+      where start :: Name Exp
             start = s2n $ conf^.C.start
 
             extraTC :: (Fresh m, MonadIO m, MonadError AstError m) => FreeProgram -> m FreeProgram
             extraTC | conf^.typecheck = verb "Type-checking again (--debug-typecheck)." >=> kindCheck >=> typeCheck start
                     | otherwise       = pure
 
-            purge :: Applicative m => FreeProgram -> m FreeProgram
-            purge = pure . purgeUnused (start : (s2n . fst <$> builtins)) (dataName <$> primDatas)
+            pass :: MonadIO m => Natural -> Text -> FreeProgram -> m FreeProgram
+            pass = passCrust conf
 
-            purgeAll :: Applicative m => FreeProgram -> m FreeProgram
-            purgeAll = pure . purgeUnused [start] []
+            verb :: MonadIO m => Text -> a -> m a
+            verb = verb' conf
 
 printHeader :: MonadIO m => Text -> m ()
 printHeader hd = do
-      liftIO $ T.putStrLn   "-- # ======================================="
+      liftIO $ T.putStrLn   "-- # ==================================================="
       liftIO $ T.putStrLn $ "-- # " <> hd
-      liftIO $ T.putStrLn   "-- # =======================================\n"
+      liftIO $ T.putStrLn   "-- # ===================================================\n"
 
-printInfo :: MonadIO m => Text -> Bool -> FreeProgram -> m FreeProgram
-printInfo hd verbose fp = do
+verb' :: MonadIO m => Config -> Text -> a -> m a
+verb' conf s a = pDebug conf s >> pure a
+
+passHSE :: MonadIO m => Config -> Renamer -> Module -> Natural -> Text -> S.Module a -> m (S.Module a)
+passHSE conf rn imps n m = verb' conf msg
+            >=> if (conf^.C.dump) n then printInfoHSE conf msg rn imps else pure
+      where msg = "[" <> showt n <> "] " <> m
+
+passCrust :: MonadIO m => Config -> Natural -> Text -> FreeProgram -> m FreeProgram
+passCrust conf n m = verb' conf msg
+            >=> if (conf^.C.dump) n then printInfo conf msg else pure
+      where msg = "[" <> showt n <> "] " <> m
+
+printInfo :: MonadIO m => Config -> Text -> FreeProgram -> m FreeProgram
+printInfo conf hd fp = do
       let p = Program $ trec fp
       printHeader hd
       when verbose $ liftIO $ T.putStrLn "-- ## Free kind vars:\n"
@@ -236,7 +219,8 @@ printInfo hd verbose fp = do
       liftIO $ T.putStrLn "-- ## Free exp vars:\n"
       liftIO $ T.putStrLn $ T.concat $ map comVar (nubOrd $ map prettyPrint (fv p :: [Name Exp]))
       liftIO $ T.putStrLn "-- ## Program:\n"
-      liftIO $ T.putStrLn $ prettyPrint' $ prettyFP $ if verbose then fp else untype' fp
+      fp' <- purgeAll start fp
+      liftIO . T.putStrLn $ prettyPrint' $ prettyFP $ if verbose then fp' else untype' fp'
       when verbose $ liftIO $ T.putStrLn "\n-- ## Program (show):\n"
       when verbose $ liftIO $ T.putStrLn $ showt $ unAnn fp
       pure fp
@@ -250,8 +234,14 @@ printInfo hd verbose fp = do
             comVar :: Text -> Text
             comVar = (<> "\n") . ("-- " <>)
 
-printInfoHSE :: MonadIO m => Text -> Renamer -> Module -> Bool -> S.Module a -> m (S.Module a)
-printInfoHSE hd rn imps verbose hse = do
+            verbose :: Bool
+            verbose = conf^.C.verbose
+
+            start :: Name Exp
+            start = s2n $ conf^.C.start
+
+printInfoHSE :: MonadIO m => Config -> Text -> Renamer -> Module -> S.Module a -> m (S.Module a)
+printInfoHSE conf hd rn imps hse = do
       printHeader hd
       when verbose $ liftIO $ T.putStrLn "\n-- ## Renamer:\n"
       when verbose $ liftIO $ T.putStrLn $ showt rn
@@ -264,3 +254,6 @@ printInfoHSE hd rn imps verbose hse = do
       when verbose $ liftIO $ T.putStrLn "\n-- ## Pretty HSE mod:\n"
       liftIO $ putStrLn $ P.prettyPrint $ void hse
       pure hse
+
+      where verbose :: Bool
+            verbose = conf^.C.verbose
