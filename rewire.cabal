@@ -49,6 +49,7 @@ data-files:
     tests/regression/finite2.hs
     tests/regression/fully.hs
     tests/regression/funcase.hs
+    tests/regression/gfmult.hs
     tests/regression/guards.hs
     tests/regression/HigherOrderBug.hs
     tests/regression/Infix.hs
@@ -105,6 +106,7 @@ data-files:
     tests/regression/finite2.sv
     tests/regression/fully.sv
     tests/regression/funcase.sv
+    tests/regression/gfmult.sv
     tests/regression/guards.sv
     tests/regression/HigherOrderBug.sv
     tests/regression/Infix.sv
@@ -161,6 +163,7 @@ data-files:
     tests/regression/finite2.rwc
     tests/regression/fully.rwc
     tests/regression/funcase.rwc
+    tests/regression/gfmult.rwc
     tests/regression/guards.rwc
     tests/regression/HigherOrderBug.rwc
     tests/regression/Infix.rwc
@@ -216,6 +219,7 @@ data-files:
     tests/regression/finite2.yaml
     tests/regression/fully.yaml
     tests/regression/funcase.yaml
+    tests/regression/gfmult.yaml
     tests/regression/guards.yaml
     tests/regression/HigherOrderBug.yaml
     tests/regression/Infix.yaml
