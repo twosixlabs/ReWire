@@ -7,7 +7,7 @@ module ReWire.Core.ToVerilog (compileProgram) where
 
 import ReWire.Annotation (noAnn, ann)
 import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.), szBitRep)
-import ReWire.Config (Config, flatten, resetFlags, ResetFlag (..), clock, reset)
+import ReWire.Config (Config, ResetFlag (..))
 import ReWire.Core.Interp (patApply', patMatches', subRange, dispatchWires, pausePrefix, extraWires, resumptionSize, Wiring')
 import ReWire.Core.Mangle (mangle)
 import ReWire.Core.Syntax as C hiding (Name, Size, Index)
@@ -33,6 +33,7 @@ import Numeric.Natural (Natural)
 import qualified Data.HashMap.Strict as Map
 import qualified Data.HashSet        as Set
 import qualified Data.Text           as T
+import qualified ReWire.Config       as C
 
 data FreshMode = FreshInit | FreshRun
 type Fresh = (FreshMode, HashMap Text Int)
@@ -129,11 +130,11 @@ lookupWidth n = do
 
 compileProgram :: (MonadFail m, MonadError AstError m) => Config -> C.Device -> m V.Device
 compileProgram conf p@(C.Device topLevel w loop state0 ds)
-      | conf^.flatten = V.Device . pure <$> runReaderT (compileStart conf topLevel w loop state0) defnMap'
-      | otherwise     = flip runReaderT defnMap' $ do
-            st' <- compileStart conf topLevel w loop state0
+      | conf^.C.flatten = V.Device . pure <$> runReaderT (compileStart conf' topLevel w loop state0) defnMap'
+      | otherwise       = flip runReaderT defnMap' $ do
+            st' <- compileStart conf' topLevel w loop state0
             -- Initial state should be inlined, so we can filter out its defn.
-            ds' <- mapM (compileDefn conf) $ filter (inuse . defnName) $ loop : ds
+            ds' <- mapM (compileDefn conf') $ filter (inuse . defnName) $ loop : ds
             pure $ V.Device $ st' : ds'
       where defnMap' :: DefnMap
             defnMap' = Map.mapKeys mangleMod $ defnMap p
@@ -145,37 +146,57 @@ compileProgram conf p@(C.Device topLevel w loop state0 ds)
                   Just 1  -> False
                   _       -> True
 
+            noClockedMods :: Bool
+            noClockedMods = Map.null $ Map.filter (not . snd . snd) defnMap'
+
+            conf' :: Config
+            conf' = C.clock.~clock' $ C.reset.~reset' $ conf
+
+            clock' :: Text
+            clock' | null (dispatchWires w')
+                   , noClockedMods = mempty
+                   | otherwise     = conf^.C.clock
+
+            reset' :: Text
+            reset' | T.null clock' = mempty
+                   | otherwise     = conf^.C.reset
+
+            w' :: Wiring'
+            w' = (w, defnSig loop, defnSig state0)
+
 compileStart :: (MonadError AstError m, MonadFail m, MonadReader DefnMap m)
                  => Config -> Name -> C.Wiring -> C.Defn -> C.Defn -> m Module
 compileStart conf topLevel w loop state0 = do
       ((rStart, ssStart), (_, startSigs)) <- flip runStateT (freshInit0, [])
-            $ compileCall (flatten.~True $ clock.~clock' $ conf) (mangleMod $ defnName state0) (resumptionSize w') []
+            $ compileCall (C.flatten.~True $ conf) (mangleMod $ defnName state0) (resumptionSize w') []
 
       ((rLoop, ssLoop),   (_, loopSigs))  <- flip runStateT (freshRun0, [])
-            $ compileCall (clock.~clock' $ conf) (mangleMod $ defnName loop) (resumptionSize w')
-                  $  [ V.cat $ map (LVal . Name . fst) $ dispatchWires w' | not (null $ dispatchWires w') ]
-                  <> [ V.cat $ map (LVal . Name . fst) $ inputWires w     | not (null $ inputWires w) ]
+            $ compileCall conf (mangleMod $ defnName loop) (resumptionSize w')
+                  $  [ V.cat $ map (LVal . Name . fst) $ dispatchWires w' | dispatchSz > 0 ]
+                  <> [ V.cat $ map (LVal . Name . fst) $ inputWires w     | inputSz > 0 ]
 
       let mod                    = Module topLevel $ inputs <> outputs
           loopStmts | loopSz > 0 = ssLoop <> [ Assign lvPause rLoop ]
                     | otherwise  = []
 
-      if T.null clock' then pure $ mod (loopSigs <> sigs) loopStmts
+      -- If dispatchSz is 0, the top_level doesn't need the clock, but might
+      -- need the clock signal for sub-modules.
+      if dispatchSz == 0 then pure $ mod (loopSigs <> sigs) loopStmts
       else do
             initExp <- initState rStart
             pure $ mod (loopSigs <> startSigs <> sigs)
                  $  ssStart <> loopStmts
                  <> [ Initial $ ParAssign lvCurrState initExp
-                    , Always (Pos clock' : rstEdge) $ Block [ ifRst initExp ]
+                    , Always (Pos (conf^.C.clock) : rstEdge) $ Block [ ifRst initExp ]
                     ]
 
       where clockSig :: Maybe Signal
-            clockSig | T.null clock' = Nothing
-                     | otherwise     = pure $ mkSignal (clock', 1)
+            clockSig | T.null (conf^.C.clock) = Nothing
+                     | otherwise              = pure $ mkSignal (conf^.C.clock, 1)
 
             resetSig :: Maybe Signal
-            resetSig | T.null reset' = Nothing
-                     | otherwise     = pure $ mkSignal (reset', 1)
+            resetSig | T.null (conf^.C.reset) = Nothing
+                     | otherwise              = pure $ mkSignal (conf^.C.reset, 1)
 
             loopSz :: Size
             loopSz | Sig _ _ sz <- defnSig loop = sz
@@ -196,20 +217,19 @@ compileStart conf topLevel w loop state0 = do
                         (Block [ ParAssign lvCurrState $ LVal lvNxtState ])
                   _            -> ParAssign lvCurrState $ LVal lvNxtState
 
-            clock' :: Text
-            clock' | null (dispatchWires w') = mempty
-                   | otherwise               = conf^.clock
+            dispatchSz :: Size
+            dispatchSz = sum $ snd <$> dispatchWires w'
 
-            reset' :: Text
-            reset' | T.null clock' = mempty
-                   | otherwise     = conf^.reset
+            inputSz :: Size
+            inputSz = sum $ snd <$> inputWires w
 
             -- | Initial/reset state.
             initState :: MonadError AstError m => V.Exp -> m V.Exp
-            initState e = case (expToBV e, fromIntegral (sum $ snd <$> dispatchWires w')) of
+            initState e = case (expToBV e, fromIntegral dispatchSz) of
                   (Just bv, n) | n > 0 -> pure $ bvToExp $ subRange (0, n - 1) bv
                   (_, n)       | n > 0 -> pure $ bvToExp $ zeros n -- TODO(chathhorn): make configurable?
-                  _                    -> failAt noAnn "compileStart: could not calculate initial state."
+                  (_, 0)               -> pure V.nil
+                  st                   -> failAt noAnn $ "compileStart: could not calculate initial state: " <> showt st
 
             lvPause :: LVal
             lvPause = mkLVals $ Name . fst <$> pauseWires
@@ -221,16 +241,16 @@ compileStart conf topLevel w loop state0 = do
             lvNxtState = mkLVals $ Name . fst <$> nextDispatchWires
 
             rstEdge :: [Sensitivity]
-            rstEdge | T.null reset' = []
-                    | syncRst       = []
-                    | invertRst     = [Neg reset']
-                    | otherwise     = [Pos reset']
+            rstEdge | T.null (conf^.C.reset) = []
+                    | syncRst                = []
+                    | invertRst              = [Neg $ conf^.C.reset]
+                    | otherwise              = [Pos $ conf^.C.reset]
 
             invertRst :: Bool
-            invertRst = Inverted `elem` (conf^.resetFlags)
+            invertRst = Inverted `elem` (conf^.C.resetFlags)
 
             syncRst :: Bool
-            syncRst = Synchronous `elem` (conf^.resetFlags)
+            syncRst = Synchronous `elem` (conf^.C.resetFlags)
 
             pauseWires :: [(Name, Size)]
             pauseWires = pausePrefix w' <> nextDispatchWires
@@ -260,10 +280,10 @@ compileDefn conf (C.Defn _ n (Sig _ inps outp) body) = do
             outputs = map (Output . mkSignal) [("res", outp)]
 
             clkPort :: Port
-            clkPort = Input $ Logic [1] (conf^.clock) []
+            clkPort = Input $ Logic [1] (conf^.C.clock) []
 
             rstPort :: Port
-            rstPort = Input $ Logic [1] (conf^.reset) []
+            rstPort = Input $ Logic [1] (conf^.C.reset) []
 
             isPureDefn :: MonadReader DefnMap m => GId -> m Bool
             isPureDefn g = asks (Map.lookup $ mangleMod g) >>= \ case
@@ -274,7 +294,7 @@ compileDefn conf (C.Defn _ n (Sig _ inps outp) body) = do
 compileCall :: (MonadState SigInfo m, MonadFail m, MonadError AstError m, MonadReader DefnMap m)
              => Config -> GId -> V.Size -> [V.Exp] -> m (V.Exp, [Stmt])
 compileCall conf g sz lvars = asks (Map.lookup g) >>= \ case
-      Just (body, (uses, _)) | uses == 1 || conf^.flatten -> do
+      Just (body, (uses, _)) | uses == 1 || conf^.C.flatten -> do
             (e, stmts) <- compileExp conf lvars body
             e'         <- wcast sz e
             pure (e', stmts)
@@ -287,10 +307,10 @@ compileCall conf g sz lvars = asks (Map.lookup g) >>= \ case
             pure (LVal mr, [stmt])
       _ -> failAt noAnn $ "ToVerilog: compileCall: failed to find definition for " <> g <> " while flattening."
       where clk :: V.Exp
-            clk = LVal $ Name $ conf^.clock
+            clk = LVal $ Name $ conf^.C.clock
 
             rst :: V.Exp
-            rst = LVal $ Name $ conf^.reset
+            rst = LVal $ Name $ conf^.C.reset
 
 instantiate :: (MonadFail m, MonadState SigInfo m, MonadError AstError m) => Config -> ExternSig -> GId -> Text -> V.Size -> [V.Exp] -> m (V.Exp, [Stmt])
 instantiate conf (ExternSig an ps theirClock theirReset args res) g inst sz lvars = do
@@ -301,22 +321,22 @@ instantiate conf (ExternSig an ps theirClock theirReset args res) g inst sz lvar
                $ zip (fst <$> args') lvars' <> zip (fst <$> res) (toSubRanges mr (snd <$> res))
       pure (LVal $ Name mr, [stmt])
       where clk :: V.Exp
-            clk = LVal $ Name $ conf^.clock
+            clk = LVal $ Name $ conf^.C.clock
 
             rst :: V.Exp
-            rst = LVal $ Name $ conf^.reset
+            rst = LVal $ Name $ conf^.C.reset
 
             addClock :: MonadError AstError m => ([(Text, Size)], [V.Exp]) -> m ([(Text, Size)], [V.Exp])
             addClock (args, lvars)
-                  | T.null theirClock          = pure (args, lvars)
-                  | not (T.null $ conf^.clock) = pure ((theirClock, 1) : args, clk : lvars)
-                  | otherwise                  = failAt an "ToVerilog: external module requires a clock signal, but we have no clock to give it."
+                  | T.null theirClock            = pure (args, lvars)
+                  | not (T.null $ conf^.C.clock) = pure ((theirClock, 1) : args, clk : lvars)
+                  | otherwise                    = failAt an "ToVerilog: external module requires a clock signal, but we have no clock to give it."
 
             addReset :: MonadError AstError m => ([(Text, Size)], [V.Exp]) -> m ([(Text, Size)], [V.Exp])
             addReset (args, lvars)
-                  | T.null theirReset          = pure (args, lvars)
-                  | not (T.null $ conf^.reset) = pure ((theirReset, 1) : args, rst : lvars)
-                  | otherwise                  = failAt an "ToVerilog: external module requires a reset signal, but we have no reset to give it."
+                  | T.null theirReset            = pure (args, lvars)
+                  | not (T.null $ conf^.C.reset) = pure ((theirReset, 1) : args, rst : lvars)
+                  | otherwise                    = failAt an "ToVerilog: external module requires a reset signal, but we have no reset to give it."
 
 
 compileExps :: (MonadState SigInfo m, MonadFail m, MonadError AstError m, MonadReader DefnMap m)
