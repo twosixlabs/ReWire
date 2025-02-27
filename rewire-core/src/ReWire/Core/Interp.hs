@@ -91,10 +91,10 @@ interpStart defns w loop state0 = MealyT $ \ _ -> do
             f s i = (filterOutput &&& filterDispatch) . splitOutputs <$> interpDefn defns loop (joinInputs $ Map.map nat s <> i)
 
             splitOutputs :: BV -> Outs
-            splitOutputs b = Map.fromList $ zip (map fst pauseWires) $ toSubRanges b $ map snd pauseWires
+            splitOutputs b = Map.fromList $ zip (fst <$> pauseWires) $ toSubRanges b $ map snd pauseWires
 
             joinInputs :: Ins -> BV
-            joinInputs vs = mconcat $ zipWith mkBV (map snd st_inps) $ map (fromMaybe 0 . flip Map.lookup vs . fst) st_inps
+            joinInputs vs = mconcat $ zipWith mkBV (snd <$> st_inps) $ map (fromMaybe 0 . flip Map.lookup vs . fst) st_inps
 
             st_inps :: [(Name, Size)]
             st_inps = dispatchWires w' <> inputWires w
@@ -316,8 +316,9 @@ resumptionTag (w, sigLoop, _) | tagSize > 0 = [("__resumption_tag", fromIntegral
                               | otherwise   = []
       where tagSize :: Int
             tagSize = case sigLoop of
-                  Sig _ (a : _) _ -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
-                  _               -> 0
+                  Sig _ (a : _ : _) _ | not $ null $ inputWires w -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
+                  Sig _ (a : _) _     | null $ inputWires w       -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
+                  _                                               -> 0
 
 resumptionSize :: Wiring' -> Size
 resumptionSize (_, _, Sig _ _ s) = s

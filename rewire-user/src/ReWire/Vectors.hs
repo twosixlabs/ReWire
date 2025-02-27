@@ -123,25 +123,28 @@ packlo v w = generate (\ fi ->
       if fi FC.< n then index v (fi FC.* two)
                  else index w ((fi FC.- n) FC.* two))
   where
+      one = F.finite 1
       two = F.finite 2
-      n = lastIndex v `FC.div` two
+      n' = lastIndex v `FC.div` two
+      n = if FC.even (lastIndex v) then n' else n' FC.+ one
 
 -- | Returns odds from v concatenated with odds from w
 {-# INLINE packhi #-}
 packhi :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 packhi v w = generate (\ fi ->
       if fi FC.< n then index v ((fi FC.* two) FC.+ one)
-                  else index w (((fi FC.- n) FC.* two) FC.+ one))
+                 else index w (((fi FC.- n) FC.* two) FC.+ one))
   where
       one = F.finite 1
       two = F.finite 2
-      n = lastIndex v `FC.div` two
+      n' = lastIndex v `FC.div` two
+      n = if FC.even (lastIndex v) then n' else n' FC.+ one
 
 -- | Returns the first half of v interleaved with w
 {-# INLINE unpacklo #-}
 unpacklo :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 unpacklo v w = generate (\ fi ->
-      if FC.even fi then index v (fi `FC.div` two) 
+      if FC.even fi then index v (fi `FC.div` two)
                    else index w ((fi FC.- one) `FC.div` two))
   where
       one = F.finite 1
@@ -151,12 +154,13 @@ unpacklo v w = generate (\ fi ->
 {-# INLINE unpackhi #-}
 unpackhi :: KnownNat n => Vec n a -> Vec n a -> Vec n a
 unpackhi v w = generate (\ fi ->
-      if FC.even fi then index v (n FC.+ fi `FC.div` two)
-                   else index w (n FC.+ (fi FC.- one) `FC.div` two))
+      if FC.even fi then index v (n FC.+ (fi `FC.div` two))
+                   else index w (n FC.+ ((fi FC.- one) `FC.div` two)))
   where
       one = F.finite 1
       two = F.finite 2
-      n = lastIndex v `FC.div` two
+      n' = lastIndex v `FC.div` two
+      n = if FC.even (lastIndex v) then n' else n' FC.+ one
 
 -- | lookup value at index n in vector
 {-# INLINE (!) #-}

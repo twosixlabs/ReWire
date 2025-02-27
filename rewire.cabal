@@ -224,6 +224,7 @@ data-files:
     tests/regression/matchBind.yaml
     tests/regression/ModsMain.yaml
     tests/regression/onestate.yaml
+    tests/regression/PackUnpack.yaml
     tests/regression/pats.yaml
     tests/regression/pats2.yaml
     tests/regression/PreludeTest.yaml
