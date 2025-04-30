@@ -100,11 +100,7 @@ class Pretty a where
   pp :: a -> String
 
 instance Pretty (V.Vector n Bool) where
-<<<<<<< HEAD
   pp bs = xshow bs
-=======
-  pp = xshow
->>>>>>> 5381b6dc5dce1eb1322133490817c8b714a0b291
 
 instance (Pretty a, Pretty b) => Pretty (a , b) where
   pp (a , b) = "(" ++ pp a ++ "," ++ pp b ++ ")"
