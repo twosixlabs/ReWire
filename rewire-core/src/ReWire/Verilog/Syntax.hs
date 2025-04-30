@@ -9,11 +9,11 @@ import qualified ReWire.BitVector as BV
 import Data.Text (Text)
 import Data.List (intersperse)
 
-newtype Program = Program { pgmModules :: [Module] }
+newtype Device = Device { pgmModules :: [Module] }
       deriving (Eq, Show)
 
-instance Pretty Program where
-      pretty (Program mods) = vsep (intersperse empty $ map pretty mods)
+instance Pretty Device where
+      pretty (Device mods) = vsep (intersperse empty $ map pretty mods)
 
 type Name  = Text
 type Size  = Word

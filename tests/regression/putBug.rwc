@@ -1,0 +1,34 @@
+device top_level:
+
+inputs [("__in0",1)]
+outputs [("__out0",1)]
+states [("__st0",1)]
+
+$Pure.dispatch :: W2 -> W1 -> W4
+$Pure.dispatch $0 $1 = 4'case {1'$1, 2'$0} of
+    {1'@, 1'@, 1'@} -> $LL.Pure.dispatch1
+
+$Pure.start :: W4
+$Pure.start  = 4'h8
+
+$LL.Main.convtest15 :: W1 -> W4 -> W4
+$LL.Main.convtest15 $0 $1 = 4'case {1'$0, 4'$1} of
+    {1'@, 1'h0, 2'_, 1'@} -> $LL.Main.convtest14
+
+$LL.Main.convtest14 :: W1 -> W1 -> W4
+$LL.Main.convtest14 $0 $1 = 4'case {1'$0, 1'$1} of
+    {1'@, 1'@} -> $LL.Main.convtest7
+
+$LL.Main.convtest10 :: W1 -> W1 -> W1 -> W4
+$LL.Main.convtest10 $0 $1 $2 = 4'case {1'$0, 4'case 1'$0 of {1'@} -> $LL.Main.convtest} of
+    {1'@, 4'@} -> $LL.Main.convtest15
+
+$LL.Main.convtest7 :: W1 -> W1 -> W4
+$LL.Main.convtest7 $0 $1 = {1'h1, 1'$0, 1'$0, 1'$1}
+
+$LL.Pure.dispatch1 :: W1 -> W1 -> W1 -> W4
+$LL.Pure.dispatch1 $0 $1 $2 = 4'case {1'$1, 1'$0, 1'$2} of
+    {1'@, 1'@, 1'@} -> $LL.Main.convtest10
+
+$LL.Main.convtest :: W1 -> W4
+$LL.Main.convtest $0 = {3'h0, 1'$0}

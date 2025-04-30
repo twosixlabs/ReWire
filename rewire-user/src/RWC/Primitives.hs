@@ -170,8 +170,8 @@ rwPrimExtrude (GHC.ReacT (GHC.StateT m)) s =
             GHC.Left y -> GHC.return (GHC.Left y)
             GHC.Right (o,k) -> GHC.return (GHC.Right (o, \ i -> rwPrimExtrude (k i) s'))
 
-rwPrimUnfold :: ((R_, s) -> i -> PuRe s o) -> PuRe s o -> ReacT i o Identity A_
-rwPrimUnfold _ (Done (a,_)) = GHC.return a
+rwPrimUnfold :: ((R_, s) -> i -> PuRe s o) -> PuRe s o -> ReacT i o Identity ()
+rwPrimUnfold _ (Done _)      = GHC.return ()
 rwPrimUnfold f (Pause (o,b)) = do i <- GHC.signal o
                                   rwPrimUnfold f (f b i)
 

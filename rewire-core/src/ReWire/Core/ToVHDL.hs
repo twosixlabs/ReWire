@@ -17,7 +17,7 @@ import Control.Monad (zipWithM)
 import Control.Monad.Reader (ReaderT (..), ask)
 import Control.Monad.State (StateT (..), get, put, lift)
 import Data.Bits (testBit)
-import Data.List (genericLength, find, foldl')
+import Data.List (genericLength, find)
 import Data.Text (Text)
 
 type CM m = StateT ([Signal], [Component], Index) (ReaderT [Defn] m)
@@ -238,9 +238,9 @@ compileStart conf topLevel w n_loopfun sigLoop n_startstate sigState0 = do
 compileDefn :: MonadError AstError m => Config -> Defn -> CM m Unit
 compileDefn conf d = Unit (conf^.vhdlPackages) <$> mkDefnEntity d <*> mkDefnArch d
 
-compileProgram :: MonadError AstError m => Config -> C.Program -> m V.Program
+compileProgram :: MonadError AstError m => Config -> C.Device -> m V.Device
 compileProgram conf p = fmap fst $ flip runReaderT (defns p) $ flip runStateT ([], [], 0)
-      $ V.Program
+      $ V.Device
             <$> ((:)
             <$> compileStart
                   conf

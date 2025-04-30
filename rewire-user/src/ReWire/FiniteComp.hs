@@ -35,6 +35,18 @@ a == b = (fromFinite a :: B.Lit) B.== (fromFinite b :: B.Lit)
 (<) :: Finite n -> Finite n -> Bool
 a < b = (fromFinite a :: B.Lit) B.< (fromFinite b :: B.Lit)
 
+{-# INLINE (<=) #-}
+(<=) :: Finite n -> Finite n -> Bool
+a <= b = (fromFinite a :: B.Lit) B.<= (fromFinite b :: B.Lit)
+
+{-# INLINE (>) #-}
+(>) :: Finite n -> Finite n -> Bool
+a > b = (fromFinite a :: B.Lit) B.> (fromFinite b :: B.Lit)
+
+{-# INLINE (>=) #-}
+(>=) :: Finite n -> Finite n -> Bool
+a >= b = (fromFinite a :: B.Lit) B.>= (fromFinite b :: B.Lit)
+
 {-# INLINE even #-}
 even :: Finite n -> Bool
 even a = B.even (fromFinite a :: B.Lit)

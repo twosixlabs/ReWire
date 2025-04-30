@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE Trustworthy #-}
@@ -9,36 +10,43 @@ module ReWire.Config
       , resetFlags, outFlags
       , inputSigs, stateSigs, outputSigs
       , vhdlPackages, inputsFile, outFile
-      , start, top, loadPath, cycles, depth, dump, source
+      , start, top, loadPath, cycles, depth, dump, source, typecheck, rtlOpt
+      , pDebug
       ) where
 
 import ReWire.Flags (Flag (..))
 import ReWire.Pretty (showt)
 
 import Control.Lens (makeLenses, over, (.~), (^.), Lens', lens)
-import Control.Monad (foldM)
+import Control.Monad (when, foldM)
+import Control.Monad.IO.Class (liftIO, MonadIO)
+import Data.HashSet (HashSet)
+import Data.Hashable (Hashable)
 import Data.Maybe (fromMaybe)
-import Data.Set (Set)
 import Data.Text (Text, pack, unpack, splitOn)
+import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
 import System.FilePath ((-<.>))
 
-import qualified Data.Set as Set
+import qualified Data.HashSet as Set
+import qualified Data.Text.IO as T
 
 data Language = Interpret | FIRRTL | VHDL | Verilog | RWCore | Haskell
       deriving (Eq, Ord, Show)
 data ResetFlag = Inverted | Synchronous
-      deriving (Eq, Ord, Show)
+      deriving (Eq, Ord, Show, Generic)
+instance Hashable ResetFlag
 data OutFlag   = Flatten | Pretty | Verbose
-      deriving (Eq, Ord, Show)
+      deriving (Eq, Ord, Show, Generic)
+instance Hashable OutFlag
 
 data Config = Config
       { _source       :: Language
       , _target       :: Language
       , _clock        :: Text -- No clock if null.
       , _reset        :: Text -- No reset if null.
-      , _resetFlags   :: Set ResetFlag
-      , _outFlags     :: Set OutFlag
+      , _resetFlags   :: HashSet ResetFlag
+      , _outFlags     :: HashSet OutFlag
       , _inputSigs    :: [Text]
       , _stateSigs    :: [Text]
       , _outputSigs   :: [Text]
@@ -51,6 +59,8 @@ data Config = Config
       , _cycles       :: Natural
       , _depth        :: Natural
       , _dump         :: Natural -> Bool
+      , _typecheck    :: Bool
+      , _rtlOpt       :: Natural
       }
 
 makeLenses ''Config
@@ -75,6 +85,8 @@ defaultConfig = Config
       , _cycles       = 10
       , _depth        = 8
       , _dump         = const False
+      , _typecheck    = False
+      , _rtlOpt       = 8
       }
 
 verbose :: Lens' Config Bool
@@ -90,8 +102,8 @@ getOutFlag :: OutFlag -> Config -> Bool
 getOutFlag f conf = f `Set.member` (conf^.outFlags)
 
 setOutFlag :: OutFlag -> Config -> Bool -> Config
-setOutFlag f conf True  = over outFlags (Set.insert f) conf
-setOutFlag f conf False = over outFlags (Set.delete f) conf
+setOutFlag f conf ins | ins       = over outFlags (Set.insert f) conf
+                      | otherwise = over outFlags (Set.delete f) conf
 
 type ErrorMsg = Text
 
@@ -138,6 +150,8 @@ interpret = foldM interp defaultConfig
                   FlagTop (pack -> n)             -> pure $ top .~ n $ c
                   FlagCycles n                    -> pure $ cycles .~ read n $ c
                   FlagEvalDepth n                 -> pure $ depth .~ read n $ c
+                  FlagDebugTypeCheck              -> pure $ typecheck .~ True $ c
+                  FlagRtlOpt n                    -> pure $ rtlOpt .~ read n $ c
 
             augment :: [Natural] -> (Natural -> Bool) -> Natural -> Bool
             augment ns f n | n `elem` ns = True
@@ -148,3 +162,6 @@ interpret = foldM interp defaultConfig
             splitOn' sep = \ case
                   "" -> []
                   s  -> splitOn sep s
+
+pDebug :: MonadIO m => Config -> Text -> m ()
+pDebug conf s = when (conf^.verbose) $ liftIO $ T.putStrLn $ "Debug: " <> s

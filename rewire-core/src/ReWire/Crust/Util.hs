@@ -2,18 +2,19 @@
 {-# LANGUAGE Safe #-}
 module ReWire.Crust.Util
       ( Fresh, Name, Embed (..), TRec, Bind, FieldId
-      , paramTys, isPrim, inlineable, mustInline, nil
-      , mkTuple, mkTuplePat, mkTupleMPat
+      , paramTys, isPrim, inlinable, nil, isExtrude, extrudeDefn
+      , mkTuple, mkTuplePat, mkTupleMPat, synthableDefn
       , mkPair, mkPairPat, mkPairMPat, flattenLam, mkLam
-      , mkApp, mkError, builtin, proxy
+      , mkApp, mkError, builtin, proxy, patVars, toVar, toPatVar, transPat, transMPat
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote))
-import ReWire.Crust.Syntax (Exp (..), Ty (..), MatchPat (..), Pat (..), Defn (..), DefnAttr (..), Builtin (..), Poly (..), FieldId, builtins)
-import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairTy, fundamental, mkArrowTy, paramTys)
-import ReWire.Unbound (Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
+import ReWire.Crust.Syntax (Exp (..), Ty (..), MatchPat (..), Pat (..), Defn (..), DefnAttr (..), Builtin (..), Poly (..), FieldId, builtins, flattenApp)
+import ReWire.Crust.Types (proxyTy, nilTy, strTy, arr, typeOf, arrowRight, pairTy, fundamental, mkArrowTy, paramTys, higherOrder, synthable)
+import ReWire.Pretty (pretty)
+import ReWire.SYB (query)
+import ReWire.Unbound (freshVar, Name, Fresh, Embed (Embed), unbind, bind, s2n, unsafeUnbind, Bind, TRec)
 
-import Data.List (foldl')
 import Data.Text (Text)
 import Numeric.Natural (Natural)
 
@@ -23,17 +24,27 @@ builtin b = lookup b builtins
 isPrim :: Show a => a -> Bool
 isPrim = notElem '.' . show
 
-inlineable :: Defn -> Bool
-inlineable d = case defnAttr d of
+inlinable :: Defn -> Bool
+inlinable d = case defnAttr d of
       Just Inline   -> True
       Just NoInline -> False
       Nothing       -> not $ isPrim $ defnName d
 
-mustInline :: Defn -> Bool
-mustInline = \ case
-      Defn { defnAttr = Just Inline }                    -> True
+extrudeDefn :: Defn -> Bool
+extrudeDefn (Defn { defnBody = Embed (unsafeUnbind -> (_, b)) }) = hasExtrude b
+      where hasExtrude :: Exp -> Bool
+            hasExtrude (query -> xs) = Extrude `elem` xs
+
+synthableDefn :: Defn -> Bool
+synthableDefn = \ case
       Defn { defnPolyTy = Embed (Poly (unsafeUnbind -> (_, t)))
-           , defnName   = n }                            -> not (isPrim n || fundamental t)
+           , defnName   = n
+           } -> isPrim n || synthable t
+
+isExtrude :: Exp -> Bool
+isExtrude e = case flattenApp e of
+      (Builtin _ _ _ Extrude, [_, _]) -> True
+      _                               -> False
 
 nil :: Exp
 nil = Con (MsgAnnote "nil") Nothing (Just nilTy) (s2n "()")
@@ -48,6 +59,32 @@ nilPat = PatCon (MsgAnnote "nilPat") (Embed Nothing) (Embed $ Just nilTy) (Embed
 
 nilMPat :: MatchPat
 nilMPat = MatchPatCon (MsgAnnote "nilMPat") Nothing (Just nilTy) (s2n "()") []
+
+-- | Get well-typed pat variables.
+patVars :: Pat -> [(Ty, Name Exp)]
+patVars = \ case
+      PatCon _ _ _ _ ps             -> concatMap patVars ps
+      PatVar _ _ (Embed (Just t)) x -> [(t, x)]
+      PatVar _ _ (Embed Nothing) x  -> error $ "Untyped pat var (rwc bug; shouldn't happen): " <> show (pretty x)
+      _                             -> []
+
+toVar :: Annote -> (Ty, Name Exp) -> Exp
+toVar an (vt, v) = Var an Nothing (Just vt) v
+
+toPatVar :: Annote -> (Ty, Name Exp) -> Pat
+toPatVar an (vt, v) = PatVar an (Embed Nothing) (Embed $ Just vt) v
+
+transPat :: Pat -> MatchPat
+transPat = \ case
+      PatCon an (Embed tan) (Embed t) (Embed c) ps -> MatchPatCon an tan t c $ map transPat ps
+      PatVar an (Embed tan) (Embed t) _            -> MatchPatVar an tan t
+      PatWildCard an (Embed tan) (Embed t)         -> MatchPatWildCard an tan t
+
+transMPat :: Fresh m => MatchPat -> m Pat
+transMPat = \ case
+      MatchPatCon an tan t c ps -> PatCon an (Embed tan) (Embed t) (Embed c) <$> mapM transMPat ps
+      MatchPatVar an tan t      -> PatVar an (Embed tan) (Embed t) <$> freshVar "m2c"
+      MatchPatWildCard an tan t -> pure $ PatWildCard an (Embed tan) (Embed t)
 
 mkPair :: Annote -> Exp -> Exp -> Exp
 mkPair an e1 e2 = mkApp an (Con an Nothing t (s2n "(,)")) [e1, e2]

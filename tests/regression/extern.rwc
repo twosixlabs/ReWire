@@ -1,0 +1,26 @@
+device top_level:
+
+inputs [("__in0",16)]
+outputs [("__out0",8)]
+states []
+
+$Pure.dispatch :: W16 -> W9
+$Pure.dispatch $0 = 9'case 16'$0 of
+    {16'@} -> $LL.Main.loop2
+
+$Pure.start :: W9
+$Pure.start  = 9'case 16'h0 of
+    {16'@} -> $LL.Main.loop2
+
+$LL.Main.loop3 :: W9 -> W9
+$LL.Main.loop3 $0 = 9'case 9'$0 of
+    {1'h0, 8'@} -> $LL.Main.loop1
+
+$LL.Main.loop2 :: W16 -> W9
+$LL.Main.loop2 $0 = 9'case {1'h0
+    , 8'case 16'$0 of
+      {16'@} -> extern (Sig [] "clk" "rst" [("x",16)] [("out",8)]) "mymod" ""} of
+    {9'@} -> $LL.Main.loop3
+
+$LL.Main.loop1 :: W8 -> W9
+$LL.Main.loop1 $0 = {1'h1, 8'$0}

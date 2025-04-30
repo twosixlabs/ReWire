@@ -12,11 +12,11 @@ import Data.Maybe (listToMaybe, mapMaybe)
 type Size  = Word
 type Index = Int
 
-newtype Program = Program { programUnits :: [Unit] }
+newtype Device = Device { programUnits :: [Unit] }
       deriving (Eq, Show)
 
-instance Pretty Program where
-      pretty (Program units) = vsep (intersperse empty $ map pretty units)
+instance Pretty Device where
+      pretty (Device units) = vsep (intersperse empty $ map pretty units)
 
 data Unit = Unit ![Text] !Entity !Architecture
       deriving (Eq, Show)

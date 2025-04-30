@@ -7,19 +7,22 @@ import ReWire.Annotation (unAnn, ann)
 import ReWire.BitVector (BV, zeros)
 import ReWire.Core.Interp (interpExp, DefnMap)
 import ReWire.Core.Syntax
+
 import qualified ReWire.BitVector as BV
 
 import Control.Arrow ((&&&))
-import Data.Containers.ListUtils (nubOrd)
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet)
 import Data.List (genericLength, genericIndex)
+
 import qualified Data.HashMap.Strict as Map
+import qualified Data.HashSet        as Set
 
 type DefnBodyMap = HashMap GId Exp
 
 -- | Removes all zero-length arguments and parameters.
-mergeSlices :: Program -> Program
-mergeSlices p@Program {loop, state0, defns}  = p { loop = reDefn loop, state0 = reDefn state0, defns = reDefn <$> filter ((> 0) . sizeOf) defns }
+mergeSlices :: Device -> Device
+mergeSlices p@Device {loop, state0, defns}  = p { loop = reDefn loop, state0 = reDefn state0, defns = reDefn <$> filter ((> 0) . sizeOf) defns }
       where defns' :: DefnMap
             defns' = Map.fromList $ map (defnName &&& id) allDefns
 
@@ -142,24 +145,24 @@ mergeSlices p@Program {loop, state0, defns}  = p { loop = reDefn loop, state0 = 
 
 
 -- | Remove unused definitions.
-purgeUnused :: Program -> Program
-purgeUnused p@Program { loop, state0, defns } = p { defns = filter ((`elem` uses) . defnName) defns }
-      where uses :: [GId]
-            uses = uses' [defnName loop, defnName state0]
+purgeUnused :: Device -> Device
+purgeUnused p@Device { loop, state0, defns } = p { defns = filter ((`Set.member` uses) . defnName) defns }
+      where uses :: HashSet GId
+            uses = uses' $ Set.fromList [defnName loop, defnName state0]
 
-            uses' :: [GId] -> [GId]
-            uses' u = let u' = nubOrd (concatMap defnUses u) in
+            uses' :: HashSet GId -> HashSet GId
+            uses' u = let u' = Set.foldl' defnUses u u in
                   if length u' == length u then u else uses' u'
 
-            defnUses :: GId -> [GId]
-            defnUses d = maybe [d] ((<> [d]) . getUses) $ Map.lookup d defns'
+            defnUses :: HashSet GId -> GId -> HashSet GId
+            defnUses us d = maybe us (getUses us) $ Map.lookup d defns'
 
-            getUses :: Exp -> [GId]
-            getUses = \ case
-                  Concat _ e1 e2              -> getUses e1 <> getUses e2
-                  Call _ _ (Global g) e _ els -> [g] <> getUses e <> getUses els
-                  Call _ _ _          e _ els ->        getUses e <> getUses els
-                  _                           -> []
+            getUses :: HashSet GId -> Exp -> HashSet GId
+            getUses us = \ case -- TODO: refactor
+                  Concat _ e1 e2              -> getUses (getUses us e1) e2
+                  Call _ _ (Global g) e _ els -> getUses (getUses (Set.insert g us) e) els
+                  Call _ _ _          e _ els -> getUses (getUses us e) els
+                  _                           -> us
 
             defns' :: DefnBodyMap
             defns' = Map.fromList $ (defnName &&& defnBody) <$> allDefns
@@ -169,8 +172,8 @@ purgeUnused p@Program { loop, state0, defns } = p { defns = filter ((`elem` uses
 
 -- | Substitute all calls to functions with duplicate bodies to the same
 --   function. Should follow with `purgeUnused`.
-dedupe :: Program -> Program
-dedupe p@Program { loop, state0, defns } = p { loop = ddDefn loop, state0 = ddDefn state0, defns = ddDefn <$> defns }
+dedupe :: Device -> Device
+dedupe p@Device { loop, state0, defns } = p { loop = ddDefn loop, state0 = ddDefn state0, defns = ddDefn <$> defns }
       where ddDefn :: Defn -> Defn
             ddDefn d = d { defnBody = ddExp $ defnBody d }
 
@@ -194,8 +197,8 @@ dedupe p@Program { loop, state0, defns } = p { loop = ddDefn loop, state0 = ddDe
             allDefns = loop : state0 : defns
 
 -- | Attempt to reduce definition bodies to a constant literal value.
-partialEval :: Program -> Program
-partialEval p@Program { loop, state0, defns } = p { loop = evalDefn loop, state0 = evalDefn state0, defns = evalDefn <$> defns }
+partialEval :: Device -> Device
+partialEval p@Device { loop, state0, defns } = p { loop = evalDefn loop, state0 = evalDefn state0, defns = evalDefn <$> defns }
       where defns' :: DefnMap
             defns' = Map.fromList $ map (defnName &&& id) allDefns
 

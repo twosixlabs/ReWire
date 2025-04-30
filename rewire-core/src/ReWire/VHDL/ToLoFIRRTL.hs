@@ -14,8 +14,8 @@ import Numeric.Natural (Natural)
 concatMapM :: (Monad m, Traversable t) => (a -> m [b]) -> t a -> m [b]
 concatMapM f xs = concat <$> mapM f xs
 
-toLoFirrtl :: MonadError AstError m => V.Program -> m F.Circuit
-toLoFirrtl (V.Program units) = F.Circuit (F.Id "rewire_root") <$> mapM transUnit units
+toLoFirrtl :: MonadError AstError m => V.Device -> m F.Circuit
+toLoFirrtl (V.Device units) = F.Circuit (F.Id "rewire_root") <$> mapM transUnit units
 
 transUnit :: MonadError AstError m => V.Unit -> m F.Module
 transUnit (V.Unit _ e a) = F.ModuleDef (F.Id $ V.entityName e) <$> mapM transPort (V.entityPorts e) <*> transArch a

@@ -71,7 +71,7 @@ extrude :: Monad m => ReacT i o (StateT s m) a -> s -> ReacT i o m a
 extrude = rwPrimExtrude
 
 {-# INLINE unfold #-}
-unfold :: ((R_, s) -> i -> PuRe s o) -> PuRe s o -> ReacT i o Identity A_
+unfold :: ((R_, s) -> i -> PuRe s o) -> PuRe s o -> ReacT i o Identity ()
 unfold = rwPrimUnfold
 
 -- | Produce integer associated with type-level natural.

@@ -1,4 +1,4 @@
-import ReWire
+import ReWire hiding (Bit)
 
 data Bit = C | S
 data W2 = W2 Bit Bit

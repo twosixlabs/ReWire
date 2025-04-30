@@ -12,24 +12,24 @@ import ReWire.Pretty (prettyPrint, showt)
 
 import Control.Monad.Reader (ReaderT (..), local, asks)
 import Control.Monad.State (evalStateT, StateT (..), get, modify)
-import Data.Map.Strict (Map)
+import Data.HashMap.Strict (HashMap)
 
-import safe qualified Data.Map.Strict as Map
+import safe qualified Data.HashMap.Strict as Map
 
-subst :: Subst b a => Map (Name b) b -> a -> a
-subst = substs . Map.assocs
+subst :: Subst b a => HashMap (Name b) b -> a -> a
+subst = substs . Map.toList
 
 -- Kind checking for Core.
-type KiSub = Map (Name Kind) Kind
-newtype KCEnv = KCEnv { cas :: Map (Name TyConId) Kind }
+type KiSub = HashMap (Name Kind) Kind
+newtype KCEnv = KCEnv { cas :: HashMap (Name TyConId) Kind }
       deriving Show
 
 type KCM m = ReaderT KCEnv (StateT KiSub m)
 
-localCAssumps :: MonadError AstError m => (Map (Name TyConId) Kind -> Map (Name TyConId) Kind) -> KCM m a -> KCM m a
+localCAssumps :: MonadError AstError m => (HashMap (Name TyConId) Kind -> HashMap (Name TyConId) Kind) -> KCM m a -> KCM m a
 localCAssumps f = local $ \ kce -> kce { cas = f (cas kce) }
 
-askCAssumps :: MonadError AstError m => KCM m (Map (Name TyConId) Kind)
+askCAssumps :: MonadError AstError m => KCM m (HashMap (Name TyConId) Kind)
 askCAssumps = asks cas
 
 freshkv :: (Fresh m, MonadError AstError m) => KCM m Kind

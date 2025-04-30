@@ -1,0 +1,74 @@
+device top_level:
+
+inputs [("__in0",64),("__in1",64)]
+outputs [("__out0",64),("__out1",64)]
+states []
+
+$Pure.dispatch :: W128 -> W129
+$Pure.dispatch $0 = 129'case 128'$0 of
+    {128'@} -> $LL.Main.loop
+
+$Pure.start :: W129
+$Pure.start  = 129'h100000000000000000000000000000000
+
+$LL.Main.compute27 :: W64 -> W8 -> W56 -> W128
+$LL.Main.compute27 $0 $1 $2 = 128'case {56'$2, 64'$0, 8'$1, 8'case 64'$0 of {64'@} -> $LL.Main.compute17} of
+    {56'@, 64'@, 8'@, 8'@} -> $LL.Main.compute7
+
+$LL.Main.compute26 :: W64 -> W64 -> W8 -> W128
+$LL.Main.compute26 $0 $1 $2 = 128'case {64'$1, 8'$2, 56'case 64'$0 of {8'_, 56'@} -> Id} of
+    {64'@, 8'@, 56'@} -> $LL.Main.compute27
+
+$LL.Main.loop3 :: W129 -> W129
+$LL.Main.loop3 $0 = 129'case 129'$0 of
+    {1'h0, 128'@} -> $LL.Main.loop1
+
+$LL.Main.compute21 :: W56 -> W8 -> W64
+$LL.Main.compute21 $0 $1 = 64'case {56'$0, 8'$1} of
+    {64'@} -> $LL.Main.compute13
+
+$LL.Main.compute17 :: W64 -> W8
+$LL.Main.compute17 $0 = 8'case 128'case {128'case 64'$0 of {64'@} -> Resize, 128'h0} of
+      {128'@, 128'@} -> RShift of
+    {128'@} -> Resize
+
+$LL.Main.compute16 :: W8 -> W56 -> W64
+$LL.Main.compute16 $0 $1 = 64'case {8'$0, 56'$1} of
+    {64'@} -> $LL.Main.compute5
+
+$LL.Main.compute15 :: W64 -> W8
+$LL.Main.compute15 $0 = 8'case 64'$0 of
+    {8'@, 56'_} -> Id
+
+$LL.Main.loop1 :: W128 -> W129
+$LL.Main.loop1 $0 = {1'h1, 128'$0}
+
+$LL.Main.compute13 :: W64 -> W64
+$LL.Main.compute13 $0 = 64'case 64'$0 of
+    {56'@, 8'@} -> Id
+
+$LL.Main.compute11 :: W56 -> W8 -> W8 -> W56 -> W128
+$LL.Main.compute11 $0 $1 $2 $3 = {64'case {56'$0, 8'$2} of
+    {56'@, 8'@} -> $LL.Main.compute21
+  , 64'case {8'$1, 56'$3} of
+    {8'@, 56'@} -> $LL.Main.compute16}
+
+$LL.Main.loop :: W128 -> W129
+$LL.Main.loop $0 = 129'case {1'h0, 128'case 128'$0 of {128'@} -> $LL.Main.compute9} of
+    {129'@} -> $LL.Main.loop3
+
+$LL.Main.compute9 :: W128 -> W128
+$LL.Main.compute9 $0 = 128'case 128'$0 of
+    {64'@, 64'@} -> $LL.Main.compute4
+
+$LL.Main.compute7 :: W56 -> W64 -> W8 -> W8 -> W128
+$LL.Main.compute7 $0 $1 $2 $3 = 128'case {56'$0, 8'$2, 8'$3, 56'case 64'$1 of {56'@, 8'_} -> Id} of
+    {56'@, 8'@, 8'@, 56'@} -> $LL.Main.compute11
+
+$LL.Main.compute5 :: W64 -> W64
+$LL.Main.compute5 $0 = 64'case 64'$0 of
+    {8'@, 56'@} -> Id
+
+$LL.Main.compute4 :: W64 -> W64 -> W128
+$LL.Main.compute4 $0 $1 = 128'case {64'$0, 64'$1, 8'case 64'$0 of {64'@} -> $LL.Main.compute15} of
+    {64'@, 64'@, 8'@} -> $LL.Main.compute26

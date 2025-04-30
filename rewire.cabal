@@ -5,8 +5,8 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           rewire
-version:        2.5.1
-synopsis:       A Haskell-to-Verilog/VHDL compiler
+version:        2.6
+synopsis:       A Haskell-to-Verilog compiler
 description:    A compiler for a subset of Haskell to Verilog and VHDL.
 category:       Language
 homepage:       https://github.com/mu-chaco/ReWire
@@ -25,17 +25,16 @@ extra-source-files:
 data-files:
     tests/integration/InlinedMiniISA.hs
     tests/integration/MiniISA.hs
-    tests/integration/OD19Filter.hs
-    tests/integration/RW_REPL_OD19Filter.hs
     tests/integration/SecMemCon.hs
-    tests/integration/Sha256_1.hs
     tests/integration/Sha256_2.hs
-    tests/integration/OD19/ProgramCounter.hs
     tests/regression/Mods/Infix.hs
     tests/regression/Mods/X.hs
     tests/regression/Mods/Y.hs
+    tests/regression/OD19/ProgramCounter.hs
     tests/regression/Mods/C/X.hs
+    tests/regression/verilog/filterprims.sv
     tests/regression/verilog/mymod.sv
+    tests/regression/verilog/w32ops.sv
     tests/regression/case1.hs
     tests/regression/case2.hs
     tests/regression/dependencyGraph.hs
@@ -50,12 +49,15 @@ data-files:
     tests/regression/finite2.hs
     tests/regression/fully.hs
     tests/regression/funcase.hs
+    tests/regression/gfmult.hs
     tests/regression/guards.hs
     tests/regression/HigherOrderBug.hs
     tests/regression/Infix.hs
     tests/regression/iter.hs
     tests/regression/iterSt.hs
+    tests/regression/matchBind.hs
     tests/regression/ModsMain.hs
+    tests/regression/OD19Filter.hs
     tests/regression/onestate.hs
     tests/regression/PackUnpack.hs
     tests/regression/pats.hs
@@ -65,6 +67,8 @@ data-files:
     tests/regression/pvartype.hs
     tests/regression/react.hs
     tests/regression/records.hs
+    tests/regression/RW_REPL_OD19Filter.hs
+    tests/regression/Sha256_1.hs
     tests/regression/sigNothing.hs
     tests/regression/state.hs
     tests/regression/state0.hs
@@ -72,6 +76,7 @@ data-files:
     tests/regression/synonym.hs
     tests/regression/test2.hs
     tests/regression/test3.hs
+    tests/regression/TinyISA.hs
     tests/regression/toag.hs
     tests/regression/toags.hs
     tests/regression/uniquification.hs
@@ -87,6 +92,173 @@ data-files:
     tests/regression/wordLit.hs
     tests/regression/wordShift.hs
     tests/regression/wordSlice.hs
+    tests/regression/case1.sv
+    tests/regression/case2.sv
+    tests/regression/dependencyGraph.sv
+    tests/regression/dissex.sv
+    tests/regression/dissex2.sv
+    tests/regression/exp2.sv
+    tests/regression/extern.sv
+    tests/regression/fibo1.sv
+    tests/regression/fibo2.sv
+    tests/regression/fibo3.sv
+    tests/regression/Finite.sv
+    tests/regression/finite2.sv
+    tests/regression/fully.sv
+    tests/regression/funcase.sv
+    tests/regression/gfmult.sv
+    tests/regression/guards.sv
+    tests/regression/HigherOrderBug.sv
+    tests/regression/Infix.sv
+    tests/regression/iter.sv
+    tests/regression/iterSt.sv
+    tests/regression/matchBind.sv
+    tests/regression/ModsMain.sv
+    tests/regression/OD19Filter.sv
+    tests/regression/onestate.sv
+    tests/regression/PackUnpack.sv
+    tests/regression/pats.sv
+    tests/regression/pats2.sv
+    tests/regression/PreludeTest.sv
+    tests/regression/putBug.sv
+    tests/regression/pvartype.sv
+    tests/regression/react.sv
+    tests/regression/records.sv
+    tests/regression/RW_REPL_OD19Filter.sv
+    tests/regression/Sha256_1.sv
+    tests/regression/sigNothing.sv
+    tests/regression/state.sv
+    tests/regression/state0.sv
+    tests/regression/stateTower.sv
+    tests/regression/synonym.sv
+    tests/regression/test2.sv
+    tests/regression/test3.sv
+    tests/regression/TinyISA.sv
+    tests/regression/toag.sv
+    tests/regression/toags.sv
+    tests/regression/uniquification.sv
+    tests/regression/UpCounter1.sv
+    tests/regression/UpCounter2.sv
+    tests/regression/vectorAppend.sv
+    tests/regression/vectorCons.sv
+    tests/regression/vectorIndexProxy.sv
+    tests/regression/vectorPack.sv
+    tests/regression/weird1.sv
+    tests/regression/wordArith.sv
+    tests/regression/wordBitwise.sv
+    tests/regression/wordLit.sv
+    tests/regression/wordShift.sv
+    tests/regression/wordSlice.sv
+    tests/regression/case1.rwc
+    tests/regression/case2.rwc
+    tests/regression/dependencyGraph.rwc
+    tests/regression/dissex.rwc
+    tests/regression/dissex2.rwc
+    tests/regression/exp2.rwc
+    tests/regression/extern.rwc
+    tests/regression/fibo1.rwc
+    tests/regression/fibo2.rwc
+    tests/regression/fibo3.rwc
+    tests/regression/Finite.rwc
+    tests/regression/finite2.rwc
+    tests/regression/fully.rwc
+    tests/regression/funcase.rwc
+    tests/regression/gfmult.rwc
+    tests/regression/guards.rwc
+    tests/regression/HigherOrderBug.rwc
+    tests/regression/Infix.rwc
+    tests/regression/iter.rwc
+    tests/regression/iterSt.rwc
+    tests/regression/matchBind.rwc
+    tests/regression/ModsMain.rwc
+    tests/regression/OD19Filter.rwc
+    tests/regression/onestate.rwc
+    tests/regression/PackUnpack.rwc
+    tests/regression/pats.rwc
+    tests/regression/pats2.rwc
+    tests/regression/PreludeTest.rwc
+    tests/regression/putBug.rwc
+    tests/regression/pvartype.rwc
+    tests/regression/react.rwc
+    tests/regression/records.rwc
+    tests/regression/RW_REPL_OD19Filter.rwc
+    tests/regression/Sha256_1.rwc
+    tests/regression/sigNothing.rwc
+    tests/regression/state.rwc
+    tests/regression/state0.rwc
+    tests/regression/stateTower.rwc
+    tests/regression/synonym.rwc
+    tests/regression/test2.rwc
+    tests/regression/test3.rwc
+    tests/regression/TinyISA.rwc
+    tests/regression/toag.rwc
+    tests/regression/toags.rwc
+    tests/regression/uniquification.rwc
+    tests/regression/UpCounter1.rwc
+    tests/regression/UpCounter2.rwc
+    tests/regression/vectorAppend.rwc
+    tests/regression/vectorCons.rwc
+    tests/regression/vectorIndexProxy.rwc
+    tests/regression/vectorPack.rwc
+    tests/regression/weird1.rwc
+    tests/regression/wordArith.rwc
+    tests/regression/wordBitwise.rwc
+    tests/regression/wordLit.rwc
+    tests/regression/wordShift.rwc
+    tests/regression/wordSlice.rwc
+    tests/regression/case1.yaml
+    tests/regression/case2.yaml
+    tests/regression/dependencyGraph.yaml
+    tests/regression/dissex.yaml
+    tests/regression/dissex2.yaml
+    tests/regression/exp2.yaml
+    tests/regression/fibo1.yaml
+    tests/regression/fibo2.yaml
+    tests/regression/fibo3.yaml
+    tests/regression/Finite.yaml
+    tests/regression/finite2.yaml
+    tests/regression/fully.yaml
+    tests/regression/funcase.yaml
+    tests/regression/gfmult.yaml
+    tests/regression/guards.yaml
+    tests/regression/HigherOrderBug.yaml
+    tests/regression/Infix.yaml
+    tests/regression/iter.yaml
+    tests/regression/iterSt.yaml
+    tests/regression/matchBind.yaml
+    tests/regression/ModsMain.yaml
+    tests/regression/onestate.yaml
+    tests/regression/PackUnpack.yaml
+    tests/regression/pats.yaml
+    tests/regression/pats2.yaml
+    tests/regression/PreludeTest.yaml
+    tests/regression/putBug.yaml
+    tests/regression/pvartype.yaml
+    tests/regression/react.yaml
+    tests/regression/records.yaml
+    tests/regression/sigNothing.yaml
+    tests/regression/state.yaml
+    tests/regression/state0.yaml
+    tests/regression/stateTower.yaml
+    tests/regression/synonym.yaml
+    tests/regression/test2.yaml
+    tests/regression/test3.yaml
+    tests/regression/TinyISA.yaml
+    tests/regression/toag.yaml
+    tests/regression/toags.yaml
+    tests/regression/uniquification.yaml
+    tests/regression/UpCounter1.yaml
+    tests/regression/UpCounter2.yaml
+    tests/regression/vectorAppend.yaml
+    tests/regression/vectorCons.yaml
+    tests/regression/vectorIndexProxy.yaml
+    tests/regression/vectorPack.yaml
+    tests/regression/weird1.yaml
+    tests/regression/wordArith.yaml
+    tests/regression/wordBitwise.yaml
+    tests/regression/wordLit.yaml
+    tests/regression/wordShift.yaml
+    tests/regression/wordSlice.yaml
     rewire-user/src/ReWire.hs
     rewire-user/src/RWC/Primitives.hs
     rewire-user/src/ReWire/Bits.hs
@@ -482,15 +654,15 @@ library
       ViewPatterns
   ghc-options: -Wall -fno-warn-name-shadowing -funbox-strict-fields -O2 -optc-O3 -j8 +RTS -A64m -RTS
   build-depends:
-      base ==4.18.*
+      base ==4.20.*
     , directory ==1.3.*
-    , filepath ==1.4.*
-    , ghc ==9.6.*
-    , lens ==5.2.*
+    , filepath ==1.5.*
+    , ghc ==9.10.*
+    , lens ==5.3.*
     , rewire-core
     , rewire-embedder
-    , rewire-user ==0.1.*
-    , text ==2.0.*
+    , rewire-user ==0.2.*
+    , text ==2.1.*
   default-language: Haskell2010
 
 executable firrtl
@@ -505,15 +677,15 @@ executable firrtl
       ViewPatterns
   ghc-options: -Wall -fno-warn-name-shadowing -funbox-strict-fields -O2 -optc-O3 -j8 +RTS -A64m -RTS
   build-depends:
-      base ==4.18.*
+      base ==4.20.*
     , directory ==1.3.*
-    , filepath ==1.4.*
-    , ghc ==9.6.*
-    , lens ==5.2.*
+    , filepath ==1.5.*
+    , ghc ==9.10.*
+    , lens ==5.3.*
     , rewire-core
     , rewire-embedder
-    , rewire-user ==0.1.*
-    , text ==2.0.*
+    , rewire-user ==0.2.*
+    , text ==2.1.*
   default-language: Haskell2010
 
 executable rwc
@@ -528,15 +700,15 @@ executable rwc
       ViewPatterns
   ghc-options: -Wall -fno-warn-name-shadowing -funbox-strict-fields -O2 -optc-O3 -j8 +RTS -A64m -RTS
   build-depends:
-      base ==4.18.*
+      base ==4.20.*
     , directory ==1.3.*
-    , filepath ==1.4.*
-    , ghc ==9.6.*
-    , lens ==5.2.*
+    , filepath ==1.5.*
+    , ghc ==9.10.*
+    , lens ==5.3.*
     , rewire
     , rewire-embedder
-    , rewire-user ==0.1.*
-    , text ==2.0.*
+    , rewire-user ==0.2.*
+    , text ==2.1.*
   default-language: Haskell2010
 
 executable rwe
@@ -551,15 +723,15 @@ executable rwe
       ViewPatterns
   ghc-options: -Wall -fno-warn-name-shadowing -funbox-strict-fields -O2 -optc-O3 -j8 +RTS -A64m -RTS
   build-depends:
-      base ==4.18.*
+      base ==4.20.*
     , directory ==1.3.*
-    , filepath ==1.4.*
-    , ghc ==9.6.*
-    , lens ==5.2.*
+    , filepath ==1.5.*
+    , ghc ==9.10.*
+    , lens ==5.3.*
     , rewire
     , rewire-embedder
-    , rewire-user ==0.1.*
-    , text ==2.0.*
+    , rewire-user ==0.2.*
+    , text ==2.1.*
   default-language: Haskell2010
 
 test-suite rwc-test
@@ -576,18 +748,19 @@ test-suite rwc-test
   ghc-options: -Wall -fno-warn-name-shadowing -funbox-strict-fields -O2 -optc-O3 -j8 +RTS -A64m -RTS
   build-depends:
       HUnit ==1.6.*
-    , base ==4.18.*
+    , base ==4.20.*
     , directory ==1.3.*
-    , filepath ==1.4.*
-    , ghc ==9.6.*
-    , lens ==5.2.*
+    , filepath ==1.5.*
+    , ghc ==9.10.*
+    , lens ==5.3.*
     , process ==1.6.*
     , rewire
     , rewire-embedder
-    , rewire-user ==0.1.*
-    , test-framework ==0.8.*
-    , test-framework-hunit >=0.3.0.2 && <0.4
-    , text ==2.0.*
+    , rewire-user ==0.2.*
+    , tasty ==1.5.*
+    , tasty-golden ==2.3.*
+    , tasty-hunit ==0.10.*
+    , text ==2.1.*
   default-language: Haskell2010
 
 test-suite rwe-test
@@ -604,18 +777,16 @@ test-suite rwe-test
   ghc-options: -Wall -fno-warn-name-shadowing -funbox-strict-fields -O2 -optc-O3 -j8 +RTS -A64m -RTS
   build-depends:
       HUnit ==1.6.*
-    , base ==4.18.*
+    , base ==4.20.*
     , directory ==1.3.*
-    , filepath ==1.4.*
-    , ghc ==9.6.*
-    , lens ==5.2.*
+    , filepath ==1.5.*
+    , ghc ==9.10.*
+    , lens ==5.3.*
     , process ==1.6.*
     , rewire
     , rewire-embedder
-    , rewire-user ==0.1.*
-    , tasty ==1.4.*
+    , rewire-user ==0.2.*
+    , tasty ==1.5.*
     , tasty-hunit ==0.10.*
-    , test-framework ==0.8.*
-    , test-framework-hunit >=0.3.0.2 && <0.4
-    , text ==2.0.*
+    , text ==2.1.*
   default-language: Haskell2010

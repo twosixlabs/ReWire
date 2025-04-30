@@ -1,0 +1,49 @@
+device top_level:
+
+inputs [("__in0",1)]
+outputs [("__out0",1)]
+states []
+
+$Pure.dispatch :: W1 -> W1 -> W2
+$Pure.dispatch $0 $1 = 2'case {1'$1, 1'$0} of
+    {1'@, 1'@} -> $LL.Pure.dispatch1
+
+$Pure.start :: W2
+$Pure.start  = 2'h0
+
+$LL.ReWire.Prelude.&&3 :: W2 -> W1
+$LL.ReWire.Prelude.&&3 $0 = 1'case 2'$0 of
+    {1'h0, 1'_} -> 1'h0
+
+$LL.Main.zookus4 :: W1 -> W1
+$LL.Main.zookus4 $0 = 1'case {1'$0, 1'$0} of
+    {2'@} -> $LL.Main.zookus
+
+$LL.Main.loop2 :: W1 -> W2
+$LL.Main.loop2 $0 = {1'case 1'case 1'$0 of {1'@} -> $LL.Main.zookus4 of {1'@} -> $LL.Main.zookus4, 1'$0}
+
+$LL.Pure.dispatch1 :: W1 -> W1 -> W2
+$LL.Pure.dispatch1 $0 $1 = 2'case {1'$1, 1'$0} of
+    {1'@, 1'@} -> $LL.Main.loop1
+
+$LL.ReWire.Prelude.&&1 :: W1 -> W1 -> W2 -> W1
+$LL.ReWire.Prelude.&&1 $0 $1 $2 = 1'case 2'$2 of
+    {1'h1, 1'@} -> Id
+    _ -> 1'case {1'$0, 1'$1} of
+      {2'@} -> $LL.ReWire.Prelude.&&3
+
+$LL.Main.loop1 :: W1 -> W1 -> W2
+$LL.Main.loop1 $0 $1 = 2'case 1'case {1'$0, 1'h1} of
+      {1'@, 1'@} -> ReWire.Prelude.&& of
+    {1'@} -> $LL.Main.loop2
+
+ReWire.Prelude.&& :: W1 -> W1 -> W1
+ReWire.Prelude.&& $0 $1 = 1'case {1'$0, 1'$1, 1'$0, 1'$1} of
+    {1'@, 1'@, 2'@} -> $LL.ReWire.Prelude.&&1
+
+$LL.Main.zookus2 :: W1 -> W1 -> W1
+$LL.Main.zookus2 $0 $1 = 1'$0
+
+$LL.Main.zookus :: W2 -> W1
+$LL.Main.zookus $0 = 1'case 2'$0 of
+    {1'@, 1'@} -> $LL.Main.zookus2

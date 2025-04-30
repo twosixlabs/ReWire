@@ -15,7 +15,7 @@ module ReWire.Core.Interp
 
 import ReWire.Config (Config, verbose)
 import ReWire.Core.Syntax
-      ( Program (..)
+      ( Device (..)
       , Name, Value, Index, Size
       , Wiring (..), Prim (..)
       , GId, LId
@@ -29,6 +29,7 @@ import ReWire.Annotation (ann, noAnn, Annote)
 import ReWire.BitVector (BV, bitVec, (@@), nat, width, (>>.), (<<.), (==.), ashr)
 import ReWire.Error (failAt', MonadError, AstError)
 import ReWire.Pretty (showt)
+
 import qualified ReWire.BitVector as BV
 
 import Control.Arrow ((&&&), second)
@@ -38,9 +39,9 @@ import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Bits (Bits (..))
 import Data.HashMap.Strict (HashMap)
-import Data.List (foldl')
 import Data.Machine.MealyT (MealyT (..))
 import Data.Maybe (fromMaybe)
+
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Text.IO as T
 
@@ -48,7 +49,8 @@ mkBV :: Integral v => Size -> v -> BV
 mkBV sz = bitVec (fromIntegral sz)
 
 subRange :: (Index, Index) -> BV -> BV
-subRange (i, j) b = b @@ (j, i)
+subRange (i, j) b | j - i >= 0 = b @@ (j, i)
+                  | otherwise  = bitVec 0 (0 :: Integer)
 
 type Out = BV
 type Ins = HashMap Name Value
@@ -71,8 +73,8 @@ run conf m = \ case
                   T.putStr $ mconcat $ (\ (k, v) -> "\t" <> k <> ": " <> BV.showHex v <> "\n") <$> Map.toList b
             (b :) <$> run conf m' ips
 
-interp :: MonadError AstError m => Config -> Program -> MealyT m Ins Outs
-interp _conf (Program _ w loop state0 ds) = interpStart defnMap w loop state0
+interp :: MonadError AstError m => Config -> Device -> MealyT m Ins Outs
+interp _conf (Device _ w loop state0 ds) = interpStart defnMap w loop state0
       where defnMap :: DefnMap
             defnMap = Map.fromList $ map (defnName &&& id) ds
 
@@ -80,18 +82,19 @@ interpStart :: MonadError AstError m => DefnMap -> Wiring -> Defn -> Defn -> Mea
 interpStart defns w loop state0 = MealyT $ \ _ -> do
             so <- splitOutputs <$> interpDefn defns state0 mempty
             pure (filterOutput so, unfoldMealyT f $ filterDispatch so)
-      -- So:        loop   :: ((R_, s), i) -> R (o, s)
-      --            (state0 :: R (o, s)) = Pause (o0, R_0, s0)
-      --            where R a = Done (a, s) | Pause (o, R_, s)
+      -- So:        loop   :: ((R_, s), i) -> PR (o, s)
+      --            state0 :: PR (o, s)
+      --            state0 = Pause (o0, R_0, s0)
+      --            where PR (o, s) = Done (a, s) | Pause (o, R_, s)
       -- Assuming neither should ever be Done.
       where f :: MonadError AstError m => Sts -> Ins -> m (Outs, Sts)
             f s i = (filterOutput &&& filterDispatch) . splitOutputs <$> interpDefn defns loop (joinInputs $ Map.map nat s <> i)
 
             splitOutputs :: BV -> Outs
-            splitOutputs b = Map.fromList $ zip (map fst pauseWires) $ toSubRanges b $ map snd pauseWires
+            splitOutputs b = Map.fromList $ zip (fst <$> pauseWires) $ toSubRanges b $ map snd pauseWires
 
             joinInputs :: Ins -> BV
-            joinInputs vs = mconcat $ zipWith mkBV (map snd st_inps) $ map (fromMaybe 0 . flip Map.lookup vs . fst) st_inps
+            joinInputs vs = mconcat $ zipWith mkBV (snd <$> st_inps) $ map (fromMaybe 0 . flip Map.lookup vs . fst) st_inps
 
             st_inps :: [(Name, Size)]
             st_inps = dispatchWires w' <> inputWires w
@@ -268,6 +271,7 @@ primBinOps = map (second zToBV)
       [ (And         , (.&.))
       , (Or          , (.|.))
       , (XOr         , xor)
+      , (XNor        , \ a b -> complement (a `xor` b))
       , (LShift      , (<<.))
       , (RShift      , (>>.))
       , (RShiftArith , ashr)
@@ -312,8 +316,9 @@ resumptionTag (w, sigLoop, _) | tagSize > 0 = [("__resumption_tag", fromIntegral
                               | otherwise   = []
       where tagSize :: Int
             tagSize = case sigLoop of
-                  Sig _ (a : _) _ -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
-                  _               -> 0
+                  Sig _ (a : _ : _) _ | not $ null $ inputWires w -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
+                  Sig _ (a : _) _     | null $ inputWires w       -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
+                  _                                               -> 0
 
 resumptionSize :: Wiring' -> Size
 resumptionSize (_, _, Sig _ _ s) = s

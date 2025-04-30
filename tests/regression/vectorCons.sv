@@ -1,0 +1,53 @@
+module top_level (input logic [63:0] __in0,
+  input logic [63:0] __in1,
+  output logic [63:0] __out0,
+  output logic [63:0] __out1);
+  logic [127:0] zll_main_loop_in;
+  logic [127:0] zll_main_compute9_in;
+  logic [127:0] zll_main_compute4_in;
+  logic [63:0] zll_main_compute15_in;
+  logic [63:0] id_in;
+  logic [135:0] zll_main_compute26_in;
+  logic [63:0] id_inR1;
+  logic [127:0] zll_main_compute27_in;
+  logic [63:0] zll_main_compute17_in;
+  logic [63:0] resize_in;
+  logic [255:0] binop_in;
+  logic [127:0] resize_inR1;
+  logic [135:0] zll_main_compute7_in;
+  logic [63:0] id_inR2;
+  logic [127:0] zll_main_compute11_in;
+  logic [63:0] zll_main_compute21_in;
+  logic [63:0] zll_main_compute13_in;
+  logic [63:0] id_inR3;
+  logic [63:0] zll_main_compute16_in;
+  logic [63:0] zll_main_compute5_in;
+  logic [63:0] id_inR4;
+  logic [128:0] zll_main_loop3_in;
+  logic [128:0] zll_main_loop1_in;
+  logic [0:0] __continue;
+  assign zll_main_loop_in = {__in0, __in1};
+  assign zll_main_compute9_in = zll_main_loop_in[127:0];
+  assign zll_main_compute4_in = zll_main_compute9_in[127:0];
+  assign zll_main_compute15_in = zll_main_compute4_in[127:64];
+  assign id_in = zll_main_compute15_in[63:0];
+  assign zll_main_compute26_in = {zll_main_compute4_in[127:64], zll_main_compute4_in[63:0], id_in[63:56]};
+  assign id_inR1 = zll_main_compute26_in[135:72];
+  assign zll_main_compute27_in = {zll_main_compute26_in[71:8], zll_main_compute26_in[7:0], id_inR1[55:0]};
+  assign zll_main_compute17_in = zll_main_compute27_in[127:64];
+  assign resize_in = zll_main_compute17_in[63:0];
+  assign binop_in = {128'(resize_in[63:0]), {8'h80{1'h0}}};
+  assign resize_inR1 = binop_in[255:128] >> binop_in[127:0];
+  assign zll_main_compute7_in = {zll_main_compute27_in[55:0], zll_main_compute27_in[127:64], zll_main_compute27_in[63:56], resize_inR1[7:0]};
+  assign id_inR2 = zll_main_compute7_in[79:16];
+  assign zll_main_compute11_in = {zll_main_compute7_in[135:80], zll_main_compute7_in[15:8], zll_main_compute7_in[7:0], id_inR2[63:8]};
+  assign zll_main_compute21_in = {zll_main_compute11_in[127:72], zll_main_compute11_in[63:56]};
+  assign zll_main_compute13_in = {zll_main_compute21_in[63:8], zll_main_compute21_in[7:0]};
+  assign id_inR3 = zll_main_compute13_in[63:0];
+  assign zll_main_compute16_in = {zll_main_compute11_in[71:64], zll_main_compute11_in[55:0]};
+  assign zll_main_compute5_in = {zll_main_compute16_in[63:56], zll_main_compute16_in[55:0]};
+  assign id_inR4 = zll_main_compute5_in[63:0];
+  assign zll_main_loop3_in = {1'h0, {{id_inR3[63:8], id_inR3[7:0]}, {id_inR4[63:56], id_inR4[55:0]}}};
+  assign zll_main_loop1_in = zll_main_loop3_in[128:0];
+  assign {__continue, __out0, __out1} = {1'h1, zll_main_loop1_in[127:0]};
+endmodule

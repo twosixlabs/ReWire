@@ -44,7 +44,7 @@ instance ShowBin (Vec n Bool) where
      bool2bit False = '0'
 
 instance ShowHex (Vec n Bool) where
-  xshow bs = {- "0x" ++ -} hexify (V.toList bs)
+  xshow bs = "0x" ++ hexify (V.toList bs)
    where
      hexify :: [Bool] -> String
      hexify bits = map toHex (reverse (fours False (reverse bits)))
@@ -100,7 +100,11 @@ class Pretty a where
   pp :: a -> String
 
 instance Pretty (V.Vector n Bool) where
+<<<<<<< HEAD
   pp bs = xshow bs
+=======
+  pp = xshow
+>>>>>>> 5381b6dc5dce1eb1322133490817c8b714a0b291
 
 instance (Pretty a, Pretty b) => Pretty (a , b) where
   pp (a , b) = "(" ++ pp a ++ "," ++ pp b ++ ")"
@@ -108,10 +112,28 @@ instance (Pretty a, Pretty b) => Pretty (a , b) where
 instance (Pretty a, Pretty b , Pretty c) => Pretty (a , b , c) where
   pp (a , b , c) = "(" ++ pp a ++ "," ++ pp b ++ "," ++ pp c ++ ")"
 
+instance (Pretty a, Pretty b , Pretty c, Pretty d) => Pretty (a , b , c, d) where
+  pp (a,b,c,d) = "(" ++ pp a ++ "," ++ pp b ++ "," ++ pp c ++ "," ++ pp d ++ ")"
+
+instance (Pretty a,Pretty b,Pretty c,Pretty d,Pretty e,Pretty f,Pretty g,Pretty h) => Pretty (a,b,c,d,e,f,g,h) where
+  pp (a,b,c,d,e,f,g,h) = "(" ++ pp a ++ "," ++ pp b ++ "," ++ pp c ++ "," ++ pp d ++ ","
+                             ++ pp e ++ "," ++ pp f ++ "," ++ pp g ++ "," ++ pp h ++ ")"
+
+instance (Pretty a,Pretty b,Pretty c,Pretty d,Pretty e,Pretty f,Pretty g,Pretty h,
+          Pretty i,Pretty j,Pretty k,Pretty l,Pretty m,Pretty n,Pretty o,Pretty p) => Pretty (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) where
+  pp (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) =
+      "(" ++ pp a ++ "," ++ pp b ++ "," ++ pp c ++ "," ++ pp d ++ ","
+          ++ pp e ++ "," ++ pp f ++ "," ++ pp g ++ "," ++ pp h ++ ","
+          ++ pp i ++ "," ++ pp j ++ "," ++ pp k ++ "," ++ pp l ++ ","
+          ++ pp m ++ "," ++ pp n ++ "," ++ pp o ++ "," ++ pp p ++ ")"
+
 instance Pretty () where
   pp () = "()"
 
 instance Pretty Bool where
+  pp = show
+
+instance Pretty Integer where
   pp = show
 
 instance Pretty a => Pretty (Maybe a) where
@@ -165,8 +187,19 @@ runP x (i0, o0) (i' : is) = case stepPure x i' of
                                  Right (x' , o') -> (i0 , o0) :> runP x' (i' , o') is
 
 
+trace :: Re i s o a -> (i , s , o) -> [i] -> [(i , s , o)]
+trace d iso0 = toList . run d iso0
+
+
+traceP :: RePure i o a -> (i , o) -> [i] -> [(i , o)]
+traceP d io0 = toList . runP d io0
+
 data WriterPlus w a = w :> WriterPlus w a | w :+> a
 
 instance (Show w , Show a) => Show (WriterPlus w a) where
   show (w :> ws) = show w ++ " :> " ++ show ws
   show (w :+> a) = show w ++ " :+> " ++ show a
+
+toList :: WriterPlus w a -> [w]
+toList (w :> ws) = w : toList ws
+toList (w :+> _) = [w]

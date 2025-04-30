@@ -1,0 +1,54 @@
+device top_level:
+
+inputs [("__in0",1)]
+outputs [("__out0",8)]
+states [("__st0",8)]
+
+$Pure.dispatch :: W8 -> W1 -> W18
+$Pure.dispatch $0 $1 = 18'case {1'$1, 8'$0} of
+    {1'@, 8'@} -> $LL.Main.incr2
+
+$Pure.start :: W18
+$Pure.start  = 18'h20000
+
+$LL.Main.incr17 :: W8 -> W18
+$LL.Main.incr17 $0 = {10'h100, 8'$0}
+
+$LL.Main.incr14 :: W16 -> W18
+$LL.Main.incr14 $0 = 18'case 16'$0 of
+    {8'@, 8'@} -> $LL.Main.incr11
+
+$LL.Main.incr13 :: W18 -> W18
+$LL.Main.incr13 $0 = 18'case 18'$0 of
+    {2'h0, 8'@, 8'@} -> $LL.Main.incr
+
+Main.incr :: W8 -> W18
+Main.incr $0 = 18'case 18'case {8'$0, 8'$0} of
+      {16'@} -> $LL.Main.incr14 of
+    {18'@} -> $LL.Main.incr13
+
+$LL.Main.incr12 :: W8 -> W8 -> W18
+$LL.Main.incr12 $0 $1 = 18'case {8'$0, 8'$1} of
+    {8'@, 8'@} -> $LL.Main.incr8
+
+$LL.Main.incr11 :: W8 -> W8 -> W18
+$LL.Main.incr11 $0 $1 = {2'h0, 8'$0, 8'$1}
+
+$LL.Main.incr8 :: W8 -> W8 -> W18
+$LL.Main.incr8 $0 $1 = {2'h2, 8'$0, 8'$1}
+
+$LL.Main.incr7 :: W8 -> W18 -> W18
+$LL.Main.incr7 $0 $1 = 18'case {8'$0, 18'$1} of
+    {8'@, 2'h1, 8'_, 8'@} -> $LL.Main.incr12
+
+$LL.Main.incr5 :: W8 -> W8 -> W18
+$LL.Main.incr5 $0 $1 = 18'case {8'$0, 18'case 8'$0 of {8'@} -> $LL.Main.incr17} of
+    {8'@, 18'@} -> $LL.Main.incr7
+
+$LL.Main.incr2 :: W1 -> W8 -> W18
+$LL.Main.incr2 $0 $1 = 18'case 8'$1 of
+    {8'@} -> Main.incr
+
+$LL.Main.incr :: W8 -> W8 -> W18
+$LL.Main.incr $0 $1 = 18'case {8'$0, 8'$1} of
+    {8'@, 8'@} -> $LL.Main.incr5

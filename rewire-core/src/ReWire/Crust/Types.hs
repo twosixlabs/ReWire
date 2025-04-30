@@ -1,28 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE Safe #-}
 module ReWire.Crust.Types
-      ( TypeAnnotated (typeOf, tyAnn, setTyAnn), tupleTy
+      ( TypeAnnotated (typeOf, tyAnn, setTyAnn), maybeSetTyAnn, tupleTy
       , arr, intTy, strTy, nilTy, refTy, kmonad, (|->)
-      , rangeTy, flattenArrow, pairTy, arrowRight, arrowLeft
+      , codomTy, flattenArrow, pairTy, arrowRight, arrowLeft
       , higherOrder, fundamental, concrete, paramTys
       , finSz, proxyNat, finiteTy, vecSize, vecElemTy, vecTy, evalNat
       , mkArrowTy, poly, poly', listTy, kblank, plusTy, plus
       , isReacT, isStateT, ctorNames, resInputTy
       , dstArrow, dstStateT, dstTyApp, dstReacT, proxyTy
       , dstNegTy, negTy, dstPoly1, Poly1, minusP1, zeroP1, pickVar, poly1Ty
+      , renumTyVars, prettyTy, synthable
       ) where
 
 import ReWire.Annotation (Annote (MsgAnnote), Annotated (ann), noAnn)
 import ReWire.Crust.Syntax (Exp (..), Ty (..), Poly (Poly), Pat (..), Kind (..), MatchPat (..), flattenTyApp, TyConId)
-import ReWire.Unbound (Name, Embed (Embed), unsafeUnbind, n2s, s2n, fv, bind)
-import ReWire.Pretty (Pretty (pretty), Doc, hsep, text, punctuate, parens, showt)
+import ReWire.Unbound (Name, Embed (Embed), unsafeUnbind, n2s, s2n, fv, bind, makeName, name2Integer)
+import ReWire.Pretty (Pretty (pretty), Doc, hsep, text, punctuate, parens, showt, prettyPrint)
 
+import Control.Monad.State (MonadState, evalState, gets, modify)
 import Data.Containers.ListUtils (nubOrd)
 import Data.HashMap.Strict (HashMap)
 import Data.Hashable (Hashable (hash))
-import Data.List (sortOn)
+import Data.List (sortOn, elemIndex)
 import Data.Maybe (isJust)
 import Data.Ratio (numerator, denominator, (%))
+import Data.Text (Text)
 import Numeric.Natural (Natural)
 
 import qualified Data.HashMap.Strict as Map
@@ -33,6 +37,12 @@ class TypeAnnotated a where
       typeOf   :: a -> Maybe Ty
       tyAnn    :: a -> Maybe Poly
       setTyAnn :: Maybe Poly -> a -> a
+
+-- | Set type annotation only if it is not set already.
+maybeSetTyAnn :: TypeAnnotated a => Maybe Poly -> a -> a
+maybeSetTyAnn tan a = case tyAnn a of
+      Nothing -> setTyAnn tan a
+      Just _  -> a
 
 instance TypeAnnotated Exp where
       typeOf = \ case
@@ -128,7 +138,7 @@ infix 1 |->
 arr :: Ty -> Ty -> Ty
 arr t = TyApp (ann t) (TyApp (ann t) (TyCon (ann t) $ s2n "->") t)
 
-infixr 1 `arr`
+infixr 2 `arr`
 
 flattenArrow :: Ty -> ([Ty], Ty)
 flattenArrow = \ case
@@ -139,11 +149,16 @@ flattenArrow = \ case
 paramTys :: Ty -> [Ty]
 paramTys = fst . flattenArrow
 
-rangeTy :: Ty -> Ty
-rangeTy = snd . flattenArrow
+codomTy :: Ty -> Ty
+codomTy = snd . flattenArrow
 
-isArrow :: Ty -> Bool
-isArrow = isJust . dstArrow
+hasArrow :: Ty -> Bool
+hasArrow = \ case
+      t | isArrow t -> True
+      TyApp _ t1 t2 -> hasArrow t1 || hasArrow t2
+      _             -> False
+      where isArrow :: Ty -> Bool
+            isArrow = isJust . dstArrow
 
 dstArrow :: Ty -> Maybe (Ty, Ty)
 dstArrow = \ case
@@ -242,15 +257,15 @@ tupleTy :: Annote -> [Ty] -> Ty
 tupleTy an = foldr (pairTy an) nilTy
 
 isReacT :: Ty -> Bool
-isReacT = isJust . dstReacT . rangeTy
+isReacT = isJust . dstReacT . codomTy
 
 resInputTy :: Ty -> Maybe Ty
-resInputTy ty = case rangeTy ty of
+resInputTy ty = case codomTy ty of
       TyApp _ (TyApp _ (TyApp _ (TyApp _ (TyCon _ (n2s -> "ReacT")) ip) _) _) _ -> Just ip
       _                                                                         -> Nothing
 
 isStateT :: Ty -> Bool
-isStateT ty = case rangeTy ty of
+isStateT ty = case codomTy ty of
       TyApp an (TyApp _ (TyApp _ (TyCon _ (n2s -> "StateT")) _) m) a -> isStateT (TyApp an m a)
       TyApp _ (TyCon _ (n2s -> "Identity")) _                        -> True
       _                                                              -> False
@@ -303,13 +318,33 @@ fundamental = \ case
       TyCon _ (n2s -> "String")  -> False
       TyCon _ (n2s -> "Integer") -> False
       TyCon _ (n2s -> "[_]")     -> False
-      TyNat {}                   -> True
       TyCon {}                   -> True
+      TyNat {}                   -> True
       TyVar {}                   -> True
       TyApp _ a b                -> fundamental a && fundamental b
 
+-- | Types containing ReacT, StateT, or Identity constructors.
+reacOrStateT :: Ty -> Bool
+reacOrStateT = \ case
+      TyCon _ (n2s -> "ReacT")    -> True
+      TyCon _ (n2s -> "StateT")   -> True
+      TyCon _ (n2s -> "Identity") -> True
+      TyNat {}                    -> False
+      TyCon {}                    -> False
+      TyVar {}                    -> False
+      TyApp _ a b                 -> reacOrStateT a || reacOrStateT b
+
 higherOrder :: Ty -> Bool
-higherOrder (flattenArrow -> (ats, rt)) = any isArrow $ rt : ats
+higherOrder (flattenArrow -> (ats, rt)) = any hasArrow $ rt : ats
+
+-- | These are function types that aren't higher order and don't contain
+--   non-synthesizable types: Strings, Integers, lists, and in params: ReacT,
+--   StateT, Identity. Only synthable expressions are lambda-lifted and
+--   the goal of the "simplify" pass is to eliminate non-synthable defns.
+synthable :: Ty -> Bool
+synthable t = not (higherOrder t)
+           && fundamental t
+           && not (any reacOrStateT $ paramTys t)
 
 -- Degree-1 polynomial with rational coefficients.
 data Poly1 = Poly1 Rational (HashMap (Name Ty) Rational)
@@ -415,3 +450,19 @@ dstPoly1 = \ case
             rdiv = \ case
                   (dstTyBinOp -> Just (n2s -> "/", t, dstRat -> Just r)) -> pure (t, r)
                   _                                                      -> Nothing
+
+prettyTy :: Ty -> Text
+prettyTy = prettyPrint . renumTyVars
+
+-- | Re-number all type var names to make them smaller and prettier (but only
+--   unique within this type and not globally).
+renumTyVars :: Ty -> Ty
+renumTyVars = flip evalState mempty . renum
+      where renum :: MonadState (HashMap Text [Integer]) m => Ty -> m Ty
+            renum = \ case
+                  TyApp an a b -> TyApp an <$> renum a <*> renum b
+                  TyVar an k v -> gets (Map.lookup $ n2s v) >>= \ case
+                        Just ns  | Just n <- elemIndex (name2Integer v) ns -> pure (TyVar an k $ makeName (n2s v) $ fromIntegral n)
+                                 | otherwise                               -> modify (Map.insert (n2s v) (ns <> [name2Integer v])) >> pure (TyVar an k $ makeName (n2s v) $ fromIntegral $ length ns)
+                        Nothing                                            -> modify (Map.insert (n2s v) [name2Integer v]) >> pure (TyVar an k $ makeName (n2s v) 0)
+                  t            -> pure t
