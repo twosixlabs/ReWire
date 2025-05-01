@@ -13,10 +13,11 @@ module Embedder.Atmo.Syntax
       ( Module (..), DataConId (..), TyConId (..)
       , Ty (..), TyBuiltin(..), Poly (..)
       , Exp (..), Pat (..)
-      , Defn (..), DefnAttr (..), DataDefn (..), TypeSynonym (..), DataCon (..)
+      , Defn (..), DefnAttr (..), DataDefn (..), RecDefn (..), TypeSynonym (..)
+      , DataCon (..)
       , FreeProgram, Program (..)
       , FieldId
-      , DataHeader, Binds(..), PatBind(..)
+      , DataHeader, RecHeader, Binds(..), PatBind(..)
       , FunBinding(..) -- Rhs(..), GuardedRhs(..)
       , prettyFP, getPatVars -- getFunBody
       , untype
@@ -28,7 +29,7 @@ import Embedder.Annotation (Annote, Annotated (ann))
 import Embedder.Orphans ()
 import Embedder.Pretty (empty, text, TextShow (showt), FromGeneric (..), Doc,
   nest, hsep, parens, dquotes, comma, brackets, vsep, (<+>), Pretty (pretty),
-  punctuate, line, softline, align)
+  punctuate, line, softline, align, braces, dot)
 import Embedder.SYB (transform)
 import Control.DeepSeq (NFData (..), deepseq)
 import Data.Containers.ListUtils (nubOrdOn)
@@ -43,19 +44,19 @@ import Embedder.Builtins (TyBuiltin (..), RWUserOp, rwu2s)
 import Control.Monad.Identity (Identity(..))
 import Embedder.Error (MonadError, AstError)
 
-data Module = Module ![DataDefn] ![TypeSynonym] ![Defn]
+data Module = Module ![DataDefn] ![RecDefn] ![TypeSynonym] ![Defn]
       deriving (Show, Generic, Data)
       deriving TextShow via FromGeneric Module
 
 instance Pretty Module where
-      pretty (Module cs ts ds) = nest 2 $ vsep (text "module" : map pretty cs <> map pretty ts <> map pretty ds)
+      pretty (Module cs rs ts ds) = nest 2 $ vsep (text "module" : map pretty cs <> map pretty rs <> map pretty ts <> map pretty ds)
 
 instance Semigroup Module where
       -- TODO(chathhorn): shouldn't be necessary
-      (Module a b c) <> (Module a' b' c') = Module (nubOrdOn dataName $ a <> a') (nubOrdOn typeSynName $ b <> b') (nubOrdOn defnName $ c <> c')
+      (Module a b c d) <> (Module a' b' c' d') = Module (nubOrdOn dataName $ a <> a') (nubOrdOn recName $ b <> b') (nubOrdOn typeSynName $ c <> c') (nubOrdOn defnName $ d <> d')
 
 instance Monoid Module where
-      mempty = Module [] [] []
+      mempty = Module [] [] [] []
 
 ---
 
@@ -213,6 +214,9 @@ data Exp = App     Annote !(Maybe Poly) !(Maybe Ty) !Exp ![Exp]
          | Tuple   Annote !(Maybe Poly) !(Maybe Ty) ![Exp]
          | If      Annote !(Maybe Poly) !(Maybe Ty) !Exp !Exp !Exp
          | Let     Annote !(Maybe Poly) !(Maybe Ty) ![PatBind] !Exp
+         | RecVal  Annote !(Maybe Poly) !(Maybe Ty) ![(Text, Exp)]
+         | RecSel  Annote !(Maybe Poly) !(Maybe Ty) Text Exp
+         | RecUpd  Annote !(Maybe Poly) !(Maybe Ty) !Exp ![(Text,Exp)]
       deriving (Generic, Show, Typeable, Data)
       deriving TextShow via FromGeneric Exp
 
@@ -238,6 +242,9 @@ instance Annotated Exp where
             Tuple a _ _ _       -> a
             If a _ _ _ _ _      -> a
             Let a _ _ _ _       -> a
+            RecVal a _ _ _      -> a
+            RecSel a _ _ _ _    -> a
+            RecUpd a _ _ _ _    -> a
 
 -- | Does this exp have a type annotation? Avoids depending on Embedder.Atmo.Types.
 typeAnnotated :: Exp -> Bool
@@ -255,6 +262,9 @@ typeAnnotated = isJust . \ case
       Tuple _ t _ _       -> t
       If _ t _ _ _ _      -> t
       Let _ t _ _ _       -> t
+      RecVal _ t _ _      -> t
+      RecSel _ t _ _ _    -> t
+      RecUpd _ t _ _ _    -> t
 
 instance Parenless Exp where
       parenless = \ case
@@ -287,7 +297,10 @@ instance Pretty Exp where
             Tuple _ pt _ es                            -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty es
             App _ _ _ e es                             -> nest 2 $ hsep $ map mparens (e : es)
             If _ _pt _mt t c a                         -> parens $ "if" <+> pretty t <+> "then" <+> pretty c <+> "else" <+> pretty a
-            Let _ _pt _mt pbs e                 -> parens $ "let" <> softline <> align (vsep $ map pLetBind pbs ++ [ "in" <+> pretty e])
+            Let _ _pt _mt pbs e                        -> parens $ "let" <> softline <> align (vsep $ map pLetBind pbs ++ [ "in" <+> pretty e])
+            RecVal _ _pt _mt fs                        -> braces $ hsep $ punctuate comma $ map (\(f, e) -> text f <+> "=" <+> pretty e) fs
+            RecSel _ _pt _mt f e                       -> pretty e <> dot <> text f
+            RecUpd _ _pt _mt e fs                      -> pretty e <+> braces (hsep $ punctuate comma $ map (\(f, e') -> text f <+> "=" <+> pretty e') fs)
             where
             pLetBind :: PatBind -> Doc ann
             pLetBind (PatBind p e) = pretty p <+> "=" <+> pretty e
@@ -299,6 +312,7 @@ data Pat = PatCon      Annote !(Maybe Poly) !(Maybe Ty) !Text ![Pat]
          | PatWildCard Annote !(Maybe Poly) !(Maybe Ty)
          | PatTuple    Annote !(Maybe Poly) !(Maybe Ty) ![Pat]
          | PatAs       Annote !(Maybe Poly) !(Maybe Ty) !Text !Pat -- should only appear in FunBindings
+         | PatRec      Annote !(Maybe Poly) !(Maybe Ty) ![(Text,Pat)]
       deriving (Eq, Show, Generic, Typeable, Data)
       deriving TextShow via FromGeneric Pat
 
@@ -313,6 +327,7 @@ instance Annotated Pat where
             PatWildCard a _ _ -> a
             PatTuple a _ _ _  -> a
             PatAs a _ _ _ _   -> a
+            PatRec a _ _ _    -> a
 
 instance Parenless Pat where
       parenless = \ case
@@ -329,7 +344,8 @@ instance Pretty Pat where
             PatVar _ pt _ n      -> ppTyAnn pt $ text n
             PatWildCard _ pt _   -> ppTyAnn pt $ text "_"
             PatTuple _ pt _ ps   -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty ps
-            PatAs _ pt _ n p     -> ppTyAnn pt $ parens $ text n <+> "@" <+> parens (pretty p) 
+            PatAs _ pt _ n p     -> ppTyAnn pt $ parens $ text n <+> "@" <+> parens (pretty p)
+            PatRec _ pt _ fs     -> ppTyAnn pt $ parens $ hsep $ punctuate comma $ map pretty fs
 
 ---
 
@@ -379,6 +395,7 @@ getPatVars (PatCon _ _ _ _n ps : ps') = getPatVars ps' >>= \ vs' -> getPatVars p
 getPatVars (PatTuple _ _ _ ps : ps') = getPatVars ps' >>= \ vs' -> getPatVars ps >>= \ vs -> return $ vs ++ vs'
 getPatVars (PatWildCard {} : ps) = getPatVars ps
 getPatVars (PatAs _ _ _ n p : ps) = getPatVars [p] >>= \ vs' -> getPatVars ps >>= \ vs -> return $ n : vs ++ vs'
+getPatVars (PatRec _ _ _ fs : ps) = getPatVars (map snd fs) >>= \ vs' -> getPatVars ps >>= \ vs -> return $ vs ++ vs'
 
 -- getFunBody :: (MonadError AstError m) => Rhs -> m Exp
 -- getFunBody (UnGuardedRhs _ e) = return e
@@ -445,6 +462,33 @@ instance Pretty DataDefn where
 
 ---
 
+-- RecDefn, a specialized version of DataDefn
+
+-- this is just a synonym for the dataName and dataVars of a DataDefn
+type RecHeader = (Text,[Text])
+
+data RecDefn = RecDefn
+      { recAnnote :: Annote
+      , recName   :: !Text
+      , recVars   :: ![Text]
+      , recPoly   :: !Poly
+      , recFields :: ![(Text, Ty)]
+      }
+      deriving (Eq, Generic, Show, Typeable, Data)
+      deriving TextShow via FromGeneric RecDefn
+
+instance NFData RecDefn
+
+instance Annotated RecDefn where
+      ann (RecDefn a _ _ _ _) = a
+
+instance Pretty RecDefn where
+      pretty (RecDefn _ n tvs _ fs) = nest 2 $ vsep
+            $ (text "record" <+> text n <+> hsep (map text tvs) <+> text "where")
+            : map (\ (f,t) -> nest 2 $ pretty f <+> "::" <+> pretty t) fs
+
+---
+
 data TypeSynonym = TypeSynonym
       { typeSynAnnote :: Annote
       , typeSynName   :: !Text
@@ -465,9 +509,9 @@ instance Pretty TypeSynonym where
             pure (text "type" <+> text n <+> hsep (map text tvs) <+> "=" <+> pretty t)
 ---
 
-type FreeProgram = ([DataDefn], [TypeSynonym], [Defn])
+type FreeProgram = ([DataDefn], [RecDefn], [TypeSynonym], [Defn])
 
-newtype Program = Program ([DataDefn], [TypeSynonym], [Defn])
+newtype Program = Program ([DataDefn], [RecDefn], [TypeSynonym], [Defn])
       deriving (Generic, Show, Typeable)
 
 instance NFData Program where
@@ -487,5 +531,5 @@ ppTyAnn (Just pt) d = d <+> text "::" <+> pretty pt
 
 -- TODO(chathhorn): make FreeProgram newtype.
 prettyFP :: FreeProgram -> Doc ann
-prettyFP (ts, syns, vs) = vsep $ intersperse empty $ map pretty ts <> map pretty syns <> map pretty vs
+prettyFP (ts, rs, syns, vs) = vsep $ intersperse empty $ map pretty ts <> map pretty rs <> map pretty syns <> map pretty vs
 

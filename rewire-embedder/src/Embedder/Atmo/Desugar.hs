@@ -347,7 +347,7 @@ desugarTuples = mempty
 desugarFuns :: (MonadState Fresh m, MonadError AstError m) => Desugar m
 desugarFuns = mempty
       { dsModule = TM $ \ case
-            Module prags imps ds -> Module prags imps <$> mapM (desugarFun $ tySigMap ds) ds
+            Module prags recs imps ds -> Module prags recs imps <$> mapM (desugarFun $ tySigMap ds) ds
       , dsBinds = TM $ \ case
             BDefs ds               -> BDefs <$> mapM (desugarFun $ tySigMap ds) ds
       }

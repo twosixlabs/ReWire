@@ -6,6 +6,7 @@ module Embedder.Atmo.Util
       , flattenTuple, mkTuple, mkTuplePat
       , mkPair, mkPairPat, flattenLam, mkLam
       , mkApp, mkError, builtin, proxy, tybuiltin, userBuiltin, mkTupleCtor, isTupleCtor
+      , mkRecVal, mkRecUpd, mkRecSel, mkPatRec
       ) where
 
 import Embedder.Annotation (Annote (MsgAnnote))
@@ -116,3 +117,19 @@ mkLam an t = Lam an Nothing (Just t)
 
 -- mkLam :: Annote -> [(Ty, Text)] -> Exp -> Exp
 -- mkLam an vs b = foldr (\ (t, v) e -> Lam an Nothing (Just t) v e) b vs
+
+
+-- Record helpers for construction
+mkRecVal :: Annote -> [(Text, Exp)] -> Exp
+mkRecVal an fields = RecVal an Nothing Nothing fields
+
+mkRecUpd :: Annote -> Exp -> [(Text, Exp)] -> Exp
+mkRecUpd an rec fields = RecUpd an Nothing Nothing rec fields
+
+mkRecSel :: Annote -> Text -> Exp -> Exp
+mkRecSel an field rec = RecSel an Nothing Nothing field rec
+
+-- Record pattern helper
+mkPatRec :: Annote -> [(Text, Pat)] -> Pat
+mkPatRec an fields = PatRec an Nothing Nothing fields
+

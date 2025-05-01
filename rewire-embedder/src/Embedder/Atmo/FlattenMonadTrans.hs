@@ -32,7 +32,7 @@ transMonadT = \ case
             -- let _ = trace "transMonadT : Found applied ReacT" ()
             let s = mkState an (getStates m)
             in TyApp an (TyBuiltin an TyRe) [i,o,s,a]
-      TyApp an (TyBuiltin _ TyStateT) [s,m@(TyVar {}),a] ->
+      TyApp an (TyBuiltin _ TyStateT) [s,TyVar {},a] ->
             -- trace "transMonadT: Interior monad variable won't work" $ 
             TyApp an (TyBuiltin an TyState) [TyTuple an [s,TyTuple an []],a]
       TyApp an (TyBuiltin _ TyStateT) [s,m,a] -> 
@@ -55,7 +55,7 @@ getStates :: Ty -> [Ty]
 getStates = \ case
       TyApp _ (TyBuiltin _ TyStateT) [s,m] -> s : getStates m
       (TyBuiltin _ TyIdentity) -> []
-      t -> -- trace ("getStates: unidentified monad: " <> show (pretty t))
+      _ -> -- trace ("getStates: unidentified monad: " <> show (pretty t))
             []
 
 mkState :: Annote -> [Ty] -> Ty

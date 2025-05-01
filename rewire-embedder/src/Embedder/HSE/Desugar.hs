@@ -83,7 +83,7 @@ desugar rn = flip evalStateT 0 .
            <> desugarDos -- (opt) Move this to Atmo
            <> desugarInfix
            <> desugarFuns       -- 3. Moved the simple case to Atmo
-           <> desugarRecords rn -- (opt) Move this to Atmo
+      --     <> desugarRecords rn -- (opt) Move this to Atmo
             )
       >=> pass flattenLambdas -- (opt) because this is a prereq of the next pass, we'll wait on this.
       >=> pass

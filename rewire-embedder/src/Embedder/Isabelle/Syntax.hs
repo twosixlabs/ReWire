@@ -225,6 +225,9 @@ data Term =
                 secondTerm :: Term }
       | Tuplex [Term]
       | List   [Term]
+      | RecordVal [(Text, Term)]
+      | RecordUpdate Term [(Text, Term)]
+      | RecordSel Text Term
       | TypAnnTerm { termId :: Term, 
                      typAnn :: Typ}
       deriving (Eq, Ord, Show, Typeable, Data)
@@ -246,6 +249,9 @@ atomic = \ case
        Tuplex es   -> all atomic es
        List es     -> all atomic es
        TypAnnTerm e _ -> atomic e
+       RecordVal fields -> Prelude.length fields <= 4 && all (atomic . snd) fields 
+       RecordUpdate {} -> True
+       RecordSel {} -> True
 
 
 selfGroup :: Term -> Bool
@@ -264,6 +270,9 @@ selfGroup = \ case
        IsaEq _ _   -> False
        Tuplex _    -> True
        List _      -> True
+       RecordVal {}     -> True
+       RecordUpdate {}  -> True
+       RecordSel {}     -> False
        TypAnnTerm {} -> True
 
 
@@ -478,6 +487,15 @@ prettyTerm = \ case
      LitVec _es -> text "LitVec" -- something like 3w.[ a, b, c ]
      Let _bs _e -> text "Let" -- not needed yet
      IsaEq _e1 _e2 -> text "IsaEq" -- not needed yet
+     RecordVal fields -> text "⦇" <> P.hsep (punctuate comma (map ppField fields)) <> text "⦈"
+          where
+          ppField (f, t) = text f <+> text "=" <+> pretty t
+
+     RecordUpdate rec fields -> pretty rec <> text "⦇" <> P.hsep (punctuate comma (map ppUpd fields)) <> text "⦈"
+          where
+          ppUpd (f, t) = text f <+> text ":=" <+> pretty t
+
+     RecordSel f t -> pretty t <> text "." <> text f
 
 
 
@@ -488,6 +506,7 @@ data Pttrn = PttrnWildCard (Maybe Typ)
            | PttrnCon VName (Maybe Typ) [Pttrn]
            | PttrnTuple (Maybe Typ) [Pttrn]
            | PttrnAs (Maybe Typ) Pttrn VName
+           | PttrnRecord (Maybe Typ) [(Text, Pttrn)]
         deriving (Eq, Ord, Show, Typeable, Data)
 
 instance Pretty Pttrn where
@@ -502,6 +521,13 @@ instance Pretty Pttrn where
     PttrnTuple (Just t) ps -> tyAnn (printTuple ps) (pretty t)
     PttrnAs Nothing p n -> parens $ pretty p <+> text "=:" <+> text n
     PttrnAs (Just t) p n -> tyAnn (parens (pretty p <+> text "=:" <+> text n)) (pretty t)
+    PttrnRecord Nothing fields -> text "⦇" <> P.hsep (punctuate comma (map ppField fields)) <> text "⦈"
+      where
+        ppField (f, p) = text f <+> text "=" <+> pretty p
+    PttrnRecord (Just t) fields -> tyAnn (text "⦇" <> P.hsep (punctuate comma (map ppField fields)) <> text "⦈") (pretty t)
+      where
+        ppField (f, p) = text f <+> text "=" <+> pretty p
+
 
 
 
@@ -557,12 +583,16 @@ data Decl =
       datatypeName :: Text,
       datatypeTVars :: [TName],
       datatypeConstructors :: [DatatypeConstructor] }
+  | Record { 
+      recordName :: Text, 
+      recordTVars :: [Text], 
+      recordFields :: [(Text, Typ)] }
   | TypeSynonym Text [Text] Typ
   | Definition {
-     definitionName :: Text,
-     definitionType :: TypSig,
-     definitionVars :: [Term],
-     definitionTerm :: Term }
+      definitionName :: Text,
+      definitionType :: TypSig,
+      definitionVars :: [Term],
+      definitionTerm :: Term }
   | Fun { funEquations :: [(Text, TypSig, [([Pttrn], Term)])] }
     deriving (Eq, Ord, Show, Typeable, Data)
 
@@ -570,7 +600,10 @@ instance Pretty Decl where
   pretty = \ case
     Datatype name tvs cons ->
       text "datatype" <+> pretty (Type name (map TVar tvs)) <+> P.align ("="
-         <+> P.vsep (punctuate " |" (map pretty cons)) <> P.line)
+          <+> P.vsep (punctuate " |" (map pretty cons))) <> P.line
+    Record name tvs fields ->
+      P.nest 2 $ text "record" <+> pretty (Type name (map TVar tvs)) <+> text "="
+          $+$ (P.vsep (map (\(f, t) -> text f <+> "::" <+> dquotes (pretty t)) fields)) <> P.line
     TypeSynonym name args ty ->
       text "type_synonym" <+> pretty (Type name (map TVar args)) <+> "=" <+> dquotes (pretty ty) <> P.line
     Definition name ty vs t ->

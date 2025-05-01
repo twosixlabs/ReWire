@@ -1,0 +1,467 @@
+module
+  data ReWire.Prelude.Maybe a where
+    ReWire.Prelude.Nothing :: (ReWire.Prelude.Maybe a)
+    ReWire.Prelude.Just :: (a -> (ReWire.Prelude.Maybe a))
+  data ReWire.Prelude.Either a b where
+    ReWire.Prelude.Left :: (a -> (ReWire.Prelude.Either a b))
+    ReWire.Prelude.Right :: (b -> (ReWire.Prelude.Either a b))
+  data R_  where
+  data A_  where
+  data Proxy n where
+    Proxy :: (Proxy n)
+  data Ref a where
+    Ref :: (String -> (Ref a))
+  data PuRe s o where
+    Done :: ((A_, s) -> (PuRe s o))
+    Pause :: ((o, (R_, s)) -> (PuRe s o))
+  record Main.SRec  where
+    f1 :: ReWire.Bit
+    f2 :: ReWire.Bit
+    f3 :: (ReWire.Bit, ReWire.Bit)
+  type ReWire.Bit  = Bool
+  type ReWire.W n = (Vec n ReWire.Bit)
+  type ReWire.Bits.Lit  = (ReWire.W 128)
+  type ReWire.Monad.Dev i o = (ReacT i o (Identity) ())
+  type ReWire.Monad.StateDev i o m = (ReacT i o m ())
+  Main.x :: (Main.SRec -> ReWire.Bit)
+  d |-> Main.f1 d
+  Main.y :: (Main.SRec -> ReWire.Bit)
+  d |-> Main.f2 d
+  Main.z :: (Main.SRec -> (ReWire.Bit, ReWire.Bit))
+  d |-> Main.f3 d
+  Main.foo :: (Main.SRec -> Main.SRec)
+  ((f1, a), (f2, b), (f3, c)) |-> {f1 = b, f2 = a, f3 = c}
+  Main.bar :: (Main.SRec -> Main.SRec)
+  s |-> s {f1 = False, f2 = True, f3 = (False, True)}
+  Main.compute :: (ReWire.Bit -> ReWire.Bit)
+  _ |-> $ Main.x ($ Main.foo (Main.bar ({f1 = False, f2 = False, f3 = (False, False)})))
+  Main.start :: (Dev ReWire.Bit ReWire.Bit)
+   |-> ReWire.Monad.iter Main.compute False
+  Main.main :: a
+   |-> ReWire.Prelude.undefined
+  {-# INLINE ReWire.Prelude.id #-}
+  ReWire.Prelude.id :: (a -> a)
+  x |-> x
+  {-# INLINE ReWire.Prelude.const #-}
+  ReWire.Prelude.const :: (a -> (b -> a))
+  x _ |-> x
+  {-# INLINE ReWire.Prelude.. #-}
+  ReWire.Prelude.. :: (((b -> c)) -> (((a -> b)) -> (a -> c)))
+  f g |-> \ x -> f (g x)
+  {-# INLINE ReWire.Prelude.flip #-}
+  ReWire.Prelude.flip :: (((a -> (b -> c))) -> (b -> (a -> c)))
+  f x y |-> f y x
+  {-# INLINE ReWire.Prelude.$ #-}
+  ReWire.Prelude.$ :: (((a -> b)) -> (a -> b))
+  f x |-> f x
+  ReWire.Prelude.&& :: (Bool -> (Bool -> Bool))
+  True  b |-> b
+  False  _ |-> False
+  ReWire.Prelude.|| :: (Bool -> (Bool -> Bool))
+  True  _ |-> True
+  False  b |-> b
+  ReWire.Prelude.not :: (Bool -> Bool)
+  True  |-> False
+  False  |-> True
+  {-# INLINE ReWire.Prelude.otherwise #-}
+  ReWire.Prelude.otherwise :: Bool
+   |-> True
+  {-# INLINE ReWire.Prelude.maybe #-}
+  ReWire.Prelude.maybe :: (b -> (((a -> b)) -> ((ReWire.Prelude.Maybe a) -> b)))
+  n _ ReWire.Prelude.Nothing  |-> n
+  _ f ReWire.Prelude.Just x |-> f x
+  {-# INLINE ReWire.Prelude.either #-}
+  ReWire.Prelude.either :: (((a -> c)) -> (((b -> c)) -> ((ReWire.Prelude.Either a b) -> c)))
+  f _ ReWire.Prelude.Left x |-> f x
+  _ g ReWire.Prelude.Right y |-> g y
+  {-# INLINE ReWire.Prelude.fst #-}
+  ReWire.Prelude.fst :: ((a, b) -> a)
+  (x, _) |-> x
+  {-# INLINE ReWire.Prelude.snd #-}
+  ReWire.Prelude.snd :: ((a, b) -> b)
+  (_, y) |-> y
+  {-# INLINE ReWire.Prelude.curry #-}
+  ReWire.Prelude.curry :: ((((a, b) -> c)) -> (a -> (b -> c)))
+  f x y |-> f (x, y)
+  {-# INLINE ReWire.Prelude.uncurry #-}
+  ReWire.Prelude.uncurry :: (((a -> (b -> c))) -> ((a, b) -> c))
+  f p |-> f (ReWire.Prelude.fst p) (ReWire.Prelude.snd p)
+  {-# INLINE ReWire.Prelude.undefined #-}
+  ReWire.Prelude.undefined :: a
+   |-> error "undefined"
+  {-# INLINE ReWire.Prelude.return #-}
+  ReWire.Prelude.return :: (a -> (m a))
+   |-> return
+  {-# INLINE ReWire.Prelude.pure #-}
+  ReWire.Prelude.pure :: (a -> (m a))
+   |-> return
+  {-# INLINE ReWire.Prelude.>>= #-}
+  ReWire.Prelude.>>= :: ((m a) -> (((a -> (m b))) -> (m b)))
+   |-> >>=
+  {-# INLINE ReWire.Prelude.=<< #-}
+  ReWire.Prelude.=<< :: (((a -> (m b))) -> ((m a) -> (m b)))
+   |-> ReWire.Prelude.flip >>=
+  {-# INLINE ReWire.Prelude.>> #-}
+  ReWire.Prelude.>> :: ((m a) -> ((m b) -> (m b)))
+  ma mb |-> >>= ma (\ $0 -> case $0 of
+      [$1 mb])
+  {-# INLINE ReWire.error #-}
+  ReWire.error :: (String -> a)
+   |-> error
+  {-# INLINE ReWire.externWithSig #-}
+  ReWire.externWithSig :: ([(String, Integer)] -> (String -> (String -> ([(String, Integer)] -> ([(String, Integer)] -> (String -> (a -> (String -> a))))))))
+   |-> externWithSig
+  {-# INLINE ReWire.extern #-}
+  ReWire.extern :: (String -> (a -> a))
+  n a |-> externWithSig [] "" "" [] [] n a ""
+  {-# INLINE ReWire.setRef #-}
+  ReWire.setRef :: ((Ref a) -> (a -> (b -> b)))
+   |-> setRef
+  {-# INLINE ReWire.getRef #-}
+  ReWire.getRef :: ((Ref a) -> a)
+   |-> getRef
+  {-# INLINE ReWire.put #-}
+  ReWire.put :: (s -> (StateT s m ()))
+   |-> put
+  {-# INLINE ReWire.get #-}
+  ReWire.get :: (StateT s m s)
+   |-> get
+  {-# INLINE ReWire.modify #-}
+  ReWire.modify :: (((s -> s)) -> (StateT s m ()))
+  f |-> >>= get (\ x -> put (f x))
+  {-# INLINE ReWire.signal #-}
+  ReWire.signal :: (o -> (ReacT i o m i))
+   |-> signal
+  {-# INLINE ReWire.lift #-}
+  ReWire.lift :: ((m a) -> (t m a))
+   |-> lift
+  {-# INLINE ReWire.extrude #-}
+  ReWire.extrude :: ((ReacT i o ((StateT s m)) a) -> (s -> (ReacT i o m a)))
+   |-> extrude
+  {-# INLINE ReWire.unfold #-}
+  ReWire.unfold :: ((((R_, s) -> (i -> (PuRe s o)))) -> ((PuRe s o) -> (ReacT i o (Identity) ())))
+   |-> unfold
+  {-# INLINE ReWire.natVal #-}
+  ReWire.natVal :: ((Proxy n) -> Integer)
+   |-> natVal
+  {-# INLINE ReWire.length #-}
+  ReWire.length :: ((Vec n a) -> (Proxy n))
+  _ |-> Proxy
+  {-# INLINE ReWire.len #-}
+  ReWire.len :: ((Vec n a) -> Integer)
+  v |-> natVal (ReWire.length v)
+  {-# INLINE ReWire.fromList #-}
+  ReWire.fromList :: ([a] -> (Vec n a))
+   |-> fromList
+  rwPrimError :: (String -> a)
+   |-> error "Prim: rwPrimError"
+  rwPrimExtern :: ([(String, Integer)] -> (String -> (String -> ([(String, Integer)] -> ([(String, Integer)] -> (String -> (a -> (String -> a))))))))
+  _ _ _ _ _ _ f _ |-> error "Prim: rwPrimExtern"
+  rwPrimSetRef :: ((Ref a) -> (a -> (b -> b)))
+  _ _ b |-> error "Prim: rwPrimSetRef"
+  rwPrimGetRef :: ((Ref a) -> a)
+   |-> error "Prim: rwPrimGetRef"
+  rwPrimBind :: ((m a) -> (((a -> (m b))) -> (m b)))
+   |-> error "Prim: rwPrimBind"
+  rwPrimReturn :: (a -> (m a))
+   |-> error "Prim: rwPrimReturn"
+  rwPrimPut :: (s -> (StateT s m ()))
+   |-> error "Prim: rwPrimPut"
+  rwPrimGet :: (StateT s m s)
+   |-> error "Prim: rwPrimGet"
+  rwPrimSignal :: (o -> (ReacT i o m i))
+   |-> error "Prim: rwPrimSignal"
+  rwPrimLift :: ((m a) -> (t m a))
+   |-> error "Prim: rwPrimLift"
+  rwPrimExtrude :: ((ReacT i o ((StateT s m)) a) -> (s -> (ReacT i o m a)))
+  GHC.ReacT (GHC.StateT m) s |-> error "Prim: rwPrimExtrude"
+  rwPrimUnfold :: ((((R_, s) -> (i -> (PuRe s o)))) -> ((PuRe s o) -> (ReacT i o (Identity) ())))
+  _ Done _ |-> error "Prim: rwPrimUnfold"
+  f Pause (o, b) |-> error "Prim: rwPrimUnfold"
+  rwPrimFinite :: (Integer -> (Finite n))
+   |-> error "Prim: rwPrimFinite"
+  rwPrimFiniteMinBound :: (Finite n)
+   |-> error "Prim: rwPrimFiniteMinBound"
+  rwPrimFiniteMaxBound :: (Finite n)
+   |-> error "Prim: rwPrimFiniteMaxBound"
+  rwPrimToFinite :: ((Vec m Bool) -> (Finite n))
+   |-> error "Prim: rwPrimToFinite"
+  rwPrimToFiniteMod :: ((Vec m Bool) -> (Finite n))
+  v |-> error "Prim: rwPrimToFiniteMod"
+  rwPrimFromFinite :: ((Finite n) -> (Vec m Bool))
+   |-> error "Prim: rwPrimFromFinite"
+  rwPrimVecFromList :: ([a] -> (Vec n a))
+  v |-> error "Prim: rwPrimVecFromList"
+  rwPrimVecReplicate :: (a -> (Vec n a))
+   |-> error "Prim: rwPrimVecReplicate"
+  rwPrimVecReverse :: ((Vec n a) -> (Vec n a))
+   |-> error "Prim: rwPrimVecReverse"
+  rwPrimVecSlice :: ((Proxy i) -> ((Vec ((+ ((+ i n)) m)) a) -> (Vec n a)))
+   |-> error "Prim: rwPrimVecSlice"
+  rwPrimVecRSlice :: ((Proxy i) -> ((Vec ((+ ((+ i n)) m)) a) -> (Vec n a)))
+  i |-> error "Prim: rwPrimVecRSlice"
+  rwPrimVecIndex :: ((Vec n a) -> ((Finite n) -> a))
+   |-> error "Prim: rwPrimVecIndex"
+  rwPrimVecIndexProxy :: ((Vec ((+ ((+ n m)) 1)) a) -> ((Proxy n) -> a))
+   |-> error "Prim: rwPrimVecIndexProxy"
+  rwPrimVecMap :: (((a -> b)) -> ((Vec n a) -> (Vec n b)))
+   |-> error "Prim: rwPrimVecMap"
+  rwPrimVecGenerate :: ((((Finite n) -> a)) -> (Vec n a))
+   |-> error "Prim: rwPrimVecGenerate"
+  rwPrimVecConcat :: ((Vec n a) -> ((Vec m a) -> (Vec ((+ n m)) a)))
+   |-> error "Prim: rwPrimVecConcat"
+  rwPrimBits :: (Integer -> (Vec 128 Bool))
+   |-> error "Prim: rwPrimBits"
+  rwPrimResize :: ((Vec n Bool) -> (Vec m Bool))
+  v |-> error "Prim: rwPrimResize"
+  rwPrimSignextend :: ((Vec n Bool) -> (Vec m Bool))
+  v |-> error "Prim: rwPrimSignextend"
+  rwPrimVecUpdate :: ((Vec n a) -> ((Finite n) -> (a -> (Vec n a))))
+  v i a |-> error "Prim: rwPrimVecUpdate"
+  rwPrimNatVal :: ((Proxy n) -> Integer)
+   |-> error "Prim: rwPrimNatVal"
+  rwPrimBitSlice :: ((Vec n Bool) -> ((Finite n) -> ((Finite n) -> (Vec m Bool))))
+  v j i |-> error "Prim: rwPrimBitSlice"
+  rwPrimBitIndex :: ((Vec n Bool) -> ((Finite n) -> Bool))
+   |-> error "Prim: rwPrimBitIndex"
+  rwPrimAdd :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v w |-> error "Prim: rwPrimAdd"
+  rwPrimSub :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v w |-> error "Prim: rwPrimSub"
+  rwPrimMul :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v w |-> error "Prim: rwPrimMul"
+  rwPrimDiv :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v w |-> error "Prim: rwPrimDiv"
+  rwPrimMod :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v w |-> error "Prim: rwPrimMod"
+  rwPrimPow :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v w |-> error "Prim: rwPrimPow"
+  rwPrimLAnd :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimLAnd"
+  rwPrimLOr :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimLOr"
+  rwPrimLNot :: ((Vec n Bool) -> Bool)
+  v |-> error "Prim: rwPrimLNot"
+  rwPrimAnd :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+   |-> error "Prim: rwPrimAnd"
+  rwPrimOr :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+   |-> error "Prim: rwPrimOr"
+  rwPrimNot :: ((Vec n Bool) -> (Vec n Bool))
+   |-> error "Prim: rwPrimNot"
+  rwPrimXOr :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+   |-> error "Prim: rwPrimXOr"
+  rwPrimXNor :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+   |-> error "Prim: rwPrimXNor"
+  rwPrimLShift :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v i |-> error "Prim: rwPrimLShift"
+  rwPrimRShift :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v i |-> error "Prim: rwPrimRShift"
+  rwPrimRShiftArith :: ((Vec n Bool) -> ((Vec n Bool) -> (Vec n Bool)))
+  v i |-> error "Prim: rwPrimRShiftArith"
+  rwPrimEq :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimEq"
+  rwPrimGt :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimGt"
+  rwPrimGtEq :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimGtEq"
+  rwPrimLt :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimLt"
+  rwPrimLtEq :: ((Vec n Bool) -> ((Vec n Bool) -> Bool))
+  v w |-> error "Prim: rwPrimLtEq"
+  rwPrimRAnd :: ((Vec n Bool) -> Bool)
+   |-> error "Prim: rwPrimRAnd"
+  rwPrimRNAnd :: ((Vec ((+ 1 n)) Bool) -> Bool)
+   |-> error "Prim: rwPrimRNAnd"
+  rwPrimROr :: ((Vec n Bool) -> Bool)
+   |-> error "Prim: rwPrimROr"
+  rwPrimRNor :: ((Vec ((+ 1 n)) Bool) -> Bool)
+   |-> error "Prim: rwPrimRNor"
+  rwPrimRXOr :: ((Vec ((+ 1 n)) Bool) -> Bool)
+   |-> error "Prim: rwPrimRXOr"
+  rwPrimRXNor :: ((Vec ((+ 1 n)) Bool) -> Bool)
+   |-> error "Prim: rwPrimRXNor"
+  rwPrimMSBit :: ((Vec ((+ 1 n)) Bool) -> Bool)
+   |-> error "Prim: rwPrimMSBit"
+  rwPrimToInteger :: ((Vec n Bool) -> Integer)
+   |-> error "Prim: rwPrimToInteger"
+  ReWire.Bits.zero :: ReWire.Bit
+   |-> False
+  ReWire.Bits.one :: ReWire.Bit
+   |-> True
+  {-# INLINE ReWire.Bits.bit #-}
+  ReWire.Bits.bit :: ((ReWire.W 1) -> ReWire.Bit)
+   |-> msbit
+  {-# INLINE ReWire.Bits.toInteger #-}
+  ReWire.Bits.toInteger :: ((ReWire.W n) -> Integer)
+   |-> rwPrimToInteger
+  {-# INLINE ReWire.Bits.@@ #-}
+  ReWire.Bits.@@ :: ((ReWire.W n) -> ((Integer, Integer) -> (ReWire.W m)))
+  a (j, i) |-> ReWire.Bits.bitSlice a j i
+  {-# INLINE ReWire.Bits.@. #-}
+  ReWire.Bits.@. :: ((ReWire.W n) -> (Integer -> ReWire.Bit))
+  a i |-> ReWire.Bits.bitIndex a i
+  {-# INLINE ReWire.Bits.lit #-}
+  ReWire.Bits.lit :: (Integer -> (ReWire.W n))
+  i |-> resize (rwPrimBits i)
+  {-# INLINE ReWire.Bits.resize #-}
+  ReWire.Bits.resize :: ((ReWire.W n) -> (ReWire.W m))
+   |-> resize
+  {-# INLINE ReWire.Bits.sext #-}
+  ReWire.Bits.sext :: ((ReWire.W n) -> (ReWire.W m))
+   |-> rwPrimSignextend
+  {-# INLINE ReWire.Bits.bitSlice #-}
+  ReWire.Bits.bitSlice :: ((ReWire.W n) -> (Integer -> (Integer -> (ReWire.W m))))
+  v j i |-> finBitSlice v (finite j) (finite i)
+  {-# INLINE ReWire.Bits.bitIndex #-}
+  ReWire.Bits.bitIndex :: ((ReWire.W n) -> (Integer -> ReWire.Bit))
+  v i |-> finBitIndex v (finite i)
+  {-# INLINE ReWire.Bits.finBitSlice #-}
+  ReWire.Bits.finBitSlice :: ((ReWire.W n) -> ((Finite n) -> ((Finite n) -> (ReWire.W m))))
+   |-> finBitSlice
+  {-# INLINE ReWire.Bits.finBitIndex #-}
+  ReWire.Bits.finBitIndex :: ((ReWire.W n) -> ((Finite n) -> ReWire.Bit))
+   |-> finBitIndex
+  {-# INLINE ReWire.Bits.+ #-}
+  ReWire.Bits.+ :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> +
+  {-# INLINE ReWire.Bits.- #-}
+  ReWire.Bits.- :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> -
+  {-# INLINE ReWire.Bits.* #-}
+  ReWire.Bits.* :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> *
+  {-# INLINE ReWire.Bits./ #-}
+  ReWire.Bits./ :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> /
+  {-# INLINE ReWire.Bits.% #-}
+  ReWire.Bits.% :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> %
+  {-# INLINE ReWire.Bits.** #-}
+  ReWire.Bits.** :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> **
+  {-# INLINE ReWire.Bits.&&& #-}
+  ReWire.Bits.&&& :: (Bool -> (Bool -> Bool))
+  a b |-> $ msbit (.&. (fromList [a]) (fromList [b]))
+  {-# INLINE ReWire.Bits.||| #-}
+  ReWire.Bits.||| :: (Bool -> (Bool -> Bool))
+  a b |-> $ msbit (.|. (fromList [a]) (fromList [b]))
+  {-# INLINE ReWire.Bits.&&. #-}
+  ReWire.Bits.&&. :: ((ReWire.W n) -> ((ReWire.W n) -> Bool))
+   |-> &&.
+  {-# INLINE ReWire.Bits.||. #-}
+  ReWire.Bits.||. :: ((ReWire.W n) -> ((ReWire.W n) -> Bool))
+   |-> ||.
+  {-# INLINE ReWire.Bits.lnot #-}
+  ReWire.Bits.lnot :: ((ReWire.W n) -> ReWire.Bit)
+   |-> lnot
+  {-# INLINE ReWire.Bits..&. #-}
+  ReWire.Bits..&. :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> .&.
+  {-# INLINE ReWire.Bits..|. #-}
+  ReWire.Bits..|. :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> .|.
+  {-# INLINE ReWire.Bits.bnot #-}
+  ReWire.Bits.bnot :: ((ReWire.W n) -> (ReWire.W n))
+   |-> bnot
+  {-# INLINE ReWire.Bits.^ #-}
+  ReWire.Bits.^ :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> ^
+  {-# INLINE ReWire.Bits.xor #-}
+  ReWire.Bits.xor :: (Bool -> (Bool -> Bool))
+  a b |-> $ msbit (^ (fromList [a]) (fromList [b]))
+  {-# INLINE ReWire.Bits.~^ #-}
+  ReWire.Bits.~^ :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> ~^
+  {-# INLINE ReWire.Bits.<<. #-}
+  ReWire.Bits.<<. :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> <<.
+  {-# INLINE ReWire.Bits.>>. #-}
+  ReWire.Bits.>>. :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> >>.
+  {-# INLINE ReWire.Bits.>>> #-}
+  ReWire.Bits.>>> :: ((ReWire.W n) -> ((ReWire.W n) -> (ReWire.W n)))
+   |-> >>>
+  {-# INLINE ReWire.Bits.rotR #-}
+  ReWire.Bits.rotR :: ((ReWire.W m) -> ((ReWire.W m) -> (ReWire.W m)))
+  n w |-> .|. (>>. w n) (<<. w (- (ReWire.Bits.lit (ReWire.len w)) n))
+  {-# INLINE ReWire.Bits.rotL #-}
+  ReWire.Bits.rotL :: ((ReWire.W m) -> ((ReWire.W m) -> (ReWire.W m)))
+  n w |-> .|. (<<. w n) (>>. w (- (ReWire.Bits.lit (ReWire.len w)) n))
+  {-# INLINE ReWire.Bits.== #-}
+  ReWire.Bits.== :: ((ReWire.W n) -> ((ReWire.W n) -> Bool))
+   |-> ==
+  {-# INLINE ReWire.Bits./= #-}
+  ReWire.Bits./= :: ((ReWire.W n) -> ((ReWire.W n) -> Bool))
+  a b |-> ReWire.Prelude.not (== a b)
+  {-# INLINE ReWire.Bits.> #-}
+  ReWire.Bits.> :: ((ReWire.W n) -> ((ReWire.W n) -> Bool))
+   |-> >
+  {-# INLINE ReWire.Bits.>= #-}
+  ReWire.Bits.>= :: ((ReWire.W n) -> ((ReWire.W n) -> Bool))
+   |-> >=
+  {-# INLINE ReWire.Bits.< #-}
+  ReWire.Bits.< :: ((ReWire.W n) -> ((ReWire.W n) -> ReWire.Bit))
+   |-> <
+  {-# INLINE ReWire.Bits.<= #-}
+  ReWire.Bits.<= :: ((ReWire.W n) -> ((ReWire.W n) -> ReWire.Bit))
+   |-> <=
+  {-# INLINE ReWire.Bits.<> #-}
+  ReWire.Bits.<> :: ((ReWire.W n) -> ((ReWire.W m) -> (ReWire.W ((+ n m)))))
+   |-> ++
+  {-# INLINE ReWire.Bits.rAnd #-}
+  ReWire.Bits.rAnd :: ((ReWire.W n) -> ReWire.Bit)
+   |-> rAnd
+  {-# INLINE ReWire.Bits.rNAnd #-}
+  ReWire.Bits.rNAnd :: ((ReWire.W ((+ 1 n))) -> ReWire.Bit)
+   |-> rNAnd
+  {-# INLINE ReWire.Bits.rOr #-}
+  ReWire.Bits.rOr :: ((ReWire.W n) -> ReWire.Bit)
+   |-> rOr
+  {-# INLINE ReWire.Bits.rNor #-}
+  ReWire.Bits.rNor :: ((ReWire.W ((+ 1 n))) -> ReWire.Bit)
+   |-> rNor
+  {-# INLINE ReWire.Bits.rXOr #-}
+  ReWire.Bits.rXOr :: ((ReWire.W ((+ 1 n))) -> ReWire.Bit)
+   |-> rXOr
+  {-# INLINE ReWire.Bits.rXNor #-}
+  ReWire.Bits.rXNor :: ((ReWire.W ((+ 1 n))) -> ReWire.Bit)
+   |-> rXNor
+  {-# INLINE ReWire.Bits.msbit #-}
+  ReWire.Bits.msbit :: ((ReWire.W ((+ 1 n))) -> ReWire.Bit)
+   |-> msbit
+  {-# INLINE ReWire.Bits.odd #-}
+  ReWire.Bits.odd :: ((ReWire.W ((+ 1 n))) -> Bool)
+  b |-> msbit (resize b)
+  {-# INLINE ReWire.Bits.even #-}
+  ReWire.Bits.even :: ((ReWire.W ((+ 1 n))) -> Bool)
+  b |-> ReWire.Prelude.not (msbit (resize b))
+  {-# INLINE ReWire.Finite.finite #-}
+  ReWire.Finite.finite :: (Integer -> (Finite n))
+   |-> finite
+  {-# INLINE ReWire.Finite.toFinite #-}
+  ReWire.Finite.toFinite :: ((ReWire.W m) -> (Finite n))
+   |-> toFinite
+  {-# INLINE ReWire.Finite.minBound #-}
+  ReWire.Finite.minBound :: (Finite n)
+   |-> minBound
+  {-# INLINE ReWire.Finite.maxBound #-}
+  ReWire.Finite.maxBound :: (Finite n)
+   |-> maxBound
+  {-# INLINE ReWire.Finite.toFinite' #-}
+  ReWire.Finite.toFinite' :: ((ReWire.W m) -> (Finite n))
+   |-> toFinite'
+  {-# INLINE ReWire.Finite.fromFinite #-}
+  ReWire.Finite.fromFinite :: ((Finite n) -> (ReWire.W m))
+   |-> fromFinite
+  ReWire.Monad.iter :: (((i -> o)) -> (i -> (ReacT i o (Identity) ())))
+  f i |-> >>= (signal (f i)) (ReWire.Monad.iter f)
+  ReWire.Monad.iterSt :: (((i -> (s -> (o, s)))) -> (i -> (ReacT i o ((StateT s (Identity))) ())))
+  f i |-> >>= ($ lift (>>= get (. return (f i)))) (\ $1 -> case $1 of
+      [(o, s) >>= ($ lift (put s)) (\ $0 -> case $0 of
+        [$2 >>= (signal o) (ReWire.Monad.iterSt f)])])
+  {-# INLINE ReWire.Monad.extrudeStateDev #-}
+  ReWire.Monad.extrudeStateDev :: ((StateDev i o ((StateT s m))) -> (s -> (StateDev i o m)))
+   |-> extrude
+  {-# INLINE ReWire.Monad.extrudeDev #-}
+  ReWire.Monad.extrudeDev :: ((StateDev i o ((StateT s (Identity)))) -> (s -> (Dev i o)))
+   |-> extrude

@@ -116,9 +116,9 @@ getModule conf pwd fp = pDebug conf ("Fetching module: " <> pack fp <> " (pwd: "
             whenDump n m = if (conf^.dump) n then m $ conf^.verbose else pure
 
             embedAtmo :: (MonadError AstError m, MonadIO m) => FilePath -> (A.Module, Exports) -> m (A.Module, Exports)
-            embedAtmo filename (m@(A.Module ddefs tsyns defs),es) = do
+            embedAtmo filename (m@(A.Module ddefs rdefs tsyns defs),es) = do
                   let fout = C.getEmbedFile conf filename
-                  a' <- AtmoIsabelle.embedModule fout (A.Module ddefs tsyns defs)
+                  a' <- AtmoIsabelle.embedModule fout m
                   Data.Foldable.forM_ a' (embedAST fout)
                   return (m,es)
 

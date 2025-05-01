@@ -6,7 +6,7 @@ module Embedder.Atmo.Types
       , rangeTy, sig, flattenSig, pairTy, arrowRight, arrowLeft
       , higherOrder, fundamental, concrete, paramTys
       , finMax, proxyNat, finiteTy, vecSize, vecElemTy, vecTy, evalNat
-      , mkArrowTy, poly, poly', listTy, plusTy, dstPlusTy
+      , mkArrowTy, mkTyApp, poly, poly', listTy, plusTy, dstPlusTy
       , isReacT, isStateT, ctorNames, resInputTy
       , dstArrow, dstStateT, dstTyApp, dstReacT, proxyTy
       , dstNegTy, negTy, dstPoly1, Poly1, minusP1, zeroP1, pickVar, poly1Ty
@@ -57,6 +57,10 @@ instance TypeAnnotated Exp where
             Tuple _ _ t _         -> t
             If _ _ t _ _ _        -> t
             Let _ _ t _ _         -> t
+            RecVal _ _ t _        -> t
+            RecUpd _ _ t _ _      -> t
+            RecSel _ _ t _ _      -> t
+      
       tyAnn = \ case
             App _ pt _ _ _        -> pt
             Lam _ pt _ _ _        -> pt
@@ -71,6 +75,9 @@ instance TypeAnnotated Exp where
             Tuple _ pt _ _        -> pt
             If _ pt _ _ _ _       -> pt
             Let _ pt _ _ _        -> pt
+            RecVal _ pt _ _       -> pt
+            RecUpd _ pt _ _ _     -> pt
+            RecSel _ pt _ _ _     -> pt
       setTyAnn pt = \ case
             App a _ t e1 e2       -> App a pt t e1 e2
             Lam a _ t v e         -> Lam a pt t v e
@@ -85,6 +92,9 @@ instance TypeAnnotated Exp where
             Tuple a _ t n         -> Tuple a pt t n
             If a _ t tst con alt       -> If a pt t tst con alt
             Let a _ t b e         -> Let a pt t b e
+            RecVal a _ t fs       -> RecVal a pt t fs
+            RecUpd a _ t e fs     -> RecUpd a pt t e fs
+            RecSel a _ t f e      -> RecSel a pt t f e
 
 instance TypeAnnotated Pat where
       typeOf = \ case
@@ -92,16 +102,22 @@ instance TypeAnnotated Pat where
             PatVar _ _ t _     -> t
             PatWildCard _ _ t  -> t
             PatTuple _ _ t _   -> t
+            PatAs _ _ t _ _    -> t
+            PatRec _ _ t _     -> t
       tyAnn = \ case
             PatCon _ pt _ _ _  -> pt
             PatVar _ pt _ _    -> pt
             PatWildCard _ pt _ -> pt
             PatTuple _ pt _ _  -> pt
+            PatAs _ pt _ _ _   -> pt
+            PatRec _ pt _ _    -> pt
       setTyAnn pt = \ case
             PatCon a _ t c ps  -> PatCon a pt t c ps
             PatVar a _ t x     -> PatVar a pt t x
             PatWildCard a _ t  -> PatWildCard a pt t
             PatTuple a _ t ps  -> PatTuple a pt t ps
+            PatAs a _ t n p    -> PatAs a pt t n p
+            PatRec a _ t fs    -> PatRec a pt t fs
 
 ---
 
@@ -253,6 +269,10 @@ evalNat t | Just (Poly1 r cs) <- dstPoly1 t
 -- | Takes [T1, ..., Tn-1] Tn and returns (T1 -> (T2 -> ... (T(n-1) -> Tn) ...))
 mkArrowTy :: [Ty] -> Ty -> Ty
 mkArrowTy ps = foldr1 arr . (ps ++) . (: [])
+
+mkTyApp :: Annote -> Ty -> [Ty] -> Ty
+mkTyApp _ f []     = f
+mkTyApp ann f args = foldl (\acc x -> TyApp ann acc [x]) f args
 
 nilTy :: Ty
 nilTy = TyBuiltin (MsgAnnote "nilTy") TyUnit

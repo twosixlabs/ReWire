@@ -11,7 +11,7 @@ import safe Embedder.Atmo.Syntax as C
     ( FreeProgram,
       TypeSynonym(..), DataDefn(..), Defn(..),
       Exp(..), Ty(..), Poly(..),
-      DataCon(..), Pat (..), FunBinding (..), PatBind (..), -- Rhs (..), GuardedRhs (..), 
+      DataCon(..), Pat (..), FunBinding (..), PatBind (..), RecDefn (..), -- Rhs (..), GuardedRhs (..), 
       )
 import Embedder.Orphans ()
 
@@ -50,12 +50,12 @@ import Data.Maybe (mapMaybe)
 --       [root = 3, []]]
 
 
-data Def = DDef DataDefn | DCon DataCon | TDef TypeSynonym | Def Defn
+data Def = DDef DataDefn | RDef RecDefn | DCon DataCon | TDef TypeSynonym | Def Defn
 
 -- Isabelle allows mutually recursive datatype definitions, but ReWire doesn't
 -- ReWire does allow mutual recursion of functions; only of type ReacT
 -- Atmo will have mutual recursion between things of type ReacT and perhaps lifted lambdas
-data Declaration = DDecl DataDefn | TDecl TypeSynonym | FDecl Defn | RDecl [Defn]
+data Declaration = DDecl DataDefn | RecDecl RecDefn | TDecl TypeSynonym | FDecl Defn | RDecl [Defn]
 
 mkRDecl :: [Defn] -> Declaration
 mkRDecl ds = RDecl (map combineGroup groupedDefns)
@@ -70,6 +70,7 @@ mkRDecl ds = RDecl (map combineGroup groupedDefns)
 def2Decl :: Def -> Maybe Declaration
 def2Decl = \ case
       DDef d -> Just $ DDecl d
+      RDef d -> Just $ RecDecl d
       DCon _ -> Nothing
       TDef d -> Just $ TDecl d
       Def d  -> Just $ FDecl d
@@ -114,6 +115,9 @@ tycons = \ case
       Tuple _a mp _mt es -> concatMap tycons es ++ mp_fvt mp
       If _ mp _mt t c a -> tycons t ++ tycons c ++ tycons a ++ mp_fvt mp
       Let _ mp _mt pbs e -> concatMap pbTycons pbs ++ tycons e ++ mp_fvt mp
+      RecVal _ mp _ fs   -> concatMap (tycons . snd) fs ++ mp_fvt mp
+      RecUpd _ mp _ e fs -> tycons e ++ concatMap (tycons . snd) fs ++ mp_fvt mp
+      RecSel _ mp _ _ e  -> tycons e ++ mp_fvt mp
       where
             mp_fvt :: Maybe Poly -> [Text]
             mp_fvt = \ case
@@ -138,6 +142,9 @@ fve = \ case
       Tuple _ _ _ es -> concatMap fve es
       If _ _ _ t c a -> fve t ++ fve c ++ fve a
       Let _ _ _ pbs e -> concatMap fvePb pbs ++ fve e
+      RecVal _ _ _ fs    -> concatMap (fve . snd) fs
+      RecUpd _ _ _ e fs  -> fve e ++ concatMap (fve . snd) fs
+      RecSel _ _ _ _ e   -> fve e
 
 fvePb :: PatBind -> [Text]
 fvePb (PatBind p e) = fvePat p ++ fve e
@@ -149,6 +156,7 @@ fvePat = \ case
            PatWildCard {} -> []
            PatTuple    _ _ _ ps -> concatMap fvePat ps
            PatAs       _ _ _ n p -> n : fvePat p
+           PatRec _ _ _ fs -> concatMap (fvePat . snd) fs
 
 datacons :: Exp -> [Text] -- Name DataConId
 datacons = \ case
@@ -165,17 +173,22 @@ datacons = \ case
       Tuple _ _ _ es -> concatMap datacons es
       If _ _ _ t c a -> datacons t ++ datacons c ++ datacons a
       Let _ _ _ pbs e -> concatMap dataconsPb pbs ++ datacons e
+      RecVal _ _ _ fs    -> concatMap (datacons . snd) fs
+      RecUpd _ _ _ e fs  -> datacons e ++ concatMap (datacons . snd) fs
+      RecSel _ _ _ _ e   -> datacons e
+
 
 dataconsPb :: PatBind -> [Text]
 dataconsPb (PatBind p e) = dataconsPat p ++ datacons e
 
 dataconsPat :: Pat -> [Text] -- Name DataConId
 dataconsPat = \ case
-           PatCon      _ _ _ n ps -> n : concatMap fvePat ps
+           PatCon      _ _ _ n ps -> n : concatMap dataconsPat ps
            PatVar      _ _ _ _n -> []
            PatWildCard {} -> []
-           PatTuple    _ _ _ ps -> concatMap fvePat ps
+           PatTuple    _ _ _ ps -> concatMap dataconsPat ps
            PatAs       _ _ _ _ p -> dataconsPat p
+           PatRec      _ _ _ fs -> concatMap (dataconsPat . snd) fs
 
 getNodeTSyns :: TypeSynonym -> (Def,Text,[Text])
 getNodeTSyns d@(C.TypeSynonym _ n (Poly _ t)) = (TDef d, n, fvt t :: [Text]) -- Name TyConId
@@ -192,7 +205,11 @@ getNodeData d@(DataDefn _ n _ cons) =
             getNodeDataCon c@(DataCon _ name _) =
                   (DCon c, name, ddef_name : dcon_fvs c)
 
-
+getNodeRec :: RecDefn -> (Def,Text,[Text])
+getNodeRec d@(RecDefn _ n _ poly fs) =
+      (RDef d, n, deps)
+      where
+            deps = fvt (case poly of Poly _ t -> t) ++ concatMap (fvt . snd) fs
 
 -- Function to convert a qualified name to an unqualified name
 unqualify :: Text -> Text
@@ -210,8 +227,8 @@ unqualifyNode (def, qualifiedName, qualifiedList) =
 
 
 sortFreeProgram :: FreeProgram -> ([Declaration], Graph, [Tree Vertex])
-sortFreeProgram (datadefs,tysns,defs) =
-      let   nodes :: [(Def,Text,[Text])] = concatMap getNodeData datadefs ++ map getNodeTSyns tysns ++ map getNodeDefn defs
+sortFreeProgram (datadefs,recdefs,tysns,defs) =
+      let   nodes :: [(Def,Text,[Text])] = concatMap getNodeData datadefs ++ map getNodeRec recdefs ++  map getNodeTSyns tysns ++ map getNodeDefn defs
             nodes' = map unqualifyNode nodes
             (graph,getV,_) = graphFromEdges nodes'
             tree = scc graph

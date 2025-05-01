@@ -15,7 +15,7 @@ import safe Embedder.Atmo.Syntax as A
     ( FreeProgram, Module (..),
       TypeSynonym(..), DataDefn(..), Defn(..),
       Exp(..), Ty(..), Poly(..),
-      DataCon(..), Pat (..), PatBind (..), FunBinding (..), getPatVars,
+      DataCon(..), Pat (..), PatBind (..), FunBinding (..), getPatVars, RecDefn (..),
       -- getFunBody,
       )
 import Embedder.Orphans ()
@@ -87,22 +87,22 @@ embedFreeProgram filename prog = do
 
 {- type FreeProgram = ([DataDefn], [TypeSynonym], [Defn]) -}
 tFreeProgram :: (MonadError AstError m) => A.FreeProgram -> m ([Isa.Decl], Graph, [Tree Vertex] )
-tFreeProgram (data_defs, type_syns, definitions) =
+tFreeProgram (data_defs, rec_defs, type_syns, definitions) =
       let ddfs = filter (not . isReWire . dataName) data_defs
           tsyns = filter (not . isReWire . typeSynName) type_syns
           defs = filter (not . isReWire . defnName) definitions
-          fprog = (ddfs,tsyns,defs)
+          fprog = (ddfs,rec_defs,tsyns,defs)
           (decls,graph,tree) = sortFreeProgram fprog
       in do
             decls' <- mapM tDeclaration decls
             return (decls', graph, tree)
 
 tModule :: (MonadError AstError m) => A.Module -> m ([Isa.Decl], Graph, [Tree Vertex] )
-tModule (A.Module data_defs type_syns definitions) =
+tModule (A.Module data_defs rec_defs type_syns definitions) =
       let ddfs = filter (not . isReWire . dataName) data_defs
           tsyns = filter (not . isReWire . typeSynName) type_syns
           defs = filter (not . isReWire . defnName) definitions
-          fprog = (ddfs,tsyns,defs)
+          fprog = (ddfs,rec_defs,tsyns,defs)
           (decls,graph,tree) = sortFreeProgram fprog
       in do
             decls' <- mapM tDeclaration decls
@@ -132,6 +132,7 @@ tDeclaration = \ case
      TDecl d -> tTypeSynonym d
      FDecl d -> tDefn d
      RDecl ds -> tRDefns ds
+     RecDecl d -> tRecDefn d
 
 
 
@@ -195,6 +196,10 @@ tDataDefn (DataDefn _a name _tvs cons@(A.DataCon _ _ p:_)) = do
       (tvs,_t) <- tPoly p
       return $ Datatype (tGlobal name) tvs constrs
 tDataDefn (DataDefn _ name tvs []) = return $ Datatype (tGlobal name) (map tLocal tvs) []
+
+tRecDefn :: Monad m => A.RecDefn -> m Isa.Decl
+tRecDefn (RecDefn _ name tvs _poly fields) =
+  return $ Isa.Record (tGlobal name) (map tLocal tvs) (map (\(f, t) -> (f, tType t)) fields)
 
 
 {- data DataCon = DataCon Annote !(Name DataConId) !Poly) -}
@@ -349,6 +354,15 @@ tExp (A.Let _ _mp _mt bs e) = do
       e' <- tExp e
       bs' <- mapM tPatBind bs
       return $ Isa.Let bs' e'
+tExp (A.RecVal _ _ _ fields) = do
+  fields' <- mapM (\(f, e) -> (f,) <$> tExp e) fields
+  return $ Isa.RecordVal fields'
+tExp (A.RecUpd _ _ _ base updates) = do
+  base' <- tExp base
+  updates' <- mapM (\(f, e) -> (f,) <$> tExp e) updates
+  return $ Isa.RecordUpdate base' updates'
+tExp (A.RecSel _ _ _ field rec) = Isa.RecordSel field <$> tExp rec
+
 
 
 -- Patterns and Case
@@ -360,6 +374,7 @@ tPat = \ case
       (PatWildCard _a _mp mt) -> PttrnWildCard (fmap tType mt)
       (PatTuple _a _mp mt ps) -> PttrnTuple (fmap tType mt) (map tPat ps)
       (PatAs _a _mp mt n p)   -> PttrnAs (fmap tType mt) (tPat p) (tLocal n)
+      (A.PatRec _ _ mt fields) -> PttrnRecord (fmap tType mt) (map (\(f, p) -> (f, tPat p)) fields)
 
 tPatBind :: (Monad m) => PatBind -> m (Isa.Pttrn, Isa.Term)
 tPatBind (A.PatBind p e) = do
