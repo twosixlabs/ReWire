@@ -6,3 +6,4 @@ What this section does is introduce the monad idea through a sequence of simple 
 
 To see all of the monads discussed in this tutorial defined in one convenient Haskell file, download this: 
 [MonadWrangling.hs](MonadWrangling.hs). These monad and monad transformer definitions are in the style of earlier versions of GHC, which were immensely easier to understand than the current mess.
+
