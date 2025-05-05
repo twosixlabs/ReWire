@@ -376,11 +376,11 @@ purifyStateBody rho stos stys i = classifyCases >=> \ case
 
       CApply an _ n es -> mkPureApp an rho n $ es <> stos
 
-      -- e1 must be simply-typed, so don't purify it.
-      CMatch an e1 mp e2 e3 -> do
-            p   <- transMPat mp
-            e2' <- purifyStateBody rho stos stys i $ mkApp an e2 $ toVar an <$> patVars p
-            mkCase an e1 (p, e2') <$> mapM (purifyStateBody rho stos stys i) e3
+      -- disc must be simply-typed, so don't purify it.
+      CMatch an disc mp e els -> do
+            p  <- transMPat mp
+            e' <- purifyStateBody rho stos stys i $ mkApp an e $ toVar an <$> patVars p
+            mkCase an disc (p, e') <$> mapM (purifyStateBody rho stos stys i) els
 
       CBind an e g -> do
             a           <- liftMaybe (ann e) "Purify: invalid type in bind" $ typeOf e >>= (fmap snd . dstTyApp)
@@ -442,12 +442,6 @@ classifyRCases ex = case flattenApp ex of
             sig ex = case flattenApp ex of
                   (Builtin _ _ _ Signal, [arg]) -> pure arg
                   _                             -> Nothing
-
--- how this possible?
--- ( rwPrimBind
--- , [ (rwPrimLift :: m2 a1 -> t m2 a1) ((rwPrimPut :: s1 -> StateT s1 m ()) ((Main.setInputs s749541 ($526749544 :: Main.Inputs)) :: Main.CPUState))
--- , $LL.Main.loop120111 m2c749545 m2c749543 m2c749542
--- , $x749540 ] )
 
 -- state for res-purification.
 data PSto = PSto !(HashMap (Name Exp) ResPoint) !(Name Exp) !(HashMap Ty (Name DataConId))
