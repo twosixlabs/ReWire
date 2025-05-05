@@ -26,7 +26,7 @@ import ReWire.Config (Config, depth, start, pDebug)
 import ReWire.Crust.PrimBasis (primDatas)
 import ReWire.Crust.Syntax (Exp (..), Kind (..), Ty (..), Poly (..), Pat (..), MatchPat (..), Defn (..), FreeProgram, DataCon (..), DataConId, TyConId, DataDefn (..), Builtin (..), DefnAttr (..), TypeSynonym (..), flattenApp, builtins)
 import ReWire.Crust.TypeCheck (typeCheckDefn, unify, unify', TySub)
-import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy, synthable)
+import ReWire.Crust.Types (typeOf, tyAnn, setTyAnn, dstArrow, maybeSetTyAnn, poly, poly', flattenArrow, arr, nilTy, ctorNames, resInputTy, codomTy, (|->), arrowRight, arrowLeft, isReacT, prettyTy, synthable)
 import ReWire.Crust.Util (mkApp, mkError, mkLam, inlinable, synthableDefn, mkTupleMPat, mkTuple, mkPairMPat, mkPair, patVars, toVar, transPat, transMPat, isExtrude, extrudeDefn)
 import ReWire.Error (AstError, MonadError, failAt)
 import ReWire.Fix (fix, fix', fixUntil)
@@ -220,17 +220,17 @@ normalizeBind (ts, syns, ds) = (ts, syns, ) <$> (uncurry (<>) <$> runStateT (map
 
                   -- Bind: if Match is on the LHS, push the bind into the
                   -- Match arms.
-                  -- > match disc p e els >>= f
+                  -- > (match disc p e els) >>= f
                   -- becomes
-                  -- > match disc p b (els >>= f)
-                  -- > where b = e >>= f
+                  -- > match disc p e' (els >>= f)
+                  -- > where e' = e >>= f
                   -- if e has a non-function type, otherwise
-                  -- >       b = \ x1... -> (e x1... >>= f)
-                  (dstBind -> Just (a, Match an tan _ disc p e els, e2)) -> do
+                  -- >       e' = \ x1... -> (e x1... >>= f)
+                  b@(dstBind -> Just (a, Match an tan _ disc p e els, e2)) -> do
                         pvs <- patVars <$> transMPat p
                         let e'   = mkLam an pvs $ mkBind a (mkApp an (maybeSetTyAnn tan e) (toVar an <$> pvs)) e2
                             els' = flip (mkBind a) e2 . maybeSetTyAnn tan <$> els
-                        ppExp' $ Match an Nothing (typeOf e) disc p e' els'
+                        ppExp' $ Match an Nothing (typeOf b) disc p e' els'
 
                   -- Bind: inline everything on the LHS, lift the RHS.
                   (dstBind -> Just (a, e1, e2)) -> do
@@ -307,7 +307,7 @@ etaAbsDefs (ts, syns, vs) = (ts, syns, ) <$> mapM etaAbsDefs' vs
             etaAbs e = do
                   (vs, e') <- unbind e
                   case typeOf e' of
-                        Just (TyApp _ (TyApp _ (TyCon _ (n2s -> "->")) t) _) -> do
+                        Just (dstArrow -> Just (t, _)) -> do
                               x <- freshVar "$x"
                               etaAbs $ bind (vs <> [x]) $ appl t (Var (ann e') Nothing (Just t) x) e'
                         _                                                    -> pure e
