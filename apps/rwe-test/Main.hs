@@ -15,7 +15,7 @@ import Control.Monad (when)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Test.Tasty.Options (IsOption (..), safeRead)
-import System.Environment (getArgs, withArgs)
+import System.Environment (getArgs, withArgs, lookupEnv)
 import Data.List (isPrefixOf, intersect)
 import System.Directory (listDirectory)
 
@@ -66,7 +66,10 @@ instance IsOption EachFlag where
 prepareIsabelle :: FilePath -> IO ()
 prepareIsabelle workingDir = do
     let prepCmd = workingDir </> "isabelle-test-prep.sh"
-    (exitCode, _output) <- runCommand prepCmd []
+    -- Pass AFP path from environment if available
+    afpEnv <- lookupEnv "AFP"
+    let args = maybe [] (:[]) afpEnv
+    (exitCode, _output) <- runCommand prepCmd args
     -- Check that the process exits successfully
     assertEqual "Exit code is zero" ExitSuccess exitCode
 

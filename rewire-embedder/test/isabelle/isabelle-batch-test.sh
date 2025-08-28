@@ -53,7 +53,18 @@ fi
 # Typecheck the batch of .thy files using Isabelle
 
 echo " - Isabelle: Building ReWire_Testing session with files ${@:1}"
-isabelle build -c -d ./thys/testing ReWire_Testing
+# Use AFP path from environment if available
+if [ -n "$AFP" ]; then
+    AFP_PATH="$AFP"
+    # Normalize AFP path - add /thys if needed
+    if [ -d "$AFP_PATH/thys" ]; then
+        AFP_PATH="$AFP_PATH/thys"
+    fi
+    isabelle build -c -d ./thys/testing -d ../../targets/isabelle/thys -d "$AFP_PATH" ReWire_Testing
+else
+    # Try without AFP (will fail if ReWire session needs it)
+    isabelle build -c -d ./thys/testing -d ../../targets/isabelle/thys ReWire_Testing
+fi
 
 
 # Save the resulting .thy files in ./thys/cases
