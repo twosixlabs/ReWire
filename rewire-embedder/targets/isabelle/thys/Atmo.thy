@@ -6,6 +6,7 @@ Main
 Rewire
 Word_Lib.Reversed_Bit_Lists
 Word_Lib.More_Word_Operations
+Word_Lib.Generic_set_bit
 begin
 
 term word_cat
@@ -217,7 +218,7 @@ fun fin_of_nat :: "nat \<Rightarrow> 'a::len fin" where
 
 
 fun update_word_fin :: "'a::len word \<Rightarrow> 'a fin \<Rightarrow> Bit \<Rightarrow> 'a word" ("update") where
-"update_word_fin w i = set_bit w (nat (val_fin i))"
+"update_word_fin w i b = set_bit w (nat (val_fin i)) b"
 
 
 
