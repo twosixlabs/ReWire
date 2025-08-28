@@ -76,7 +76,7 @@ testCompiler flags fn = do
 
       let verilogTests =
             -- Test: compile Core to Verilog with RWC.
-            [ golden "rwc" $ do
+            [ golden "sv" $ do
                   cdTestdir -- TODO enable extra typechecking
                   withArgs ((fn -<.> "rwc") : ["--from-core", "-o", ofile "sv"] <> extraFlags) RWC.main
                ]
