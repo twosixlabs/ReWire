@@ -94,11 +94,11 @@ module
   ReWire.error :: (String -> a)
    |-> error
   {-# INLINE ReWire.externWithSig #-}
-  ReWire.externWithSig :: ([(String, Integer)] -> (String -> ([(String, Integer)] -> ([(String, Integer)] -> (String -> (a -> (String -> a)))))))
+  ReWire.externWithSig :: ([(String, Integer)] -> (String -> (String -> ([(String, Integer)] -> ([(String, Integer)] -> (String -> (a -> (String -> a))))))))
    |-> externWithSig
   {-# INLINE ReWire.extern #-}
   ReWire.extern :: (String -> (a -> a))
-  n a |-> externWithSig [] "" [] [] n a ""
+  n a |-> externWithSig [] "" "" [] [] n a ""
   {-# INLINE ReWire.setRef #-}
   ReWire.setRef :: ((Ref a) -> (a -> (b -> b)))
    |-> setRef
@@ -124,7 +124,7 @@ module
   ReWire.extrude :: ((ReacT i o ((StateT s m)) a) -> (s -> (ReacT i o m a)))
    |-> extrude
   {-# INLINE ReWire.unfold #-}
-  ReWire.unfold :: ((((R_, s) -> (i -> (PuRe s o)))) -> ((PuRe s o) -> (ReacT i o (Identity) A_)))
+  ReWire.unfold :: ((((R_, s) -> (i -> (PuRe s o)))) -> ((PuRe s o) -> (ReacT i o (Identity) ())))
    |-> unfold
   {-# INLINE ReWire.natVal #-}
   ReWire.natVal :: ((Proxy n) -> Integer)
@@ -140,8 +140,8 @@ module
    |-> fromList
   rwPrimError :: (String -> a)
    |-> error "Prim: rwPrimError"
-  rwPrimExtern :: ([(String, Integer)] -> (String -> ([(String, Integer)] -> ([(String, Integer)] -> (String -> (a -> (String -> a)))))))
-  _ _ _ _ _ f _ |-> error "Prim: rwPrimExtern"
+  rwPrimExtern :: ([(String, Integer)] -> (String -> (String -> ([(String, Integer)] -> ([(String, Integer)] -> (String -> (a -> (String -> a))))))))
+  _ _ _ _ _ _ f _ |-> error "Prim: rwPrimExtern"
   rwPrimSetRef :: ((Ref a) -> (a -> (b -> b)))
   _ _ b |-> error "Prim: rwPrimSetRef"
   rwPrimGetRef :: ((Ref a) -> a)
@@ -160,8 +160,8 @@ module
    |-> error "Prim: rwPrimLift"
   rwPrimExtrude :: ((ReacT i o ((StateT s m)) a) -> (s -> (ReacT i o m a)))
   GHC.ReacT (GHC.StateT m) s |-> error "Prim: rwPrimExtrude"
-  rwPrimUnfold :: ((((R_, s) -> (i -> (PuRe s o)))) -> ((PuRe s o) -> (ReacT i o (Identity) A_)))
-  _ Done (a, _) |-> error "Prim: rwPrimUnfold"
+  rwPrimUnfold :: ((((R_, s) -> (i -> (PuRe s o)))) -> ((PuRe s o) -> (ReacT i o (Identity) ())))
+  _ Done _ |-> error "Prim: rwPrimUnfold"
   f Pause (o, b) |-> error "Prim: rwPrimUnfold"
   rwPrimFinite :: (Integer -> (Finite n))
    |-> error "Prim: rwPrimFinite"
