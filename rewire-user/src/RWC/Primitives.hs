@@ -69,7 +69,6 @@ module RWC.Primitives
       , rwPrimVecReplicate
       , rwPrimVecReverse
       , rwPrimVecSlice
-      , rwPrimVecUpdate
       , rwPrimXNor
       , rwPrimXOr
       , rwPrimToInteger
@@ -258,10 +257,6 @@ rwPrimSignextend v = rwPrimVecFromList vs'
     where
       vs = V.toList v
       vs' = BW.signextend (GHC.fromEnum (natVal (Proxy :: Proxy m))) vs
-
--- | Update index i to value a
-rwPrimVecUpdate :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
-rwPrimVecUpdate v i a = V.update v (V.singleton (GHC.fromEnum i,a))
 
 -- | Update multiple indices
 -- rwPrimVecBulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a

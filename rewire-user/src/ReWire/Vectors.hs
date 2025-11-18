@@ -86,7 +86,7 @@ tail = drop
 
 {-# INLINE update #-}
 update :: KnownNat n => Vec n a -> Finite n -> a -> Vec n a
-update = rwPrimVecUpdate
+update v i x = generate (\ j -> if j FC.== i then x else index v j)
 
 -- {-# INLINE bulkUpdate #-}
 -- bulkUpdate :: KnownNat n => Vec n a -> Vec m (Finite n,a) -> Vec n a
