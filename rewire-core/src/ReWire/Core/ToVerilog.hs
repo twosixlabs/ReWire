@@ -186,7 +186,7 @@ compileStart conf topLevel w loop state0 = do
             initExp <- initState rStart
             pure $ mod (loopSigs <> startSigs <> sigs)
                  $  ssStart <> loopStmts
-                 <> [ Initial $ ParAssign lvCurrState initExp
+                 <> [ Initial $ SeqAssign lvCurrState initExp
                     , Always (Pos (conf^.C.clock) : rstEdge) $ Block [ ifRst initExp ]
                     ]
 
