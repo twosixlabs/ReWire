@@ -79,8 +79,7 @@ module top_level (input logic [0:0] clk,
   logic [80:0] zll_main_repl98_outR1;
   logic [77:0] zll_main_repl48_inR1;
   logic [80:0] zll_main_repl48_outR1;
-  logic [0:0] __continue;
-  logic [38:0] __padding;
+  logic [39:0] __padding;
   logic [31:0] __st0;
   logic [6:0] __st1;
   logic [31:0] __st0_next;
@@ -160,8 +159,8 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_repl98  instR15 (zll_main_repl98_inR1[77:39], zll_main_repl98_inR1[38:7], zll_main_repl98_outR1);
   assign zll_main_repl48_inR1 = {zll_main_repl82_in[38:0], zll_main_repl82_in[84:53], zll_main_repl82_in[45:39]};
   ZLL_Main_repl48  instR16 (zll_main_repl48_inR1[77:39], zll_main_repl48_inR1[38:7], zll_main_repl48_outR1);
-  assign {__continue, __padding, __out0, __out1, __st0_next, __st1_next} = (zll_main_repl113_in[32] == 1'h0) ? ((zll_main_repl48_inR1[6:0] == 7'h0) ? zll_main_repl48_outR1 : ((zll_main_repl98_inR1[6:0] == 7'h1) ? zll_main_repl98_outR1 : ((zll_main_repl48_in[6:0] == 7'h2) ? zll_main_repl48_out : ((zll_main_repl98_in[6:0] == 7'h3) ? zll_main_repl98_out : ((zll_main_repl87_in[6:0] == 7'h4) ? {{1'h1, {6'h28{1'h0}}}, extresR2, zll_main_repl108_in[38:0]} : ((zll_main_repl83_in[6:0] == 7'h5) ? {{1'h1, {6'h28{1'h0}}}, extresR1, zll_main_repl100_in[38:0]} : ((zll_main_repl57_in[6:0] == 7'h6) ? {{1'h1, {6'h28{1'h0}}}, extres, zll_main_repl61_in[38:0]} : zll_main_repl101_out))))))) : zll_main_repl94_out;
-  initial {__st0, __st1} <= {6'h27{1'h0}};
+  assign {__padding, __out0, __out1, __st0_next, __st1_next} = (zll_main_repl113_in[32] == 1'h0) ? ((zll_main_repl48_inR1[6:0] == 7'h0) ? zll_main_repl48_outR1 : ((zll_main_repl98_inR1[6:0] == 7'h1) ? zll_main_repl98_outR1 : ((zll_main_repl48_in[6:0] == 7'h2) ? zll_main_repl48_out : ((zll_main_repl98_in[6:0] == 7'h3) ? zll_main_repl98_out : ((zll_main_repl87_in[6:0] == 7'h4) ? {{1'h1, {6'h28{1'h0}}}, extresR2, zll_main_repl108_in[38:0]} : ((zll_main_repl83_in[6:0] == 7'h5) ? {{1'h1, {6'h28{1'h0}}}, extresR1, zll_main_repl100_in[38:0]} : ((zll_main_repl57_in[6:0] == 7'h6) ? {{1'h1, {6'h28{1'h0}}}, extres, zll_main_repl61_in[38:0]} : zll_main_repl101_out))))))) : zll_main_repl94_out;
+  initial {__st0, __st1} = {6'h27{1'h0}};
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__st0, __st1} <= {6'h27{1'h0}};

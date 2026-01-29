@@ -78,7 +78,7 @@ module top_level (input logic [0:0] clk,
   logic [1999:0] zll_main_dev6_in;
   logic [999:0] zll_main_dev5_in;
   logic [999:0] id_inR20;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   logic [999:0] __resumption_tag;
   logic [999:0] __st0;
   logic [999:0] __resumption_tag_next;
@@ -159,8 +159,8 @@ module top_level (input logic [0:0] clk,
   assign zll_main_dev6_in = {zll_main_dev16_in[1999:1000], zll_main_dev16_in[999:0]};
   assign zll_main_dev5_in = zll_main_dev6_in[1999:1000];
   assign id_inR20 = zll_main_dev5_in[999:0];
-  assign {__continue, __out0, __resumption_tag_next, __st0_next} = {1'h1, id_inR20[999:900], zll_main_dev6_in[1999:1000], zll_main_dev6_in[999:0]};
-  initial {__resumption_tag, __st0} <= {11'h7d0{1'h0}};
+  assign {__padding, __out0, __resumption_tag_next, __st0_next} = {1'h1, id_inR20[999:900], zll_main_dev6_in[1999:1000], zll_main_dev6_in[999:0]};
+  initial {__resumption_tag, __st0} = {11'h7d0{1'h0}};
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__resumption_tag, __st0} <= {11'h7d0{1'h0}};

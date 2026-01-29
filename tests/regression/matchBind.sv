@@ -11,7 +11,7 @@ module top_level (input logic [0:0] clk,
   logic [18:0] zll_main_loop13_out;
   logic [17:0] zll_pure_dispatch2_inR1;
   logic [18:0] zll_pure_dispatch2_outR1;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   logic [1:0] __resumption_tag;
   logic [7:0] __st0;
   logic [1:0] __resumption_tag_next;
@@ -25,8 +25,8 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_loop13  instR1 (zll_main_loop13_in[18:0], zll_main_loop13_out);
   assign zll_pure_dispatch2_inR1 = {__in0, {__resumption_tag, __st0}};
   ZLL_Pure_dispatch2  instR2 (zll_pure_dispatch2_inR1[17:10], zll_pure_dispatch2_inR1[7:0], zll_pure_dispatch2_outR1);
-  assign {__continue, __out0, __resumption_tag_next, __st0_next} = (zll_pure_dispatch2_inR1[9:8] == 2'h1) ? zll_pure_dispatch2_outR1 : ((zll_pure_dispatch1_in[9:8] == 2'h2) ? zll_main_loop13_out : zll_pure_dispatch2_out);
-  initial {__resumption_tag, __st0} <= 10'h200;
+  assign {__padding, __out0, __resumption_tag_next, __st0_next} = (zll_pure_dispatch2_inR1[9:8] == 2'h1) ? zll_pure_dispatch2_outR1 : ((zll_pure_dispatch1_in[9:8] == 2'h2) ? zll_main_loop13_out : zll_pure_dispatch2_out);
+  initial {__resumption_tag, __st0} = 10'h200;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__resumption_tag, __st0} <= 10'h200;

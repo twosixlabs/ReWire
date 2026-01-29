@@ -1792,7 +1792,6 @@ module top_level (input logic [127:0] __in0,
   logic [127:0] zll_main_multiply1792_outR127;
   logic [256:0] zll_main_multiply1788_inR69;
   logic [127:0] zll_main_multiply1788_outR69;
-  logic [0:0] __continue;
   assign zll_main_multiplyfun1_in = {__in0, __in1};
   assign main_multiply_in = zll_main_multiplyfun1_in[255:0];
   assign zll_main_multiply1304_in = {main_multiply_in[255:128], main_multiply_in[127:0]};
@@ -3584,7 +3583,7 @@ module top_level (input logic [127:0] __in0,
   ZLL_Main_multiply1792  instR508 (zll_main_multiply1792_inR127[128:1], zll_main_multiply1792_inR127[0], zll_main_multiply1792_outR127);
   assign zll_main_multiply1788_inR69 = {zll_main_multiply608_in[384:257], zll_main_multiply608_in[256:129], zll_main_multiply608_in[0]};
   ZLL_Main_multiply1788  instR509 (zll_main_multiply1788_inR69[256:129], zll_main_multiply1788_inR69[128:1], zll_main_multiply1788_outR69);
-  assign {__continue, __out0} = (zll_main_multiply1788_inR69[0] == 1'h1) ? zll_main_multiply1788_outR69 : zll_main_multiply1792_outR127;
+  assign __out0 = (zll_main_multiply1788_inR69[0] == 1'h1) ? zll_main_multiply1788_outR69 : zll_main_multiply1792_outR127;
 endmodule
 
 module ZLL_Main_multiply1792 (input logic [127:0] arg0,

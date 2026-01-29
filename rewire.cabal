@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.38.1.
+-- This file has been generated from package.yaml by hpack version 0.39.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -37,6 +37,7 @@ data-files:
     tests/regression/verilog/w32ops.sv
     tests/regression/case1.hs
     tests/regression/case2.hs
+    tests/regression/cubehash.hs
     tests/regression/dependencyGraph.hs
     tests/regression/dissex.hs
     tests/regression/dissex2.hs
@@ -94,6 +95,7 @@ data-files:
     tests/regression/wordSlice.hs
     tests/regression/case1.sv
     tests/regression/case2.sv
+    tests/regression/cubehash.sv
     tests/regression/dependencyGraph.sv
     tests/regression/dissex.sv
     tests/regression/dissex2.sv
@@ -151,6 +153,7 @@ data-files:
     tests/regression/wordSlice.sv
     tests/regression/case1.rwc
     tests/regression/case2.rwc
+    tests/regression/cubehash.rwc
     tests/regression/dependencyGraph.rwc
     tests/regression/dissex.rwc
     tests/regression/dissex2.rwc
@@ -208,6 +211,7 @@ data-files:
     tests/regression/wordSlice.rwc
     tests/regression/case1.yaml
     tests/regression/case2.yaml
+    tests/regression/cubehash.yaml
     tests/regression/dependencyGraph.yaml
     tests/regression/dissex.yaml
     tests/regression/dissex2.yaml

@@ -125,8 +125,7 @@ module top_level (input logic [0:0] clk,
   logic [84:0] zll_main_loop24_in;
   logic [90:0] zll_pure_dispatch7_inR4;
   logic [142:0] zll_pure_dispatch7_outR4;
-  logic [0:0] __continue;
-  logic [52:0] __padding;
+  logic [53:0] __padding;
   logic [3:0] __resumption_tag;
   logic [69:0] __st0;
   logic [3:0] __resumption_tag_next;
@@ -254,8 +253,8 @@ module top_level (input logic [0:0] clk,
   assign zll_main_loop24_in = {zll_main_loop2_in[84:70], zll_main_loop2_in[69:0]};
   assign zll_pure_dispatch7_inR4 = {__in0, {__resumption_tag, __st0}};
   ZLL_Pure_dispatch7  instR35 (zll_pure_dispatch7_inR4[90:74], zll_pure_dispatch7_inR4[69:0], zll_pure_dispatch7_outR4);
-  assign {__continue, __padding, __out0, __resumption_tag_next, __st0_next} = (zll_pure_dispatch7_inR4[73:70] == 4'h1) ? zll_pure_dispatch7_outR4 : ((zll_pure_dispatch2_in[73:70] == 4'h2) ? {{1'h1, {6'h35{1'h0}}}, zll_main_loop24_in[84:70], 4'h8, zll_main_loop24_in[69:0]} : ((zll_pure_dispatch7_inR3[73:70] == 4'h3) ? zll_pure_dispatch7_outR3 : ((zll_pure_dispatch7_inR2[73:70] == 4'h4) ? zll_pure_dispatch7_outR2 : ((zll_pure_dispatch_in[73:70] == 4'h5) ? {{1'h1, {6'h35{1'h0}}}, zll_main_reset36_in[84:70], 4'h1, zll_main_reset36_in[69:0]} : ((zll_pure_dispatch3_in[73:70] == 4'h6) ? zll_main_loop221_out : ((zll_pure_dispatch8_in[73:70] == 4'h7) ? {{1'h1, {6'h35{1'h0}}}, zll_main_loop47_in[84:70], 4'h6, zll_main_loop47_in[69:0]} : ((zll_pure_dispatch7_inR1[73:70] == 4'h8) ? zll_pure_dispatch7_outR1 : zll_pure_dispatch7_out)))))));
-  initial {__resumption_tag, __st0} <= {4'h5, {7'h46{1'h0}}};
+  assign {__padding, __out0, __resumption_tag_next, __st0_next} = (zll_pure_dispatch7_inR4[73:70] == 4'h1) ? zll_pure_dispatch7_outR4 : ((zll_pure_dispatch2_in[73:70] == 4'h2) ? {{1'h1, {6'h35{1'h0}}}, zll_main_loop24_in[84:70], 4'h8, zll_main_loop24_in[69:0]} : ((zll_pure_dispatch7_inR3[73:70] == 4'h3) ? zll_pure_dispatch7_outR3 : ((zll_pure_dispatch7_inR2[73:70] == 4'h4) ? zll_pure_dispatch7_outR2 : ((zll_pure_dispatch_in[73:70] == 4'h5) ? {{1'h1, {6'h35{1'h0}}}, zll_main_reset36_in[84:70], 4'h1, zll_main_reset36_in[69:0]} : ((zll_pure_dispatch3_in[73:70] == 4'h6) ? zll_main_loop221_out : ((zll_pure_dispatch8_in[73:70] == 4'h7) ? {{1'h1, {6'h35{1'h0}}}, zll_main_loop47_in[84:70], 4'h6, zll_main_loop47_in[69:0]} : ((zll_pure_dispatch7_inR1[73:70] == 4'h8) ? zll_pure_dispatch7_outR1 : zll_pure_dispatch7_out)))))));
+  initial {__resumption_tag, __st0} = {4'h5, {7'h46{1'h0}}};
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__resumption_tag, __st0} <= {4'h5, {7'h46{1'h0}}};

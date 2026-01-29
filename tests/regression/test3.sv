@@ -9,7 +9,7 @@ module top_level (input logic [0:0] clk,
   logic [16:0] zll_main_go8_out;
   logic [8:0] zll_main_go8_inR1;
   logic [16:0] zll_main_go8_outR1;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   logic [7:0] __st0;
   logic [7:0] __st0_next;
   assign zll_main_go3_in = {__in0, __st0};
@@ -19,8 +19,8 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_go8  inst (zll_main_go8_in[8:1], zll_main_go8_out);
   assign zll_main_go8_inR1 = {zll_main_go1_in[7:0], zll_main_go1_in[8]};
   ZLL_Main_go8  instR1 (zll_main_go8_inR1[8:1], zll_main_go8_outR1);
-  assign {__continue, __out0, __st0_next} = (zll_main_go8_inR1[0] == 1'h1) ? zll_main_go8_outR1 : zll_main_go8_out;
-  initial __st0 <= 8'h0;
+  assign {__padding, __out0, __st0_next} = (zll_main_go8_inR1[0] == 1'h1) ? zll_main_go8_outR1 : zll_main_go8_out;
+  initial __st0 = 8'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       __st0 <= 8'h0;

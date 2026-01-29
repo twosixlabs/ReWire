@@ -8,7 +8,7 @@ module ReWire.Core.ToVerilog (compileProgram) where
 import ReWire.Annotation (noAnn, ann)
 import ReWire.BitVector (width, bitVec, BV, zeros, ones, lsb1, (==.), (@.), szBitRep)
 import ReWire.Config (Config, ResetFlag (..))
-import ReWire.Core.Interp (patApply', patMatches', subRange, dispatchWires, pausePrefix, extraWires, resumptionSize, Wiring')
+import ReWire.Core.Interp (patApply', patMatches', subRange, dispatchWires, pausePadding, resumptionSize, Wiring')
 import ReWire.Core.Mangle (mangle)
 import ReWire.Core.Syntax as C hiding (Name, Size, Index)
 import ReWire.Error (failAt, AstError, MonadError)
@@ -186,7 +186,7 @@ compileStart conf topLevel w loop state0 = do
             initExp <- initState rStart
             pure $ mod (loopSigs <> startSigs <> sigs)
                  $  ssStart <> loopStmts
-                 <> [ Initial $ ParAssign lvCurrState initExp
+                 <> [ Initial $ SeqAssign lvCurrState initExp
                     , Always (Pos (conf^.C.clock) : rstEdge) $ Block [ ifRst initExp ]
                     ]
 
@@ -253,13 +253,13 @@ compileStart conf topLevel w loop state0 = do
             syncRst = Synchronous `elem` (conf^.C.resetFlags)
 
             pauseWires :: [(Name, Size)]
-            pauseWires = pausePrefix w' <> nextDispatchWires
+            pauseWires = pausePadding w' <> outputWires w <> nextDispatchWires
 
             nextDispatchWires :: [(Name, Size)]
             nextDispatchWires = first (<> "_next") <$> dispatchWires w'
 
             allWires :: [(Name, Size)]
-            allWires = extraWires w' <> dispatchWires w' <> nextDispatchWires
+            allWires = pausePadding w' <> dispatchWires w' <> nextDispatchWires
 
             w' :: Wiring'
             w' = (w, defnSig loop, defnSig state0)

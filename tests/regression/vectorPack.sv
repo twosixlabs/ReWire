@@ -180,7 +180,7 @@ module top_level (input logic [63:0] __in0,
   logic [127:0] id_inR2;
   logic [128:0] zll_main_loop2_in;
   logic [128:0] zll_main_loop_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   assign zll_main_loop3_in = {__in0, __in1};
   assign zll_main_compute151_in = zll_main_loop3_in[127:0];
   assign zll_main_compute344_in = zll_main_compute151_in[127:0];
@@ -359,7 +359,7 @@ module top_level (input logic [63:0] __in0,
   assign id_inR2 = zll_main_compute258_in[127:0];
   assign zll_main_loop2_in = {1'h0, {id_inR2[127:64], id_inR2[63:0]}};
   assign zll_main_loop_in = zll_main_loop2_in[128:0];
-  assign {__continue, __out0, __out1} = {1'h1, zll_main_loop_in[127:0]};
+  assign {__padding, __out0, __out1} = {1'h1, zll_main_loop_in[127:0]};
 endmodule
 
 module ZLL_Main_compute439 (input logic [2:0] arg0,

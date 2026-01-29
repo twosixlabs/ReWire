@@ -24,8 +24,7 @@ module top_level (input logic [0:0] clk,
   logic [5:0] zll_rewire_monad_iterst40_in;
   logic [5:0] zll_rewire_monad_iterst38_in;
   logic [1:0] zll_rewire_monad_iterst31_in;
-  logic [0:0] __continue;
-  logic [1:0] __padding;
+  logic [2:0] __padding;
   logic [0:0] __st0;
   logic [0:0] __st0_next;
   assign rewire_monad_iterst1_in = {__in0, __st0};
@@ -50,8 +49,8 @@ module top_level (input logic [0:0] clk,
   assign zll_rewire_monad_iterst40_in = {zll_rewire_monad_iterst22_in[2], {4'h4, zll_rewire_monad_iterst17_in[0]}};
   assign zll_rewire_monad_iterst38_in = {zll_rewire_monad_iterst40_in[5], zll_rewire_monad_iterst40_in[4:0]};
   assign zll_rewire_monad_iterst31_in = {zll_rewire_monad_iterst38_in[5], zll_rewire_monad_iterst38_in[0]};
-  assign {__continue, __padding, __out0, __st0_next} = {3'h4, zll_rewire_monad_iterst31_in[1], zll_rewire_monad_iterst31_in[0]};
-  initial __st0 <= 1'h0;
+  assign {__padding, __out0, __st0_next} = {3'h4, zll_rewire_monad_iterst31_in[1], zll_rewire_monad_iterst31_in[0]};
+  initial __st0 = 1'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       __st0 <= 1'h0;

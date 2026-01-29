@@ -24,7 +24,8 @@ data Flag = FlagH
           | FlagNoDTypes
           | FlagNoGhc
           | FlagV
-          | FlagVerilogChecker String
+          | FlagIVerilog String
+          | FlagVerilator String
           | FlagVhdl
           | FlagVhdlChecker String
           -- Tasty options.
@@ -35,22 +36,29 @@ data Flag = FlagH
           | FlagColor String
       deriving (Eq, Show)
 
+defaultIVerilog :: String
+defaultIVerilog = "iverilog -Wall -g2012"
+
+defaultVerilator :: String
+defaultVerilator = "verilator --lint-only -Wno-MULTITOP"
+
 options :: [OptDescr Flag]
 options =
-       [ Option ['h'] ["help"]            (NoArg FlagH)                         "Show this help text."
-       , Option ['v'] ["verbose"]         (NoArg FlagV)                         "More verbose output."
-       , Option []    ["vhdl"]            (NoArg FlagVhdl)                      "Test VHDL code generation in addition to Verilog."
-       , Option []    ["no-check"]        (NoArg FlagNoCheck)                   "Disable verification of output HDL with checker."
-       , Option []    ["no-ghc"]          (NoArg FlagNoGhc)                     "Disable running tests through ghc."
-       , Option []    ["vhdl-checker"]    (ReqArg FlagVhdlChecker "command")    "Set the command to use for checking generated VHDL (default: 'ghdl -s')."
-       , Option []    ["verilog-checker"] (ReqArg FlagVerilogChecker "command") "Set the command to use for checking generated Verilog (default: 'iverilog -Wall -g2012')."
+       [ Option ['h'] ["help"]         (NoArg FlagH)                          "Show this help text."
+       , Option ['v'] ["verbose"]      (NoArg FlagV)                          "More verbose output."
+       , Option []    ["vhdl"]         (NoArg FlagVhdl)                       "Test VHDL code generation in addition to Verilog."
+       , Option []    ["no-check"]     (NoArg FlagNoCheck)                    "Disable verification of output HDL with checker."
+       , Option []    ["no-ghc"]       (NoArg FlagNoGhc)                      "Disable running tests through ghc."
+       , Option []    ["vhdl-checker"] (ReqArg FlagVhdlChecker "command")     "Set the command to use for checking generated VHDL (default: 'ghdl -s')."
+       , Option []    ["iverilog"]     (ReqArg FlagIVerilog "command")      $ "Set the command to use for checking generated Verilog with iverilog (default: " <> defaultIVerilog <> ")."
+       , Option []    ["verilator"]    (ReqArg FlagVerilator "command")     $ "Set the command to use for checking generated Verilog with verilator (default: " <> defaultVerilator <> ")."
 
        -- Tasty arguments.
-       , Option ['p'] ["pattern"]         (ReqArg FlagP "PATTERN")               "Select only tests which satisfy a pattern or awk expression."
-       , Option ['q'] ["quiet"]           (NoArg FlagQ)                          "Do not produce any output; indicate success only by the exit code."
-       , Option ['l'] ["list-tests"]      (NoArg FlagL)                          "Do not run the tests; just print their names."
-       , Option ['t'] ["timeout"]         (ReqArg FlagT "DURATION")              "Timeout for individual tests (suffixes: ms, s, m, h; default: s)."
-       , Option []    ["color"]           (ReqArg FlagColor "never|always|auto") "When to use colored output (default: auto)."
+       , Option ['p'] ["pattern"]      (ReqArg FlagP "PATTERN")               "Select only tests which satisfy a pattern or awk expression."
+       , Option ['q'] ["quiet"]        (NoArg FlagQ)                          "Do not produce any output; indicate success only by the exit code."
+       , Option ['l'] ["list-tests"]   (NoArg FlagL)                          "Do not run the tests; just print their names."
+       , Option ['t'] ["timeout"]      (ReqArg FlagT "DURATION")              "Timeout for individual tests (suffixes: ms, s, m, h; default: s)."
+       , Option []    ["color"]        (ReqArg FlagColor "never|always|auto") "When to use colored output (default: auto)."
        ]
 
 testCompiler :: [Flag] -> FilePath -> IO [TestTree]
@@ -80,11 +88,17 @@ testCompiler flags fn = do
                   cdTestdir -- TODO enable extra typechecking
                   withArgs ((fn -<.> "rwc") : ["--from-core", "-o", ofile "sv"] <> extraFlags) RWC.main
                ]
-            -- Test: check Verilog output.
+            -- Test: check Verilog output with iverilog.
             <> (if FlagNoCheck `elem` flags then []
-               else [ testCase (takeBaseName fn <> " (" <> verilogChecker <> ")") $ do
+               else [ testCase (takeBaseName fn <> " (" <> iverilog <> ")") $ do
                   cdTestdir
-                  callCommand $ verilogCheck <> " " <> ofile "sv"
+                  callCommand $ iverilog <> " " <> verilog <> " " <> ofile "sv"
+               ])
+            -- Test: check Verilog output with verilator.
+            <> (if FlagNoCheck `elem` flags then []
+               else [ testCase (takeBaseName fn <> " (" <> verilator <> ")") $ do
+                  cdTestdir
+                  callCommand $ verilator <> " " <> verilog <> " " <> ofile "sv"
                ])
 
       let vhdlTests = []
@@ -100,21 +114,15 @@ testCompiler flags fn = do
             ofile :: String -> FilePath
             ofile ext = fn -<.> ("out." <> ext)
 
-            -- vhdlChecker :: String
-            -- vhdlChecker = "ghdl"
+            iverilog :: String
+            iverilog = fromMaybe defaultIVerilog $ msum $ flip map flags $ \ case
+                  FlagIVerilog c -> Just $ sq c
+                  _              -> Nothing
 
-            -- vhdlCheck :: String
-            -- vhdlCheck = fromMaybe (vhdlChecker <> " -s ") $ msum $ flip map flags $ \ case
-            --       FlagVhdlChecker c -> Just $ sq c
-            --       _                 -> Nothing
-
-            verilogChecker :: String
-            verilogChecker = "iverilog"
-
-            verilogCheck :: String
-            verilogCheck = fromMaybe (verilogChecker <> " -Wall -g2012 " <> verilog) $ msum $ flip map flags $ \ case
-                  FlagVerilogChecker c -> Just $ sq c
-                  _                    -> Nothing
+            verilator :: String
+            verilator = fromMaybe defaultVerilator $ msum $ flip map flags $ \ case
+                  FlagVerilator c -> Just $ sq c
+                  _               -> Nothing
 
             verilog :: FilePath
             verilog = takeDirectory fn </> "verilog" </> "*.sv"

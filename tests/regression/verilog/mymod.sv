@@ -6,9 +6,9 @@ module mymod (input logic [0:0] clk,
 
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
-      out <= 1'h0;
+      out <= 8'h0;
     end else begin
-      out <= x + 1;
+      out <= x[7:0] + 8'h1;
     end
   end
 endmodule
