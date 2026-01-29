@@ -9,7 +9,7 @@ module ReWire.Core.Interp
       , patApply'
       , interpExp, DefnMap
       , subRange
-      , dispatchWires, pausePrefix, extraWires
+      , dispatchWires, pausePadding
       , resumptionSize
       ) where
 
@@ -82,11 +82,11 @@ interpStart :: MonadError AstError m => DefnMap -> Wiring -> Defn -> Defn -> Mea
 interpStart defns w loop state0 = MealyT $ \ _ -> do
             so <- splitOutputs <$> interpDefn defns state0 mempty
             pure (filterOutput so, unfoldMealyT f $ filterDispatch so)
-      -- So:        loop   :: ((R_, s), i) -> PR (o, s)
-      --            state0 :: PR (o, s)
+      -- So:        loop   :: (R_, s, i) -> PuRe (o, s)
+      --            state0 :: PuRe (o, s)
       --            state0 = Pause (o0, R_0, s0)
-      --            where PR (o, s) = Done (a, s) | Pause (o, R_, s)
-      -- Assuming neither should ever be Done.
+      --            where PuRe (o, s) = Done (a, s) | Pause (o, R_, s)
+      -- Note: the "Done" ctor may be eliminated, but even if not it should never be returned by "loop."
       where f :: MonadError AstError m => Sts -> Ins -> m (Outs, Sts)
             f s i = (filterOutput &&& filterDispatch) . splitOutputs <$> interpDefn defns loop (joinInputs $ Map.map nat s <> i)
 
@@ -106,7 +106,7 @@ interpStart defns w loop state0 = MealyT $ \ _ -> do
             filterDispatch = Map.filterWithKey (\ k _ -> k `elem` map fst (dispatchWires w'))
 
             pauseWires :: [(Name, Size)]
-            pauseWires = pausePrefix w' <> dispatchWires w'
+            pauseWires = pausePadding w' <> outputWires w <> dispatchWires w'
 
             w' :: Wiring'
             w' = (w, defnSig loop, defnSig state0)
@@ -301,19 +301,18 @@ toZ = toInteger . fromEnum
 zToBV :: (Integer -> Integer -> Integer) -> Size -> BV -> BV -> BV
 zToBV op sz a b = mkBV sz (nat a `op` nat b)
 
+-- | Given that: `PuRe (o, s) = Done (a, s) | Pause (o, R_, s)`, these are all
+--   of the padding-bits prepended on a "Pause" value before the bits of the
+--   first argument (of type "o").
 pausePadding :: Wiring' -> [(Name, Size)]
-pausePadding s@(w, _, _) | paddingSize > 0 = [("__padding", fromIntegral paddingSize)]
-                         | otherwise       = []
+pausePadding w'@(w, _, _) = [("__padding", fromIntegral paddingSize) | paddingSize > 0]
       where paddingSize :: Int
-            paddingSize = fromIntegral (resumptionSize s)              -- sizeof PuRe
-                        - 1                                                    -- count (Done | Pause)
-                        - fromIntegral (sum $ snd <$> resumptionTag s) -- count R_ ctors
+            paddingSize = fromIntegral (resumptionSize w')
                         - fromIntegral (sum $ snd <$> outputWires w)
-                        - fromIntegral (sum $ snd <$> stateWires w)
+                        - fromIntegral (sum $ snd <$> dispatchWires w')
 
 resumptionTag :: Wiring' -> [(Name, Size)]
-resumptionTag (w, sigLoop, _) | tagSize > 0 = [("__resumption_tag", fromIntegral tagSize)]
-                              | otherwise   = []
+resumptionTag (w, sigLoop, _) = [("__resumption_tag", fromIntegral tagSize) | tagSize > 0]
       where tagSize :: Int
             tagSize = case sigLoop of
                   Sig _ (a : _ : _) _ | not $ null $ inputWires w -> fromIntegral a - fromIntegral (sum $ snd <$> stateWires w)
@@ -323,17 +322,8 @@ resumptionTag (w, sigLoop, _) | tagSize > 0 = [("__resumption_tag", fromIntegral
 resumptionSize :: Wiring' -> Size
 resumptionSize (_, _, Sig _ _ s) = s
 
-continue :: (Name, Size)
-continue = ("__continue", 1)
-
-pausePrefix :: Wiring' -> [(Name, Size)]
-pausePrefix s@(w, _, _) = continue : pausePadding s <> outputWires w
-
 dispatchWires :: Wiring' -> [(Name, Size)]
 dispatchWires s@(w, _, _) = resumptionTag s <> stateWires w
-
-extraWires :: Wiring' -> [(Name, Size)]
-extraWires s = continue : pausePadding s
 
 unfoldMealyT :: Applicative m => (s -> a -> m (b, s)) -> s -> MealyT m a b
 unfoldMealyT f = go

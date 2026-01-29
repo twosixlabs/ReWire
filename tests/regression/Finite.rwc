@@ -6,13 +6,13 @@ states []
 
 $Pure.dispatch :: W7 -> W7
 $Pure.dispatch $0 = 7'case 7'$0 of
-    {7'@} -> $LL.Main.dev1
+    {7'@} -> $LL.Main.dev
 
 $Pure.start :: W7
 $Pure.start  = 7'h63
 
-$LL.Main.dev1 :: W7 -> W7
-$LL.Main.dev1 $0 = 7'case 128'case {128'case 7'case {7'case 7'$0 of {7'@} -> Resize, 7'h1} of
+$LL.Main.dev :: W7 -> W7
+$LL.Main.dev $0 = 7'case 128'case {128'case 7'case {7'case 7'$0 of {7'@} -> Resize, 7'h1} of
           {7'@, 7'@} -> Add of
         {7'@} -> Resize
       , 128'h64} of

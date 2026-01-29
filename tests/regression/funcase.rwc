@@ -6,28 +6,28 @@ states []
 
 $Pure.dispatch :: W2 -> W1
 $Pure.dispatch $0 = 1'case 2'$0 of
-    {2'@} -> $LL.Main.proc5
+    {2'@} -> $LL.Main.proc4
 
 $Pure.start :: W1
 $Pure.start  = 1'h0
 
-$LL.Main.proc5 :: W2 -> W1
-$LL.Main.proc5 $0 = 1'case {2'$0, 2'$0} of
-    {2'@, 2'@} -> $LL.Main.proc1
-
-$LL.Main.proc3 :: W2 -> W1
-$LL.Main.proc3 $0 = 1'case 2'$0 of
+$LL.Main.proc7 :: W2 -> W1
+$LL.Main.proc7 $0 = 1'case 2'$0 of
     {2'h2} -> 1'h0
     _ -> 1'h1
+
+$LL.Main.proc4 :: W2 -> W1
+$LL.Main.proc4 $0 = 1'case {2'$0, 2'$0} of
+    {2'@, 2'@} -> $LL.Main.proc
 
 $LL.Main.proc2 :: W2 -> W2 -> W1
 $LL.Main.proc2 $0 $1 = 1'case 2'$1 of
     {2'h1} -> 1'h0
     _ -> 1'case 2'$0 of
-      {2'@} -> $LL.Main.proc3
+      {2'@} -> $LL.Main.proc7
 
-$LL.Main.proc1 :: W2 -> W2 -> W1
-$LL.Main.proc1 $0 $1 = 1'case 2'$1 of
+$LL.Main.proc :: W2 -> W2 -> W1
+$LL.Main.proc $0 $1 = 1'case 2'$1 of
     {2'h0} -> 1'h0
     _ -> 1'case {2'$0, 2'$0} of
       {2'@, 2'@} -> $LL.Main.proc2
