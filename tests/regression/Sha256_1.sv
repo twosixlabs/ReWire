@@ -93,7 +93,7 @@ module top_level (input logic [0:0] clk,
   logic [1543:0] zll_pure_dispatch10_in;
   logic [1543:0] main_dev_inR1;
   logic [1296:0] main_dev_outR1;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   logic [7:0] __resumption_tag;
   logic [223:0] __st0;
   logic [31:0] __st1;
@@ -195,8 +195,8 @@ module top_level (input logic [0:0] clk,
   assign zll_pure_dispatch10_in = {zll_pure_dispatch1_in[1029:774], zll_pure_dispatch1_in[1543:1030], zll_pure_dispatch1_in[773:262], zll_pure_dispatch1_in[261:6], zll_pure_dispatch1_in[5:0]};
   assign main_dev_inR1 = {zll_pure_dispatch10_in[1287:774], zll_pure_dispatch10_in[1543:1288], zll_pure_dispatch10_in[773:262], zll_pure_dispatch10_in[261:6], zll_pure_dispatch10_in[5:0]};
   Main_dev  instR13 (main_dev_inR1[1543:1030], main_dev_inR1[1029:774], main_dev_inR1[773:262], main_dev_inR1[261:6], main_dev_inR1[5:0], main_dev_outR1);
-  assign {__continue, __out0, __resumption_tag_next, __st0_next, __st1_next, __st2_next, __st3_next} = (zll_pure_dispatch15_in[1037:1036] == 2'h1) ? main_dev_outR1 : ((zll_pure_dispatch16_inR1[1037:1036] == 2'h2) ? zll_pure_dispatch16_outR1 : ((zll_pure_dispatch16_in[1037:1036] == 2'h3) ? zll_pure_dispatch16_out : ((zll_main_loop52_in[5:0] == 6'h3f) ? main_dev_out : main_loop_out)));
-  initial {__resumption_tag, __st0, __st1, __st2, __st3} <= {2'h1, {11'h40c{1'h0}}};
+  assign {__padding, __out0, __resumption_tag_next, __st0_next, __st1_next, __st2_next, __st3_next} = (zll_pure_dispatch15_in[1037:1036] == 2'h1) ? main_dev_outR1 : ((zll_pure_dispatch16_inR1[1037:1036] == 2'h2) ? zll_pure_dispatch16_outR1 : ((zll_pure_dispatch16_in[1037:1036] == 2'h3) ? zll_pure_dispatch16_out : ((zll_main_loop52_in[5:0] == 6'h3f) ? main_dev_out : main_loop_out)));
+  initial {__resumption_tag, __st0, __st1, __st2, __st3} = {2'h1, {11'h40c{1'h0}}};
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__resumption_tag, __st0, __st1, __st2, __st3} <= {2'h1, {11'h40c{1'h0}}};

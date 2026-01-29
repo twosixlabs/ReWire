@@ -17,7 +17,7 @@ module top_level (input logic [6:0] __in0,
   logic [127:0] resize_inR5;
   logic [5:0] zll_main_loop2_in;
   logic [5:0] zll_main_loop3_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   assign zll_main_loop1_in = __in0;
   assign zll_main_compute1_in = zll_main_loop1_in[6:0];
   assign resize_in = zll_main_compute1_in[6:0];
@@ -35,5 +35,5 @@ module top_level (input logic [6:0] __in0,
   assign resize_inR5 = binop_inR2[255:128] % binop_inR2[127:0];
   assign zll_main_loop2_in = {1'h0, resize_inR5[4:0]};
   assign zll_main_loop3_in = zll_main_loop2_in[5:0];
-  assign {__continue, __out0} = {1'h1, zll_main_loop3_in[4:0]};
+  assign {__padding, __out0} = {1'h1, zll_main_loop3_in[4:0]};
 endmodule

@@ -21,7 +21,7 @@ module top_level (input logic [7:0] __in0,
   logic [15:0] binop_inR9;
   logic [8:0] zll_main_loop_in;
   logic [8:0] zll_main_loop1_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   assign zll_main_loop2_in = __in0;
   assign main_myrotr_in = zll_main_loop2_in[7:0];
   assign zll_main_myrotr2_in = {main_myrotr_in[7:0], 8'h3};
@@ -43,5 +43,5 @@ module top_level (input logic [7:0] __in0,
   assign binop_inR9 = {binop_inR7[15:8] << binop_inR7[7:0], binop_inR8[15:8] >>> binop_inR8[7:0]};
   assign zll_main_loop_in = {1'h0, binop_inR9[15:8] | binop_inR9[7:0]};
   assign zll_main_loop1_in = zll_main_loop_in[8:0];
-  assign {__continue, __out0} = {1'h1, zll_main_loop1_in[7:0]};
+  assign {__padding, __out0} = {1'h1, zll_main_loop1_in[7:0]};
 endmodule

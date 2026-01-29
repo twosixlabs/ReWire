@@ -33,8 +33,7 @@ module top_level (input logic [0:0] clk,
   logic [25:0] zll_main_incr17_out;
   logic [16:0] zll_main_incr17_inR1;
   logic [25:0] zll_main_incr17_outR1;
-  logic [0:0] __continue;
-  logic [0:0] __padding;
+  logic [1:0] __padding;
   logic [15:0] __st0;
   logic [15:0] __st0_next;
   assign zll_main_sig9_in = {__in0, __st0};
@@ -68,8 +67,8 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_incr17  instR3 (zll_main_incr17_in[15:0], zll_main_incr17_out);
   assign zll_main_incr17_inR1 = {zll_main_sig6_in[15:0], zll_main_sig6_in[16]};
   ZLL_Main_incr17  instR4 (zll_main_incr17_inR1[16:1], zll_main_incr17_outR1);
-  assign {__continue, __padding, __out0, __st0_next} = (zll_main_incr17_inR1[0] == 1'h1) ? zll_main_incr17_outR1 : zll_main_incr17_out;
-  initial __st0 <= 16'h1;
+  assign {__padding, __out0, __st0_next} = (zll_main_incr17_inR1[0] == 1'h1) ? zll_main_incr17_outR1 : zll_main_incr17_out;
+  initial __st0 = 16'h1;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       __st0 <= 16'h1;

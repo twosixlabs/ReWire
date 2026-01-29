@@ -16,7 +16,7 @@ module top_level (input logic [0:0] clk,
   logic [2:0] zll_main_loop4_in;
   logic [2:0] zll_main_loop3_in;
   logic [1:0] zll_main_loop5_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   logic [0:0] __st0;
   logic [0:0] __st0_next;
   assign zll_main_loop2_in = {__in0, __st0};
@@ -33,8 +33,8 @@ module top_level (input logic [0:0] clk,
   assign zll_main_loop4_in = {1'h0, zll_main_loop7_in[1], zll_main_loop7_in[0]};
   assign zll_main_loop3_in = zll_main_loop4_in[2:0];
   assign zll_main_loop5_in = {zll_main_loop3_in[1], zll_main_loop3_in[0]};
-  assign {__continue, __out0, __st0_next} = {1'h1, zll_main_loop5_in[1], zll_main_loop5_in[0]};
-  initial __st0 <= 1'h0;
+  assign {__padding, __out0, __st0_next} = {1'h1, zll_main_loop5_in[1], zll_main_loop5_in[0]};
+  initial __st0 = 1'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       __st0 <= 1'h0;

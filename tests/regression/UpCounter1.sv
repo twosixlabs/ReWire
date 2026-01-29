@@ -12,7 +12,7 @@ module top_level (input logic [0:0] clk,
   logic [24:0] zll_main_go12_in;
   logic [24:0] zll_main_go_in;
   logic [15:0] zll_main_go2_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   logic [7:0] __resumption_tag;
   logic [7:0] __st0;
   logic [7:0] __resumption_tag_next;
@@ -28,8 +28,8 @@ module top_level (input logic [0:0] clk,
   assign zll_main_go12_in = {9'h0, zll_main_go9_in[15:8], zll_main_go9_in[7:0]};
   assign zll_main_go_in = zll_main_go12_in[24:0];
   assign zll_main_go2_in = {zll_main_go_in[15:8], zll_main_go_in[7:0]};
-  assign {__continue, __out0, __resumption_tag_next, __st0_next} = {1'h1, zll_main_go2_in[15:8], zll_main_go2_in[15:8], zll_main_go2_in[7:0]};
-  initial {__resumption_tag, __st0} <= 16'h0;
+  assign {__padding, __out0, __resumption_tag_next, __st0_next} = {1'h1, zll_main_go2_in[15:8], zll_main_go2_in[15:8], zll_main_go2_in[7:0]};
+  initial {__resumption_tag, __st0} = 16'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__resumption_tag, __st0} <= 16'h0;

@@ -60,8 +60,7 @@ module top_level (input logic [0:0] clk,
   logic [93:0] zll_rewire_monad_iterst4_in;
   logic [93:0] zll_rewire_monad_iterst29_in;
   logic [45:0] zll_rewire_monad_iterst33_in;
-  logic [0:0] __continue;
-  logic [30:0] __padding;
+  logic [31:0] __padding;
   logic [29:0] __st0;
   logic [29:0] __st0_next;
   assign rewire_monad_iterst_in = {__in0, __st0};
@@ -122,8 +121,8 @@ module top_level (input logic [0:0] clk,
   assign zll_rewire_monad_iterst4_in = {zll_rewire_monad_iterst31_in[75:60], {{2'h1, {6'h2e{1'h0}}}, zll_rewire_monad_iterst15_in[29:0]}};
   assign zll_rewire_monad_iterst29_in = {zll_rewire_monad_iterst4_in[93:78], zll_rewire_monad_iterst4_in[77:0]};
   assign zll_rewire_monad_iterst33_in = {zll_rewire_monad_iterst29_in[93:78], zll_rewire_monad_iterst29_in[29:0]};
-  assign {__continue, __padding, __out0, __st0_next} = {{1'h1, {5'h1f{1'h0}}}, zll_rewire_monad_iterst33_in[45:30], zll_rewire_monad_iterst33_in[29:0]};
-  initial __st0 <= 30'h0;
+  assign {__padding, __out0, __st0_next} = {{1'h1, {5'h1f{1'h0}}}, zll_rewire_monad_iterst33_in[45:30], zll_rewire_monad_iterst33_in[29:0]};
+  initial __st0 = 30'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       __st0 <= 30'h0;

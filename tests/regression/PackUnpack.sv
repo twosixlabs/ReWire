@@ -121,7 +121,6 @@ module top_level (input logic [7:0] __in0,
   logic [0:0] zll_main_dev261_outR6;
   logic [27:0] zll_main_dev261_inR7;
   logic [0:0] zll_main_dev261_outR7;
-  logic [0:0] __continue;
   assign zll_main_dev33_in = __in0;
   assign zll_main_x2_in = zll_main_dev33_in[7:0];
   assign binop_in = {zll_main_x2_in[7:0], 8'h2};
@@ -240,7 +239,7 @@ module top_level (input logic [7:0] __in0,
   ZLL_Main_dev261  instR36 (zll_main_dev261_inR6[27:25], zll_main_dev261_inR6[24:22], zll_main_dev261_inR6[21:14], zll_main_dev261_inR6[13:6], zll_main_dev261_inR6[5:3], zll_main_dev261_inR6[2:0], zll_main_dev261_outR6);
   assign zll_main_dev261_inR7 = {zll_main_dev161_in[24:22], zll_main_dev161_in[21:19], zll_main_dev161_in[18:11], zll_main_dev161_in[10:3], zll_main_dev161_in[2:0], 3'h7};
   ZLL_Main_dev261  instR37 (zll_main_dev261_inR7[27:25], zll_main_dev261_inR7[24:22], zll_main_dev261_inR7[21:14], zll_main_dev261_inR7[13:6], zll_main_dev261_inR7[5:3], zll_main_dev261_inR7[2:0], zll_main_dev261_outR7);
-  assign {__continue, __out0, __out1, __out2, __out3} = {{zll_main_dev175_out, zll_main_dev175_outR1, zll_main_dev175_outR2, zll_main_dev175_outR3, zll_main_dev175_outR4, zll_main_dev175_outR5, zll_main_dev175_outR6, zll_main_dev175_outR7}, {zll_main_dev37_out, zll_main_dev37_outR1, zll_main_dev37_outR2, zll_main_dev37_outR3, zll_main_dev37_outR4, zll_main_dev37_outR5, zll_main_dev37_outR6, zll_main_dev37_outR7}, {zll_main_dev276_out, zll_main_dev276_outR1, zll_main_dev276_outR2, zll_main_dev276_outR3, zll_main_dev276_outR4, zll_main_dev276_outR5, zll_main_dev276_outR6, zll_main_dev276_outR7}, {zll_main_dev261_out, zll_main_dev261_outR1, zll_main_dev261_outR2, zll_main_dev261_outR3, zll_main_dev261_outR4, zll_main_dev261_outR5, zll_main_dev261_outR6, zll_main_dev261_outR7}};
+  assign {__out0, __out1, __out2, __out3} = {{zll_main_dev175_out, zll_main_dev175_outR1, zll_main_dev175_outR2, zll_main_dev175_outR3, zll_main_dev175_outR4, zll_main_dev175_outR5, zll_main_dev175_outR6, zll_main_dev175_outR7}, {zll_main_dev37_out, zll_main_dev37_outR1, zll_main_dev37_outR2, zll_main_dev37_outR3, zll_main_dev37_outR4, zll_main_dev37_outR5, zll_main_dev37_outR6, zll_main_dev37_outR7}, {zll_main_dev276_out, zll_main_dev276_outR1, zll_main_dev276_outR2, zll_main_dev276_outR3, zll_main_dev276_outR4, zll_main_dev276_outR5, zll_main_dev276_outR6, zll_main_dev276_outR7}, {zll_main_dev261_out, zll_main_dev261_outR1, zll_main_dev261_outR2, zll_main_dev261_outR3, zll_main_dev261_outR4, zll_main_dev261_outR5, zll_main_dev261_outR6, zll_main_dev261_outR7}};
 endmodule
 
 module ZLL_Main_dev276 (input logic [2:0] arg0,

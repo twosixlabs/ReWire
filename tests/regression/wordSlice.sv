@@ -18,7 +18,7 @@ module top_level (input logic [15:0] __in0,
   logic [15:0] id_inR3;
   logic [8:0] zll_main_loop_in;
   logic [8:0] zll_main_loop2_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   assign zll_main_loop1_in = __in0;
   assign zll_main_compute3_in = zll_main_loop1_in[15:0];
   assign msbit_in = zll_main_compute3_in[15:0];
@@ -37,7 +37,7 @@ module top_level (input logic [15:0] __in0,
   assign id_inR3 = zll_main_compute_in[16:1];
   assign zll_main_loop_in = {1'h0, (zll_main_compute_in[0] == 1'h1) ? id_inR3[7:0] : id_inR2[15:8]};
   assign zll_main_loop2_in = zll_main_loop_in[8:0];
-  assign {__continue, __out0} = {1'h1, zll_main_loop2_in[7:0]};
+  assign {__padding, __out0} = {1'h1, zll_main_loop2_in[7:0]};
 endmodule
 
 module ReWirezuPreludezuzaza (input logic [0:0] arg0,

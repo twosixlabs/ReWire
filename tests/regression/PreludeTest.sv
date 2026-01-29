@@ -14,7 +14,6 @@ module top_level (input logic [0:0] clk,
   logic [0:0] zll_main_zookus2_out;
   logic [0:0] zll_main_zookus2_inR1;
   logic [0:0] zll_main_zookus2_outR1;
-  logic [0:0] __continue;
   logic [0:0] __resumption_tag;
   logic [0:0] __resumption_tag_next;
   assign zll_pure_dispatch_in = {__in0, __resumption_tag};
@@ -29,8 +28,8 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_zookus2  inst (zll_main_zookus2_in[0], zll_main_zookus2_out);
   assign zll_main_zookus2_inR1 = zll_main_zookus2_out;
   ZLL_Main_zookus2  instR1 (zll_main_zookus2_inR1[0], zll_main_zookus2_outR1);
-  assign {__continue, __out0, __resumption_tag_next} = {zll_main_zookus2_outR1, zll_main_loop1_in[0]};
-  initial __resumption_tag <= 1'h0;
+  assign {__out0, __resumption_tag_next} = {zll_main_zookus2_outR1, zll_main_loop1_in[0]};
+  initial __resumption_tag = 1'h0;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       __resumption_tag <= 1'h0;

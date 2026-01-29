@@ -34,8 +34,7 @@ module top_level (input logic [0:0] clk,
   logic [25:0] zll_main_begin14_out;
   logic [16:0] zll_main_begin14_inR1;
   logic [25:0] zll_main_begin14_outR1;
-  logic [0:0] __continue;
-  logic [0:0] __padding;
+  logic [1:0] __padding;
   logic [7:0] __st0;
   logic [7:0] __st1;
   logic [7:0] __st0_next;
@@ -72,8 +71,8 @@ module top_level (input logic [0:0] clk,
   ZLL_Main_begin14  instR3 (zll_main_begin14_in[15:8], zll_main_begin14_in[7:0], zll_main_begin14_out);
   assign zll_main_begin14_inR1 = {zll_main_sig12_in[15:8], zll_main_sig12_in[7:0], zll_main_sig12_in[16]};
   ZLL_Main_begin14  instR4 (zll_main_begin14_inR1[16:9], zll_main_begin14_inR1[8:1], zll_main_begin14_outR1);
-  assign {__continue, __padding, __out0, __st0_next, __st1_next} = (zll_main_begin14_inR1[0] == 1'h1) ? zll_main_begin14_outR1 : zll_main_begin14_out;
-  initial {__st0, __st1} <= 16'h1;
+  assign {__padding, __out0, __st0_next, __st1_next} = (zll_main_begin14_inR1[0] == 1'h1) ? zll_main_begin14_outR1 : zll_main_begin14_out;
+  initial {__st0, __st1} = 16'h1;
   always @ (posedge clk or posedge rst) begin
     if (rst == 1'h1) begin
       {__st0, __st1} <= 16'h1;

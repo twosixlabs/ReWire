@@ -40,7 +40,7 @@ module top_level (input logic [1023:0] __in0,
   logic [7:0] zll_main_compute_outR7;
   logic [64:0] zll_main_loop1_in;
   logic [64:0] zll_main_loop5_in;
-  logic [0:0] __continue;
+  logic [0:0] __padding;
   assign zll_main_loop4_in = {__in0, __in1};
   assign zll_main_loop3_in = zll_main_loop4_in[1055:0];
   assign main_compute_in = {zll_main_loop3_in[1055:32], zll_main_loop3_in[31:0]};
@@ -80,7 +80,7 @@ module top_level (input logic [1023:0] __in0,
   ZLL_Main_compute  instR7 (zll_main_compute_inR7[95:64], zll_main_compute_inR7[63:0], zll_main_compute_outR7);
   assign zll_main_loop1_in = {1'h0, {zll_main_compute_out, zll_main_compute_outR1, zll_main_compute_outR2, zll_main_compute_outR3, zll_main_compute_outR4, zll_main_compute_outR5, zll_main_compute_outR6, zll_main_compute_outR7}};
   assign zll_main_loop5_in = zll_main_loop1_in[64:0];
-  assign {__continue, __out0} = {1'h1, zll_main_loop5_in[63:0]};
+  assign {__padding, __out0} = {1'h1, zll_main_loop5_in[63:0]};
 endmodule
 
 module ZLL_Main_compute (input logic [31:0] arg0,
